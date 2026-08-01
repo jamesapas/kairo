@@ -19,7 +19,7 @@ export function DashboardView({ initialData, userEmail }: DashboardViewProps) {
   const [activeSection, setActiveSection] = useState<SectionType>("overview");
 
   return (
-    <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950 font-sans text-slate-900 dark:text-slate-100">
+    <div className="flex min-h-screen bg-zinc-50 font-sans text-zinc-900">
       <Sidebar
         activeSection={activeSection}
         onSelectSection={setActiveSection}

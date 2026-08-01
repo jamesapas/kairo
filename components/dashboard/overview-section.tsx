@@ -11,7 +11,6 @@ import {
   FolderGit2,
   CheckCircle2,
   ArrowRight,
-  Sparkles,
 } from "lucide-react";
 
 interface OverviewSectionProps {
@@ -31,68 +30,30 @@ export function OverviewSection({ data, onNavigate }: OverviewSectionProps) {
   if (projects.length > 0 || educations.length > 0) completenessScore += 20;
 
   return (
-    <div className="space-y-8">
-      {/* Header Banner */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-900 via-indigo-800 to-slate-900 p-8 text-white shadow-xl">
-        <div className="absolute right-0 top-0 -mr-16 -mt-16 h-64 w-64 rounded-full bg-indigo-500/20 blur-3xl" />
-        <div className="relative z-10 space-y-3 max-w-2xl">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-400/30 text-indigo-200 text-xs font-medium">
-            <Sparkles className="h-3.5 w-3.5" /> Kairo Foundation Active
-          </div>
-          <h2 className="text-3xl font-bold tracking-tight">
-            Welcome, {profile?.full_name || "Career Builder"}
+    <div className="space-y-6">
+      {/* Title & Intro Header */}
+      <div className="bg-white rounded-lg p-6 border border-zinc-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="space-y-1">
+          <h2 className="text-xl font-bold tracking-tight text-zinc-900">
+            {profile?.full_name ? profile.full_name : "Career Dashboard"}
           </h2>
-          <p className="text-slate-300 text-sm leading-relaxed">
+          <p className="text-xs text-zinc-500 max-w-xl">
             {profile?.headline ||
-              "Your central hub for managing your professional profile, work history, skills, and portfolio before AI resume generation."}
+              "Central hub for managing professional details, experience, skills, and projects."}
           </p>
         </div>
-      </div>
 
-      {/* Profile Completeness Card */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">
-              Profile Completeness
-            </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              A comprehensive profile enables higher quality AI resume generation later.
-            </p>
+        <div className="flex items-center gap-3 bg-zinc-50 p-3 rounded-lg border border-zinc-200/80 shrink-0">
+          <div className="text-right">
+            <p className="text-[10px] uppercase font-bold text-zinc-400">Completeness</p>
+            <p className="text-lg font-bold text-zinc-900">{completenessScore}%</p>
           </div>
-          <span className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
-            {completenessScore}%
-          </span>
-        </div>
-
-        <div className="w-full bg-slate-100 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden">
-          <div
-            className="bg-indigo-600 h-full transition-all duration-500 ease-out"
-            style={{ width: `${completenessScore}%` }}
-          />
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 pt-2">
-          {[
-            { label: "Personal Info", done: Boolean(profile?.full_name && profile?.email) },
-            { label: "Work Experience", done: experiences.length > 0 },
-            { label: "Skills Inventory", done: skills.length > 0 },
-            { label: "Portfolio / Projects", done: projects.length > 0 },
-          ].map((step, idx) => (
+          <div className="w-16 bg-zinc-200 h-2 rounded-full overflow-hidden">
             <div
-              key={idx}
-              className="flex items-center gap-2 p-2.5 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 text-xs font-medium"
-            >
-              <CheckCircle2
-                className={`h-4 w-4 shrink-0 ${
-                  step.done ? "text-emerald-500" : "text-slate-300 dark:text-slate-700"
-                }`}
-              />
-              <span className={step.done ? "text-slate-900 dark:text-slate-200" : "text-slate-500"}>
-                {step.label}
-              </span>
-            </div>
-          ))}
+              className="bg-zinc-900 h-full transition-all duration-300"
+              style={{ width: `${completenessScore}%` }}
+            />
+          </div>
         </div>
       </div>
 
@@ -105,7 +66,6 @@ export function OverviewSection({ data, onNavigate }: OverviewSectionProps) {
             unit: "Positions",
             icon: Briefcase,
             section: "experiences" as SectionType,
-            color: "text-blue-600 bg-blue-50 dark:bg-blue-950/50",
           },
           {
             title: "Education",
@@ -113,7 +73,6 @@ export function OverviewSection({ data, onNavigate }: OverviewSectionProps) {
             unit: "Records",
             icon: GraduationCap,
             section: "educations" as SectionType,
-            color: "text-amber-600 bg-amber-50 dark:bg-amber-950/50",
           },
           {
             title: "Skills Inventory",
@@ -121,15 +80,13 @@ export function OverviewSection({ data, onNavigate }: OverviewSectionProps) {
             unit: "Skills Listed",
             icon: Wrench,
             section: "skills" as SectionType,
-            color: "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/50",
           },
           {
-            title: "Projects",
+            title: "Projects Showcase",
             count: projects.length,
-            unit: "Projects Showcase",
+            unit: "Projects",
             icon: FolderGit2,
             section: "projects" as SectionType,
-            color: "text-purple-600 bg-purple-50 dark:bg-purple-950/50",
           },
         ].map((stat) => {
           const Icon = stat.icon;
@@ -137,62 +94,91 @@ export function OverviewSection({ data, onNavigate }: OverviewSectionProps) {
             <div
               key={stat.title}
               onClick={() => onNavigate(stat.section)}
-              className="group cursor-pointer bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all space-y-3"
+              className="group cursor-pointer bg-white rounded-lg p-5 border border-zinc-200 shadow-sm hover:border-zinc-300 transition space-y-3"
             >
               <div className="flex items-center justify-between">
-                <div className={`p-2.5 rounded-xl ${stat.color}`}>
-                  <Icon className="h-5 w-5" />
+                <div className="p-2 rounded-lg bg-zinc-100 text-zinc-700">
+                  <Icon className="h-4 w-4" />
                 </div>
-                <ArrowRight className="h-4 w-4 text-slate-300 dark:text-slate-600 group-hover:text-indigo-600 group-hover:translate-x-0.5 transition-all" />
+                <ArrowRight className="h-3.5 w-3.5 text-zinc-400 group-hover:text-zinc-900 transition" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+                <p className="text-2xl font-bold text-zinc-900">
                   {stat.count}
                 </p>
-                <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                <p className="text-xs font-semibold text-zinc-700">
                   {stat.title}
                 </p>
-                <p className="text-[11px] text-slate-400">{stat.unit}</p>
+                <p className="text-[11px] text-zinc-400">{stat.unit}</p>
               </div>
             </div>
           );
         })}
       </div>
 
-      {/* Quick Summary Card */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
-          <div className="flex items-center gap-3">
-            <User className="h-5 w-5 text-indigo-600" />
-            <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">
+      {/* Profile Summary Card */}
+      <div className="bg-white rounded-lg p-6 border border-zinc-200 shadow-sm space-y-4">
+        <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
+          <div className="flex items-center gap-2">
+            <User className="h-4 w-4 text-zinc-500" />
+            <h3 className="text-sm font-bold text-zinc-900">
               Profile Summary
             </h3>
           </div>
           <button
             onClick={() => onNavigate("profile")}
-            className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
+            className="text-xs font-semibold text-zinc-900 hover:underline"
           >
             Edit Profile
           </button>
         </div>
 
         {profile?.summary ? (
-          <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+          <p className="text-xs text-zinc-600 leading-relaxed">
             {profile.summary}
           </p>
         ) : (
-          <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950 text-center space-y-2">
-            <p className="text-xs text-slate-500">
-              No summary provided yet. Add a career summary in your Personal Profile section.
+          <div className="p-4 rounded-lg bg-zinc-50 text-center space-y-2 border border-zinc-100">
+            <p className="text-xs text-zinc-500">
+              No summary added yet.
             </p>
             <button
               onClick={() => onNavigate("profile")}
-              className="px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-xs font-medium hover:bg-indigo-700 transition"
+              className="px-3 py-1.5 rounded-lg bg-zinc-900 text-white text-xs font-medium hover:bg-zinc-800 transition"
             >
               Add Summary
             </button>
           </div>
         )}
+      </div>
+
+      {/* Profile Check Checklist */}
+      <div className="bg-white rounded-lg p-6 border border-zinc-200 shadow-sm space-y-3">
+        <h3 className="text-xs font-bold text-zinc-900 uppercase tracking-wider text-zinc-400">
+          Setup Checklist
+        </h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+          {[
+            { label: "Personal Info", done: Boolean(profile?.full_name && profile?.email) },
+            { label: "Work Experience", done: experiences.length > 0 },
+            { label: "Skills Inventory", done: skills.length > 0 },
+            { label: "Portfolio / Projects", done: projects.length > 0 },
+          ].map((step, idx) => (
+            <div
+              key={idx}
+              className="flex items-center gap-2 p-2.5 rounded-lg bg-zinc-50 border border-zinc-200/80 text-xs font-medium"
+            >
+              <CheckCircle2
+                className={`h-4 w-4 shrink-0 ${
+                  step.done ? "text-emerald-600" : "text-zinc-300"
+                }`}
+              />
+              <span className={step.done ? "text-zinc-900 font-semibold" : "text-zinc-500"}>
+                {step.label}
+              </span>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

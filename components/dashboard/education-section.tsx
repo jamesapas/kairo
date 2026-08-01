@@ -79,7 +79,7 @@ export function EducationSection({ educations }: EducationSectionProps) {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this education entry?")) return;
+    if (!confirm("Delete this education entry?")) return;
     try {
       await deleteEducation(id);
     } catch (err: unknown) {
@@ -92,72 +92,71 @@ export function EducationSection({ educations }: EducationSectionProps) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-            <GraduationCap className="h-6 w-6 text-indigo-600" /> Education History
+          <h2 className="text-xl font-bold text-zinc-900 flex items-center gap-2">
+            <GraduationCap className="h-5 w-5 text-zinc-700" /> Education History
           </h2>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
-            Degrees, certifications, academic achievements, and courses.
+          <p className="text-xs text-zinc-500">
+            Degrees, academic background, and achievements.
           </p>
         </div>
 
         <button
           onClick={handleOpenAdd}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 text-white font-medium text-sm shadow-md hover:bg-indigo-700 transition"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-900 text-white font-semibold text-xs shadow-sm hover:bg-zinc-800 transition"
         >
-          <Plus className="h-4 w-4" /> Add Education
+          <Plus className="h-3.5 w-3.5" /> Add Education
         </button>
       </div>
 
       {/* List */}
       {educations.length === 0 ? (
-        <div className="p-8 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-center space-y-3">
-          <GraduationCap className="h-10 w-10 text-slate-300 mx-auto" />
-          <p className="text-sm text-slate-500">No education entries added yet.</p>
+        <div className="p-8 rounded-lg bg-white border border-zinc-200 text-center space-y-2">
+          <p className="text-xs text-zinc-500">No education entries added yet.</p>
           <button
             onClick={handleOpenAdd}
-            className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-semibold hover:bg-slate-200 transition"
+            className="px-3 py-1.5 rounded-lg bg-zinc-100 text-zinc-800 text-xs font-semibold hover:bg-zinc-200 transition"
           >
-            + Add First Education
+            Add Education
           </button>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {educations.map((edu) => (
             <div
               key={edu.id}
-              className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm space-y-3 transition hover:border-slate-300"
+              className="bg-white rounded-lg p-5 border border-zinc-200 shadow-sm space-y-2"
             >
               <div className="flex items-start justify-between">
                 <div>
-                  <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
+                  <h3 className="text-sm font-bold text-zinc-900">
                     {edu.degree} {edu.field_of_study ? `in ${edu.field_of_study}` : ""}
                   </h3>
-                  <p className="text-sm font-semibold text-indigo-600 dark:text-indigo-400">
+                  <p className="text-xs font-semibold text-zinc-700">
                     {edu.institution}
                   </p>
                 </div>
 
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1">
                   <button
                     onClick={() => handleOpenEdit(edu)}
-                    className="p-2 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 transition"
+                    className="p-1 rounded text-zinc-400 hover:text-zinc-900 transition"
                     title="Edit"
                   >
-                    <Edit2 className="h-4 w-4" />
+                    <Edit2 className="h-3.5 w-3.5" />
                   </button>
                   <button
                     onClick={() => handleDelete(edu.id)}
-                    className="p-2 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/50 transition"
+                    className="p-1 rounded text-zinc-400 hover:text-red-600 transition"
                     title="Delete"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="h-3.5 w-3.5" />
                   </button>
                 </div>
               </div>
 
               {(edu.start_date || edu.end_date || edu.is_current) && (
-                <div className="flex items-center gap-1 text-xs text-slate-500 font-medium">
-                  <Calendar className="h-3.5 w-3.5 text-slate-400" />
+                <div className="flex items-center gap-1 text-xs text-zinc-500">
+                  <Calendar className="h-3.5 w-3.5 text-zinc-400" />
                   <span>
                     {edu.start_date || "N/A"} - {edu.is_current ? "Present" : edu.end_date || "N/A"}
                   </span>
@@ -165,7 +164,7 @@ export function EducationSection({ educations }: EducationSectionProps) {
               )}
 
               {edu.description && (
-                <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                <p className="text-xs text-zinc-600 leading-relaxed">
                   {edu.description}
                 </p>
               )}
@@ -176,85 +175,85 @@ export function EducationSection({ educations }: EducationSectionProps) {
 
       {/* Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl w-full max-w-xl flex flex-col my-8">
-            <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-slate-800">
-              <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-900/40 backdrop-blur-xs">
+          <div className="bg-white rounded-lg border border-zinc-200 shadow-lg w-full max-w-md flex flex-col">
+            <div className="flex items-center justify-between p-4 border-b border-zinc-100">
+              <h3 className="text-sm font-bold text-zinc-900">
                 {editingEducation ? "Edit Education" : "Add Education"}
               </h3>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
+                className="text-zinc-400 hover:text-zinc-600 p-1"
               >
-                <X className="h-5 w-5" />
+                <X className="h-4 w-4" />
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+            <form onSubmit={handleSubmit} className="p-4 space-y-3 text-xs">
               {errorMsg && (
-                <div className="p-3 rounded-xl bg-red-50 text-red-700 text-xs font-medium">
+                <div className="p-2.5 rounded bg-red-50 text-red-700 font-medium">
                   {errorMsg}
                 </div>
               )}
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Degree / Qualification *
+                <label className="block font-semibold text-zinc-700 mb-1">
+                  Degree *
                 </label>
                 <input
                   type="text"
                   required
                   value={formData.degree}
                   onChange={(e) => setFormData({ ...formData, degree: e.target.value })}
-                  placeholder="e.g. Bachelor of Science"
-                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-sm"
+                  placeholder="Bachelor of Science"
+                  className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 bg-white text-zinc-900 text-xs"
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Institution / University *
+                  <label className="block font-semibold text-zinc-700 mb-1">
+                    Institution *
                   </label>
                   <input
                     type="text"
                     required
                     value={formData.institution}
                     onChange={(e) => setFormData({ ...formData, institution: e.target.value })}
-                    placeholder="e.g. Stanford University"
-                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-sm"
+                    placeholder="University"
+                    className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 bg-white text-zinc-900 text-xs"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  <label className="block font-semibold text-zinc-700 mb-1">
                     Field of Study
                   </label>
                   <input
                     type="text"
                     value={formData.field_of_study || ""}
                     onChange={(e) => setFormData({ ...formData, field_of_study: e.target.value })}
-                    placeholder="e.g. Computer Science"
-                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-sm"
+                    placeholder="Computer Science"
+                    className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 bg-white text-zinc-900 text-xs"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  <label className="block font-semibold text-zinc-700 mb-1">
                     Start Date
                   </label>
                   <input
                     type="date"
                     value={formData.start_date || ""}
                     onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
-                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-sm"
+                    className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 bg-white text-zinc-900 text-xs"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  <label className="block font-semibold text-zinc-700 mb-1">
                     End Date
                   </label>
                   <input
@@ -262,39 +261,39 @@ export function EducationSection({ educations }: EducationSectionProps) {
                     disabled={formData.is_current}
                     value={formData.end_date || ""}
                     onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
-                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-sm disabled:opacity-50"
+                    className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 bg-white text-zinc-900 text-xs disabled:opacity-50"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Description / Highlights
+                <label className="block font-semibold text-zinc-700 mb-1">
+                  Description
                 </label>
                 <textarea
                   rows={3}
                   value={formData.description || ""}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Honors, thesis, key modules..."
-                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-sm"
+                  placeholder="Highlights or honors..."
+                  className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 bg-white text-zinc-900 text-xs"
                 />
               </div>
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+              <div className="flex justify-end gap-2 pt-3 border-t border-zinc-100">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 rounded-xl border border-slate-200 text-slate-700 text-xs font-medium hover:bg-slate-50"
+                  className="px-3 py-1.5 rounded-lg border border-zinc-200 text-zinc-700 font-medium hover:bg-zinc-50"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={loading}
-                  className="flex items-center gap-2 px-5 py-2 rounded-xl bg-indigo-600 text-white font-medium text-xs hover:bg-indigo-700 disabled:opacity-50"
+                  className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-zinc-900 text-white font-medium hover:bg-zinc-800 disabled:opacity-50"
                 >
                   {loading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                  Save Education
+                  Save
                 </button>
               </div>
             </form>

@@ -105,7 +105,7 @@ export function ExperienceSection({ experiences }: ExperienceSectionProps) {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this experience entry?")) return;
+    if (!confirm("Delete this experience entry?")) return;
     try {
       await deleteExperience(id);
     } catch (err: unknown) {
@@ -118,96 +118,95 @@ export function ExperienceSection({ experiences }: ExperienceSectionProps) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-            <Briefcase className="h-6 w-6 text-indigo-600" /> Work Experience
+          <h2 className="text-xl font-bold text-zinc-900 flex items-center gap-2">
+            <Briefcase className="h-5 w-5 text-zinc-700" /> Work Experience
           </h2>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
-            Document your professional roles, key achievements, and responsibilities.
+          <p className="text-xs text-zinc-500">
+            Professional roles, key achievements, and responsibilities.
           </p>
         </div>
 
         <button
           onClick={handleOpenAdd}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 text-white font-medium text-sm shadow-md hover:bg-indigo-700 transition"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-900 text-white font-semibold text-xs shadow-sm hover:bg-zinc-800 transition"
         >
-          <Plus className="h-4 w-4" /> Add Experience
+          <Plus className="h-3.5 w-3.5" /> Add Experience
         </button>
       </div>
 
-      {/* List of Experiences */}
+      {/* List */}
       {experiences.length === 0 ? (
-        <div className="p-8 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-center space-y-3">
-          <Briefcase className="h-10 w-10 text-slate-300 mx-auto" />
-          <p className="text-sm text-slate-500">No work experiences added yet.</p>
+        <div className="p-8 rounded-lg bg-white border border-zinc-200 text-center space-y-2">
+          <p className="text-xs text-zinc-500">No work experiences added yet.</p>
           <button
             onClick={handleOpenAdd}
-            className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-semibold hover:bg-slate-200 transition"
+            className="px-3 py-1.5 rounded-lg bg-zinc-100 text-zinc-800 text-xs font-semibold hover:bg-zinc-200 transition"
           >
-            + Add First Experience
+            Add Experience
           </button>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {experiences.map((exp) => (
             <div
               key={exp.id}
-              className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4 transition hover:border-slate-300"
+              className="bg-white rounded-lg p-5 border border-zinc-200 shadow-sm space-y-3"
             >
-              <div className="flex flex-start justify-between">
+              <div className="flex items-start justify-between">
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
+                    <h3 className="text-sm font-bold text-zinc-900">
                       {exp.role}
                     </h3>
-                    <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                    <span className="px-2 py-0.5 rounded bg-zinc-100 text-zinc-600 text-[10px] font-semibold">
                       {exp.employment_type || "Full-time"}
                     </span>
                   </div>
-                  <p className="text-sm font-semibold text-indigo-600 dark:text-indigo-400">
+                  <p className="text-xs font-semibold text-zinc-700">
                     {exp.company}
                   </p>
                 </div>
 
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1">
                   <button
                     onClick={() => handleOpenEdit(exp)}
-                    className="p-2 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 transition"
+                    className="p-1 rounded text-zinc-400 hover:text-zinc-900 transition"
                     title="Edit"
                   >
-                    <Edit2 className="h-4 w-4" />
+                    <Edit2 className="h-3.5 w-3.5" />
                   </button>
                   <button
                     onClick={() => handleDelete(exp.id)}
-                    className="p-2 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/50 transition"
+                    className="p-1 rounded text-zinc-400 hover:text-red-600 transition"
                     title="Delete"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="h-3.5 w-3.5" />
                   </button>
                 </div>
               </div>
 
-              {/* Date & Location meta */}
-              <div className="flex flex-wrap items-center gap-4 text-xs text-slate-500 font-medium">
+              {/* Date & Location */}
+              <div className="flex flex-wrap items-center gap-3 text-xs text-zinc-500">
                 <span className="flex items-center gap-1">
-                  <Calendar className="h-3.5 w-3.5 text-slate-400" />
+                  <Calendar className="h-3.5 w-3.5 text-zinc-400" />
                   {exp.start_date} - {exp.is_current ? "Present" : exp.end_date || "N/A"}
                 </span>
                 {exp.location && (
                   <span className="flex items-center gap-1">
-                    <MapPin className="h-3.5 w-3.5 text-slate-400" />
+                    <MapPin className="h-3.5 w-3.5 text-zinc-400" />
                     {exp.location}
                   </span>
                 )}
               </div>
 
               {exp.description && (
-                <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                <p className="text-xs text-zinc-600 leading-relaxed">
                   {exp.description}
                 </p>
               )}
 
               {exp.bullet_points && exp.bullet_points.length > 0 && (
-                <ul className="space-y-1.5 pl-4 text-xs text-slate-600 dark:text-slate-300 list-disc">
+                <ul className="space-y-1 pl-4 text-xs text-zinc-600 list-disc">
                   {exp.bullet_points.map((pt, idx) => (
                     <li key={idx}>{pt}</li>
                   ))}
@@ -218,81 +217,81 @@ export function ExperienceSection({ experiences }: ExperienceSectionProps) {
         </div>
       )}
 
-      {/* Modal Dialog */}
+      {/* Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col my-8">
-            <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-slate-800">
-              <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
-                {editingExperience ? "Edit Experience" : "Add New Experience"}
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-900/40 backdrop-blur-xs overflow-y-auto">
+          <div className="bg-white rounded-lg border border-zinc-200 shadow-lg w-full max-w-xl flex flex-col my-8">
+            <div className="flex items-center justify-between p-4 border-b border-zinc-100">
+              <h3 className="text-sm font-bold text-zinc-900">
+                {editingExperience ? "Edit Experience" : "Add Experience"}
               </h3>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
+                className="text-zinc-400 hover:text-zinc-600 p-1"
               >
-                <X className="h-5 w-5" />
+                <X className="h-4 w-4" />
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto flex-1">
+            <form onSubmit={handleSubmit} className="p-4 space-y-4 overflow-y-auto flex-1 text-xs">
               {errorMsg && (
-                <div className="p-3 rounded-xl bg-red-50 text-red-700 text-xs font-medium">
+                <div className="p-2.5 rounded bg-red-50 text-red-700 font-medium">
                   {errorMsg}
                 </div>
               )}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Role / Job Title *
+                  <label className="block font-semibold text-zinc-700 mb-1">
+                    Role *
                   </label>
                   <input
                     type="text"
                     required
                     value={formData.role}
                     onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                    placeholder="e.g. Software Engineer"
-                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-sm"
+                    placeholder="Software Engineer"
+                    className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 bg-white text-zinc-900 text-xs focus:ring-1 focus:ring-zinc-900"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Company Name *
+                  <label className="block font-semibold text-zinc-700 mb-1">
+                    Company *
                   </label>
                   <input
                     type="text"
                     required
                     value={formData.company}
                     onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                    placeholder="e.g. Acme Corp"
-                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-sm"
+                    placeholder="Acme Corp"
+                    className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 bg-white text-zinc-900 text-xs focus:ring-1 focus:ring-zinc-900"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  <label className="block font-semibold text-zinc-700 mb-1">
                     Location
                   </label>
                   <input
                     type="text"
                     value={formData.location || ""}
                     onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                    placeholder="e.g. Remote / New York"
-                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-sm"
+                    placeholder="Remote / New York"
+                    className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 bg-white text-zinc-900 text-xs focus:ring-1 focus:ring-zinc-900"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  <label className="block font-semibold text-zinc-700 mb-1">
                     Employment Type
                   </label>
                   <select
                     value={formData.employment_type || "Full-time"}
                     onChange={(e) => setFormData({ ...formData, employment_type: e.target.value })}
-                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-sm"
+                    className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 bg-white text-zinc-900 text-xs focus:ring-1 focus:ring-zinc-900"
                   >
                     <option value="Full-time">Full-time</option>
                     <option value="Part-time">Part-time</option>
@@ -303,9 +302,9 @@ export function ExperienceSection({ experiences }: ExperienceSectionProps) {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  <label className="block font-semibold text-zinc-700 mb-1">
                     Start Date *
                   </label>
                   <input
@@ -313,12 +312,12 @@ export function ExperienceSection({ experiences }: ExperienceSectionProps) {
                     required
                     value={formData.start_date}
                     onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
-                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-sm"
+                    className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 bg-white text-zinc-900 text-xs"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  <label className="block font-semibold text-zinc-700 mb-1">
                     End Date
                   </label>
                   <input
@@ -326,7 +325,7 @@ export function ExperienceSection({ experiences }: ExperienceSectionProps) {
                     disabled={formData.is_current}
                     value={formData.end_date || ""}
                     onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
-                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-sm disabled:opacity-50"
+                    className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 bg-white text-zinc-900 text-xs disabled:opacity-50"
                   />
                 </div>
               </div>
@@ -337,38 +336,38 @@ export function ExperienceSection({ experiences }: ExperienceSectionProps) {
                   id="is_current"
                   checked={formData.is_current}
                   onChange={(e) => setFormData({ ...formData, is_current: e.target.checked })}
-                  className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                  className="rounded border-zinc-300 text-zinc-900"
                 />
-                <label htmlFor="is_current" className="text-xs font-medium text-slate-700 dark:text-slate-300">
-                  I currently work here
+                <label htmlFor="is_current" className="font-medium text-zinc-700">
+                  Current position
                 </label>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Description / Overview
+                <label className="block font-semibold text-zinc-700 mb-1">
+                  Description
                 </label>
                 <textarea
                   rows={3}
                   value={formData.description || ""}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Summary of responsibilities..."
-                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-sm"
+                  placeholder="Overview of role..."
+                  className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 bg-white text-zinc-900 text-xs"
                 />
               </div>
 
               {/* Bullet Points */}
               <div className="space-y-2">
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  Key Achievements / Bullet Points
+                <label className="block font-semibold text-zinc-700">
+                  Key Accomplishments
                 </label>
                 <div className="flex gap-2">
                   <input
                     type="text"
                     value={bulletInput}
                     onChange={(e) => setBulletInput(e.target.value)}
-                    placeholder="e.g. Reduced API latency by 40% using Redis caching"
-                    className="flex-1 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-xs"
+                    placeholder="Reduced latency by 30%..."
+                    className="flex-1 px-3 py-1.5 rounded-lg border border-zinc-200 bg-white text-zinc-900 text-xs"
                     onKeyDown={(e) => {
                       if (e.key === "Enter") {
                         e.preventDefault();
@@ -379,47 +378,47 @@ export function ExperienceSection({ experiences }: ExperienceSectionProps) {
                   <button
                     type="button"
                     onClick={handleAddBullet}
-                    className="px-3.5 py-2 rounded-xl bg-slate-800 text-white text-xs font-semibold hover:bg-slate-700"
+                    className="px-3 py-1.5 rounded-lg bg-zinc-900 text-white text-xs font-medium hover:bg-zinc-800"
                   >
-                    Add Point
+                    Add
                   </button>
                 </div>
 
-                <div className="space-y-1.5 pt-1">
+                <div className="space-y-1 pt-1">
                   {formData.bullet_points.map((pt, index) => (
                     <div
                       key={index}
-                      className="flex items-center justify-between p-2 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 text-xs"
+                      className="flex items-center justify-between p-2 rounded bg-zinc-50 border border-zinc-200 text-xs"
                     >
-                      <span className="flex-1 mr-2">{pt}</span>
+                      <span className="flex-1 mr-2 text-zinc-700">{pt}</span>
                       <button
                         type="button"
                         onClick={() => handleRemoveBullet(index)}
-                        className="text-slate-400 hover:text-red-600"
+                        className="text-zinc-400 hover:text-red-600"
                       >
-                        <X className="h-3.5 w-3.5" />
+                        <X className="h-3 w-3" />
                       </button>
                     </div>
                   ))}
                 </div>
               </div>
 
-              {/* Action buttons */}
-              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+              {/* Actions */}
+              <div className="flex justify-end gap-2 pt-3 border-t border-zinc-100">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 rounded-xl border border-slate-200 text-slate-700 text-xs font-medium hover:bg-slate-50"
+                  className="px-3 py-1.5 rounded-lg border border-zinc-200 text-zinc-700 font-medium hover:bg-zinc-50"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={loading}
-                  className="flex items-center gap-2 px-5 py-2 rounded-xl bg-indigo-600 text-white font-medium text-xs hover:bg-indigo-700 disabled:opacity-50"
+                  className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-zinc-900 text-white font-medium hover:bg-zinc-800 disabled:opacity-50"
                 >
                   {loading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                  Save Experience
+                  Save
                 </button>
               </div>
             </form>
