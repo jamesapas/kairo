@@ -114,7 +114,7 @@ export function ExperienceSection({ experiences }: ExperienceSectionProps) {
   };
 
   return (
-    <div className="space-y-6 max-w-4xl">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -128,7 +128,7 @@ export function ExperienceSection({ experiences }: ExperienceSectionProps) {
 
         <button
           onClick={handleOpenAdd}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-900 text-white font-semibold text-xs shadow-sm hover:bg-zinc-800 transition"
+          className="flex items-center gap-1.5 px-4 py-2.5 rounded-full bg-zinc-900 text-white font-semibold text-xs hover:bg-zinc-800 transition cursor-pointer"
         >
           <Plus className="h-3.5 w-3.5" /> Add Experience
         </button>
@@ -136,21 +136,21 @@ export function ExperienceSection({ experiences }: ExperienceSectionProps) {
 
       {/* List */}
       {experiences.length === 0 ? (
-        <div className="p-8 rounded-lg bg-white border border-zinc-200 text-center space-y-2">
+        <div className="p-8 rounded-2xl bg-white border border-zinc-100 text-center space-y-2">
           <p className="text-xs text-zinc-500">No work experiences added yet.</p>
           <button
             onClick={handleOpenAdd}
-            className="px-3 py-1.5 rounded-lg bg-zinc-100 text-zinc-800 text-xs font-semibold hover:bg-zinc-200 transition"
+            className="px-4 py-2 rounded-full bg-zinc-100 text-zinc-800 text-xs font-semibold hover:bg-zinc-200 transition cursor-pointer"
           >
             Add Experience
           </button>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-4">
           {experiences.map((exp) => (
             <div
               key={exp.id}
-              className="bg-white rounded-lg p-5 border border-zinc-200 shadow-sm space-y-3"
+              className="bg-white rounded-2xl p-6 border border-zinc-100 space-y-3 hover:border-zinc-200 transition"
             >
               <div className="flex items-start justify-between">
                 <div>
@@ -220,22 +220,22 @@ export function ExperienceSection({ experiences }: ExperienceSectionProps) {
       {/* Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-900/40 backdrop-blur-xs overflow-y-auto">
-          <div className="bg-white rounded-lg border border-zinc-200 shadow-lg w-full max-w-xl flex flex-col my-8">
+          <div className="bg-white rounded-2xl border border-zinc-100 shadow-xl w-full max-w-xl flex flex-col my-8">
             <div className="flex items-center justify-between p-4 border-b border-zinc-100">
               <h3 className="text-sm font-bold text-zinc-900">
                 {editingExperience ? "Edit Experience" : "Add Experience"}
               </h3>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="text-zinc-400 hover:text-zinc-600 p-1"
+                className="text-zinc-400 hover:text-zinc-600 p-1 cursor-pointer"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-4 space-y-4 overflow-y-auto flex-1 text-xs">
+            <form onSubmit={handleSubmit} className="p-5 space-y-4 overflow-y-auto flex-1 text-xs">
               {errorMsg && (
-                <div className="p-2.5 rounded bg-red-50 text-red-700 font-medium">
+                <div className="p-3 rounded-xl bg-red-50 text-red-700 font-medium">
                   {errorMsg}
                 </div>
               )}
@@ -251,7 +251,7 @@ export function ExperienceSection({ experiences }: ExperienceSectionProps) {
                     value={formData.role}
                     onChange={(e) => setFormData({ ...formData, role: e.target.value })}
                     placeholder="Software Engineer"
-                    className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 bg-white text-zinc-900 text-xs focus:ring-1 focus:ring-zinc-900"
+                    className="w-full px-5 py-3 rounded-full bg-zinc-100 text-zinc-900 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 transition placeholder-zinc-500"
                   />
                 </div>
 
@@ -265,7 +265,7 @@ export function ExperienceSection({ experiences }: ExperienceSectionProps) {
                     value={formData.company}
                     onChange={(e) => setFormData({ ...formData, company: e.target.value })}
                     placeholder="Acme Corp"
-                    className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 bg-white text-zinc-900 text-xs focus:ring-1 focus:ring-zinc-900"
+                    className="w-full px-5 py-3 rounded-full bg-zinc-100 text-zinc-900 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 transition placeholder-zinc-500"
                   />
                 </div>
               </div>
@@ -280,7 +280,7 @@ export function ExperienceSection({ experiences }: ExperienceSectionProps) {
                     value={formData.location || ""}
                     onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                     placeholder="Remote / New York"
-                    className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 bg-white text-zinc-900 text-xs focus:ring-1 focus:ring-zinc-900"
+                    className="w-full px-5 py-3 rounded-full bg-zinc-100 text-zinc-900 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 transition placeholder-zinc-500"
                   />
                 </div>
 
@@ -291,7 +291,7 @@ export function ExperienceSection({ experiences }: ExperienceSectionProps) {
                   <select
                     value={formData.employment_type || "Full-time"}
                     onChange={(e) => setFormData({ ...formData, employment_type: e.target.value })}
-                    className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 bg-white text-zinc-900 text-xs focus:ring-1 focus:ring-zinc-900"
+                    className="w-full px-5 py-3 rounded-full bg-zinc-100 text-zinc-900 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 transition cursor-pointer appearance-none"
                   >
                     <option value="Full-time">Full-time</option>
                     <option value="Part-time">Part-time</option>
@@ -312,7 +312,7 @@ export function ExperienceSection({ experiences }: ExperienceSectionProps) {
                     required
                     value={formData.start_date}
                     onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
-                    className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 bg-white text-zinc-900 text-xs"
+                    className="w-full px-5 py-3 rounded-full bg-zinc-100 text-zinc-900 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 transition cursor-pointer"
                   />
                 </div>
 
@@ -325,7 +325,7 @@ export function ExperienceSection({ experiences }: ExperienceSectionProps) {
                     disabled={formData.is_current}
                     value={formData.end_date || ""}
                     onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
-                    className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 bg-white text-zinc-900 text-xs disabled:opacity-50"
+                    className="w-full px-5 py-3 rounded-full bg-zinc-100 text-zinc-900 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 transition cursor-pointer disabled:opacity-50"
                   />
                 </div>
               </div>
@@ -336,9 +336,9 @@ export function ExperienceSection({ experiences }: ExperienceSectionProps) {
                   id="is_current"
                   checked={formData.is_current}
                   onChange={(e) => setFormData({ ...formData, is_current: e.target.checked })}
-                  className="rounded border-zinc-300 text-zinc-900"
+                  className="rounded border-zinc-300 text-zinc-900 cursor-pointer h-4 w-4"
                 />
-                <label htmlFor="is_current" className="font-medium text-zinc-700">
+                <label htmlFor="is_current" className="font-semibold text-zinc-700 cursor-pointer">
                   Current position
                 </label>
               </div>
@@ -352,7 +352,7 @@ export function ExperienceSection({ experiences }: ExperienceSectionProps) {
                   value={formData.description || ""}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   placeholder="Overview of role..."
-                  className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 bg-white text-zinc-900 text-xs"
+                  className="w-full px-5 py-3 rounded-2xl bg-zinc-100 text-zinc-900 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 transition placeholder-zinc-500 resize-none"
                 />
               </div>
 
@@ -367,7 +367,7 @@ export function ExperienceSection({ experiences }: ExperienceSectionProps) {
                     value={bulletInput}
                     onChange={(e) => setBulletInput(e.target.value)}
                     placeholder="Reduced latency by 30%..."
-                    className="flex-1 px-3 py-1.5 rounded-lg border border-zinc-200 bg-white text-zinc-900 text-xs"
+                    className="flex-1 px-5 py-3 rounded-full bg-zinc-100 text-zinc-900 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 transition placeholder-zinc-500"
                     onKeyDown={(e) => {
                       if (e.key === "Enter") {
                         e.preventDefault();
@@ -378,25 +378,25 @@ export function ExperienceSection({ experiences }: ExperienceSectionProps) {
                   <button
                     type="button"
                     onClick={handleAddBullet}
-                    className="px-3 py-1.5 rounded-lg bg-zinc-900 text-white text-xs font-medium hover:bg-zinc-800"
+                    className="px-6 py-3 rounded-full bg-zinc-900 text-white text-xs font-semibold hover:bg-zinc-800 cursor-pointer transition"
                   >
                     Add
                   </button>
                 </div>
 
-                <div className="space-y-1 pt-1">
+                <div className="space-y-1.5 pt-1">
                   {formData.bullet_points.map((pt, index) => (
                     <div
                       key={index}
-                      className="flex items-center justify-between p-2 rounded bg-zinc-50 border border-zinc-200 text-xs"
+                      className="flex items-center justify-between p-3 rounded-xl bg-zinc-50 border border-zinc-100 text-xs"
                     >
                       <span className="flex-1 mr-2 text-zinc-700">{pt}</span>
                       <button
                         type="button"
                         onClick={() => handleRemoveBullet(index)}
-                        className="text-zinc-400 hover:text-red-600"
+                        className="text-zinc-400 hover:text-red-600 cursor-pointer"
                       >
-                        <X className="h-3 w-3" />
+                        <X className="h-3.5 w-3.5" />
                       </button>
                     </div>
                   ))}
@@ -408,16 +408,16 @@ export function ExperienceSection({ experiences }: ExperienceSectionProps) {
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-3 py-1.5 rounded-lg border border-zinc-200 text-zinc-700 font-medium hover:bg-zinc-50"
+                  className="px-6 py-3 rounded-full bg-zinc-100 hover:bg-zinc-200 text-zinc-700 font-semibold cursor-pointer transition text-sm"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={loading}
-                  className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-zinc-900 text-white font-medium hover:bg-zinc-800 disabled:opacity-50"
+                  className="flex items-center justify-center gap-2 py-3 px-6 rounded-full bg-zinc-900 hover:bg-zinc-800 text-white text-sm font-semibold disabled:opacity-50 transition cursor-pointer"
                 >
-                  {loading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                  {loading && <Loader2 className="h-4 w-4 animate-spin" />}
                   Save
                 </button>
               </div>

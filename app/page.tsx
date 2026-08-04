@@ -1,6 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { getCareerData } from "@/lib/actions/career";
-import { DashboardView } from "@/components/dashboard/dashboard-view";
+import { ResumeGenerator } from "@/components/resume/resume-generator";
 import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
@@ -15,7 +14,5 @@ export default async function Page() {
     redirect("/login");
   }
 
-  const careerData = await getCareerData();
-
-  return <DashboardView initialData={careerData} userEmail={user.email} />;
+  return <ResumeGenerator userEmail={user.email} />;
 }

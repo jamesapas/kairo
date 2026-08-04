@@ -88,7 +88,7 @@ export function EducationSection({ educations }: EducationSectionProps) {
   };
 
   return (
-    <div className="space-y-6 max-w-4xl">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -102,7 +102,7 @@ export function EducationSection({ educations }: EducationSectionProps) {
 
         <button
           onClick={handleOpenAdd}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-900 text-white font-semibold text-xs shadow-sm hover:bg-zinc-800 transition"
+          className="flex items-center gap-1.5 px-4 py-2.5 rounded-full bg-zinc-900 text-white font-semibold text-xs hover:bg-zinc-800 transition cursor-pointer"
         >
           <Plus className="h-3.5 w-3.5" /> Add Education
         </button>
@@ -110,28 +110,28 @@ export function EducationSection({ educations }: EducationSectionProps) {
 
       {/* List */}
       {educations.length === 0 ? (
-        <div className="p-8 rounded-lg bg-white border border-zinc-200 text-center space-y-2">
+        <div className="p-8 rounded-2xl bg-white border border-zinc-100 text-center space-y-2">
           <p className="text-xs text-zinc-500">No education entries added yet.</p>
           <button
             onClick={handleOpenAdd}
-            className="px-3 py-1.5 rounded-lg bg-zinc-100 text-zinc-800 text-xs font-semibold hover:bg-zinc-200 transition"
+            className="px-4 py-2 rounded-full bg-zinc-100 text-zinc-800 text-xs font-semibold hover:bg-zinc-200 transition cursor-pointer"
           >
             Add Education
           </button>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-4">
           {educations.map((edu) => (
             <div
               key={edu.id}
-              className="bg-white rounded-lg p-5 border border-zinc-200 shadow-sm space-y-2"
+              className="bg-white rounded-2xl p-6 border border-zinc-100 space-y-3 hover:border-zinc-200 transition"
             >
               <div className="flex items-start justify-between">
                 <div>
                   <h3 className="text-sm font-bold text-zinc-900">
                     {edu.degree} {edu.field_of_study ? `in ${edu.field_of_study}` : ""}
                   </h3>
-                  <p className="text-xs font-semibold text-zinc-700">
+                  <p className="text-xs font-semibold text-zinc-700 mt-0.5">
                     {edu.institution}
                   </p>
                 </div>
@@ -139,14 +139,14 @@ export function EducationSection({ educations }: EducationSectionProps) {
                 <div className="flex items-center gap-1">
                   <button
                     onClick={() => handleOpenEdit(edu)}
-                    className="p-1 rounded text-zinc-400 hover:text-zinc-900 transition"
+                    className="p-1 rounded text-zinc-400 hover:text-zinc-900 transition cursor-pointer"
                     title="Edit"
                   >
                     <Edit2 className="h-3.5 w-3.5" />
                   </button>
                   <button
                     onClick={() => handleDelete(edu.id)}
-                    className="p-1 rounded text-zinc-400 hover:text-red-600 transition"
+                    className="p-1 rounded text-zinc-400 hover:text-red-600 transition cursor-pointer"
                     title="Delete"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
@@ -155,7 +155,7 @@ export function EducationSection({ educations }: EducationSectionProps) {
               </div>
 
               {(edu.start_date || edu.end_date || edu.is_current) && (
-                <div className="flex items-center gap-1 text-xs text-zinc-500">
+                <div className="flex items-center gap-1.5 text-xs text-zinc-500">
                   <Calendar className="h-3.5 w-3.5 text-zinc-400" />
                   <span>
                     {edu.start_date || "N/A"} - {edu.is_current ? "Present" : edu.end_date || "N/A"}
@@ -176,22 +176,22 @@ export function EducationSection({ educations }: EducationSectionProps) {
       {/* Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-900/40 backdrop-blur-xs">
-          <div className="bg-white rounded-lg border border-zinc-200 shadow-lg w-full max-w-md flex flex-col">
+          <div className="bg-white rounded-2xl border border-zinc-100 shadow-xl w-full max-w-md flex flex-col">
             <div className="flex items-center justify-between p-4 border-b border-zinc-100">
               <h3 className="text-sm font-bold text-zinc-900">
                 {editingEducation ? "Edit Education" : "Add Education"}
               </h3>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="text-zinc-400 hover:text-zinc-600 p-1"
+                className="text-zinc-400 hover:text-zinc-600 p-1 cursor-pointer"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-4 space-y-3 text-xs">
+            <form onSubmit={handleSubmit} className="p-5 space-y-4 text-xs">
               {errorMsg && (
-                <div className="p-2.5 rounded bg-red-50 text-red-700 font-medium">
+                <div className="p-3 rounded-xl bg-red-50 text-red-700 font-medium">
                   {errorMsg}
                 </div>
               )}
@@ -206,7 +206,7 @@ export function EducationSection({ educations }: EducationSectionProps) {
                   value={formData.degree}
                   onChange={(e) => setFormData({ ...formData, degree: e.target.value })}
                   placeholder="Bachelor of Science"
-                  className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 bg-white text-zinc-900 text-xs"
+                  className="w-full px-5 py-3 rounded-full bg-zinc-100 text-zinc-900 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 transition placeholder-zinc-500"
                 />
               </div>
 
@@ -221,7 +221,7 @@ export function EducationSection({ educations }: EducationSectionProps) {
                     value={formData.institution}
                     onChange={(e) => setFormData({ ...formData, institution: e.target.value })}
                     placeholder="University"
-                    className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 bg-white text-zinc-900 text-xs"
+                    className="w-full px-5 py-3 rounded-full bg-zinc-100 text-zinc-900 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 transition placeholder-zinc-500"
                   />
                 </div>
 
@@ -234,7 +234,7 @@ export function EducationSection({ educations }: EducationSectionProps) {
                     value={formData.field_of_study || ""}
                     onChange={(e) => setFormData({ ...formData, field_of_study: e.target.value })}
                     placeholder="Computer Science"
-                    className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 bg-white text-zinc-900 text-xs"
+                    className="w-full px-5 py-3 rounded-full bg-zinc-100 text-zinc-900 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 transition placeholder-zinc-500"
                   />
                 </div>
               </div>
@@ -248,7 +248,7 @@ export function EducationSection({ educations }: EducationSectionProps) {
                     type="date"
                     value={formData.start_date || ""}
                     onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
-                    className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 bg-white text-zinc-900 text-xs"
+                    className="w-full px-5 py-3 rounded-full bg-zinc-100 text-zinc-900 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 transition cursor-pointer"
                   />
                 </div>
 
@@ -261,7 +261,7 @@ export function EducationSection({ educations }: EducationSectionProps) {
                     disabled={formData.is_current}
                     value={formData.end_date || ""}
                     onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
-                    className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 bg-white text-zinc-900 text-xs disabled:opacity-50"
+                    className="w-full px-5 py-3 rounded-full bg-zinc-100 text-zinc-900 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 transition cursor-pointer disabled:opacity-50"
                   />
                 </div>
               </div>
@@ -275,7 +275,7 @@ export function EducationSection({ educations }: EducationSectionProps) {
                   value={formData.description || ""}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   placeholder="Highlights or honors..."
-                  className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 bg-white text-zinc-900 text-xs"
+                  className="w-full px-5 py-3 rounded-2xl bg-zinc-100 text-zinc-900 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 transition placeholder-zinc-500 resize-none"
                 />
               </div>
 
@@ -283,16 +283,16 @@ export function EducationSection({ educations }: EducationSectionProps) {
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-3 py-1.5 rounded-lg border border-zinc-200 text-zinc-700 font-medium hover:bg-zinc-50"
+                  className="px-6 py-3 rounded-full bg-zinc-100 hover:bg-zinc-200 text-zinc-700 font-semibold cursor-pointer transition text-sm"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={loading}
-                  className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-zinc-900 text-white font-medium hover:bg-zinc-800 disabled:opacity-50"
+                  className="flex items-center justify-center gap-2 py-3 px-6 rounded-full bg-zinc-900 hover:bg-zinc-800 text-white text-sm font-semibold disabled:opacity-50 transition cursor-pointer"
                 >
-                  {loading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                  {loading && <Loader2 className="h-4 w-4 animate-spin" />}
                   Save
                 </button>
               </div>

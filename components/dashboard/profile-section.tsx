@@ -45,7 +45,7 @@ export function ProfileSection({ profile }: ProfileSectionProps) {
   };
 
   return (
-    <div className="space-y-6 max-w-4xl">
+    <div className="space-y-6">
       {/* Title */}
       <div>
         <h2 className="text-xl font-bold text-zinc-900 flex items-center gap-2">
@@ -71,7 +71,7 @@ export function ProfileSection({ profile }: ProfileSectionProps) {
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Core Personal Details */}
-        <div className="bg-white rounded-lg p-6 border border-zinc-200 shadow-sm space-y-4">
+        <div className="bg-white rounded-2xl p-6 border border-zinc-100 space-y-4">
           <h3 className="text-sm font-bold text-zinc-900 border-b border-zinc-100 pb-3">
             Basic Information
           </h3>
@@ -87,7 +87,7 @@ export function ProfileSection({ profile }: ProfileSectionProps) {
                 value={formData.full_name}
                 onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
                 placeholder="Alex Morgan"
-                className="w-full px-3 py-2 rounded-lg border border-zinc-200 bg-white text-zinc-900 text-xs focus:outline-none focus:ring-1 focus:ring-zinc-900"
+                className="w-full px-5 py-3 rounded-full bg-zinc-100 text-zinc-900 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 transition placeholder-zinc-500"
               />
             </div>
 
@@ -100,7 +100,7 @@ export function ProfileSection({ profile }: ProfileSectionProps) {
                 value={formData.headline || ""}
                 onChange={(e) => setFormData({ ...formData, headline: e.target.value })}
                 placeholder="Software Engineer"
-                className="w-full px-3 py-2 rounded-lg border border-zinc-200 bg-white text-zinc-900 text-xs focus:outline-none focus:ring-1 focus:ring-zinc-900"
+                className="w-full px-5 py-3 rounded-full bg-zinc-100 text-zinc-900 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 transition placeholder-zinc-500"
               />
             </div>
           </div>
@@ -114,13 +114,13 @@ export function ProfileSection({ profile }: ProfileSectionProps) {
               value={formData.summary || ""}
               onChange={(e) => setFormData({ ...formData, summary: e.target.value })}
               placeholder="Brief overview of background and goals..."
-              className="w-full px-3 py-2 rounded-lg border border-zinc-200 bg-white text-zinc-900 text-xs focus:outline-none focus:ring-1 focus:ring-zinc-900"
+              className="w-full px-5 py-3 rounded-2xl bg-zinc-100 text-zinc-900 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 transition placeholder-zinc-500 resize-none"
             />
           </div>
         </div>
 
         {/* Contact Info */}
-        <div className="bg-white rounded-lg p-6 border border-zinc-200 shadow-sm space-y-4">
+        <div className="bg-white rounded-2xl p-6 border border-zinc-100 space-y-4">
           <h3 className="text-sm font-bold text-zinc-900 border-b border-zinc-100 pb-3">
             Contact Information
           </h3>
@@ -135,7 +135,7 @@ export function ProfileSection({ profile }: ProfileSectionProps) {
                 value={formData.email || ""}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 placeholder="alex@example.com"
-                className="w-full px-3 py-2 rounded-lg border border-zinc-200 bg-white text-zinc-900 text-xs focus:outline-none focus:ring-1 focus:ring-zinc-900"
+                className="w-full px-5 py-3 rounded-full bg-zinc-100 text-zinc-900 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 transition placeholder-zinc-500"
               />
             </div>
 
@@ -148,7 +148,7 @@ export function ProfileSection({ profile }: ProfileSectionProps) {
                 value={formData.phone || ""}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 placeholder="+1 555-0100"
-                className="w-full px-3 py-2 rounded-lg border border-zinc-200 bg-white text-zinc-900 text-xs focus:outline-none focus:ring-1 focus:ring-zinc-900"
+                className="w-full px-5 py-3 rounded-full bg-zinc-100 text-zinc-900 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 transition placeholder-zinc-500"
               />
             </div>
 
@@ -161,14 +161,14 @@ export function ProfileSection({ profile }: ProfileSectionProps) {
                 value={formData.location || ""}
                 onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                 placeholder="San Francisco, CA"
-                className="w-full px-3 py-2 rounded-lg border border-zinc-200 bg-white text-zinc-900 text-xs focus:outline-none focus:ring-1 focus:ring-zinc-900"
+                className="w-full px-5 py-3 rounded-full bg-zinc-100 text-zinc-900 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 transition placeholder-zinc-500"
               />
             </div>
           </div>
         </div>
 
         {/* Links */}
-        <div className="bg-white rounded-lg p-6 border border-zinc-200 shadow-sm space-y-4">
+        <div className="bg-white rounded-2xl p-6 border border-zinc-100 space-y-4">
           <h3 className="text-sm font-bold text-zinc-900 border-b border-zinc-100 pb-3">
             Links & Profiles
           </h3>
@@ -183,7 +183,7 @@ export function ProfileSection({ profile }: ProfileSectionProps) {
                 value={formData.website_url || ""}
                 onChange={(e) => setFormData({ ...formData, website_url: e.target.value })}
                 placeholder="https://alex.dev"
-                className="w-full px-3 py-2 rounded-lg border border-zinc-200 bg-white text-zinc-900 text-xs focus:outline-none focus:ring-1 focus:ring-zinc-900"
+                className="w-full px-5 py-3 rounded-full bg-zinc-100 text-zinc-900 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 transition placeholder-zinc-500"
               />
             </div>
 
@@ -196,7 +196,7 @@ export function ProfileSection({ profile }: ProfileSectionProps) {
                 value={formData.github_url || ""}
                 onChange={(e) => setFormData({ ...formData, github_url: e.target.value })}
                 placeholder="https://github.com/alex"
-                className="w-full px-3 py-2 rounded-lg border border-zinc-200 bg-white text-zinc-900 text-xs focus:outline-none focus:ring-1 focus:ring-zinc-900"
+                className="w-full px-5 py-3 rounded-full bg-zinc-100 text-zinc-900 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 transition placeholder-zinc-500"
               />
             </div>
 
@@ -209,7 +209,7 @@ export function ProfileSection({ profile }: ProfileSectionProps) {
                 value={formData.linkedin_url || ""}
                 onChange={(e) => setFormData({ ...formData, linkedin_url: e.target.value })}
                 placeholder="https://linkedin.com/in/alex"
-                className="w-full px-3 py-2 rounded-lg border border-zinc-200 bg-white text-zinc-900 text-xs focus:outline-none focus:ring-1 focus:ring-zinc-900"
+                className="w-full px-5 py-3 rounded-full bg-zinc-100 text-zinc-900 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 transition placeholder-zinc-500"
               />
             </div>
           </div>
@@ -220,9 +220,9 @@ export function ProfileSection({ profile }: ProfileSectionProps) {
           <button
             type="submit"
             disabled={loading}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-zinc-900 text-white font-semibold text-xs shadow-sm hover:bg-zinc-800 disabled:opacity-50 transition"
+            className="flex items-center justify-center gap-2 py-3 px-6 rounded-full bg-zinc-900 hover:bg-zinc-800 text-white text-sm font-semibold disabled:opacity-50 transition cursor-pointer"
           >
-            {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
             Save Profile
           </button>
         </div>

@@ -87,7 +87,7 @@ export function SkillsSection({ skills }: SkillsSectionProps) {
   };
 
   return (
-    <div className="space-y-6 max-w-4xl">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -101,7 +101,7 @@ export function SkillsSection({ skills }: SkillsSectionProps) {
 
         <button
           onClick={handleOpenAdd}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-900 text-white font-semibold text-xs shadow-sm hover:bg-zinc-800 transition"
+          className="flex items-center gap-1.5 px-4 py-2.5 rounded-full bg-zinc-900 text-white font-semibold text-xs hover:bg-zinc-800 transition cursor-pointer"
         >
           <Plus className="h-3.5 w-3.5" /> Add Skill
         </button>
@@ -109,12 +109,12 @@ export function SkillsSection({ skills }: SkillsSectionProps) {
 
       {/* Category Tabs */}
       {categories.length > 1 && (
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 border-b border-zinc-200">
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-2 border-b border-zinc-100">
           {categories.map((cat) => (
             <button
               key={cat}
               onClick={() => setActiveCategory(cat)}
-              className={`px-3 py-1 rounded-lg text-xs font-medium whitespace-nowrap transition ${
+              className={`px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition cursor-pointer ${
                 activeCategory === cat
                   ? "bg-zinc-900 text-white"
                   : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200"
@@ -128,11 +128,11 @@ export function SkillsSection({ skills }: SkillsSectionProps) {
 
       {/* Skills Grid */}
       {filteredSkills.length === 0 ? (
-        <div className="p-8 rounded-lg bg-white border border-zinc-200 text-center space-y-2">
+        <div className="p-8 rounded-2xl bg-white border border-zinc-100 text-center space-y-2">
           <p className="text-xs text-zinc-500">No skills listed yet.</p>
           <button
             onClick={handleOpenAdd}
-            className="px-3 py-1.5 rounded-lg bg-zinc-100 text-zinc-800 text-xs font-semibold hover:bg-zinc-200 transition"
+            className="px-4 py-2 rounded-full bg-zinc-100 text-zinc-800 text-xs font-semibold hover:bg-zinc-200 transition cursor-pointer"
           >
             Add Skill
           </button>
@@ -142,7 +142,7 @@ export function SkillsSection({ skills }: SkillsSectionProps) {
           {filteredSkills.map((sk) => (
             <div
               key={sk.id}
-              className="group bg-white rounded-lg p-3.5 border border-zinc-200 shadow-sm flex items-center justify-between"
+              className="group bg-white rounded-2xl p-4 border border-zinc-100 flex items-center justify-between transition hover:border-zinc-200"
             >
               <div className="space-y-0.5">
                 <span className="font-semibold text-xs text-zinc-900">
@@ -159,14 +159,14 @@ export function SkillsSection({ skills }: SkillsSectionProps) {
               <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button
                   onClick={() => handleOpenEdit(sk)}
-                  className="p-1 rounded text-zinc-400 hover:text-zinc-900"
+                  className="p-1 rounded text-zinc-400 hover:text-zinc-900 cursor-pointer"
                   title="Edit"
                 >
                   <Edit2 className="h-3.5 w-3.5" />
                 </button>
                 <button
                   onClick={() => handleDelete(sk.id)}
-                  className="p-1 rounded text-zinc-400 hover:text-red-600"
+                  className="p-1 rounded text-zinc-400 hover:text-red-600 cursor-pointer"
                   title="Delete"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
@@ -180,22 +180,22 @@ export function SkillsSection({ skills }: SkillsSectionProps) {
       {/* Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-900/40 backdrop-blur-xs">
-          <div className="bg-white rounded-lg border border-zinc-200 shadow-lg w-full max-w-sm flex flex-col">
+          <div className="bg-white rounded-2xl border border-zinc-100 shadow-xl w-full max-w-sm flex flex-col">
             <div className="flex items-center justify-between p-4 border-b border-zinc-100">
               <h3 className="text-sm font-bold text-zinc-900">
                 {editingSkill ? "Edit Skill" : "Add Skill"}
               </h3>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="text-zinc-400 hover:text-zinc-600 p-1"
+                className="text-zinc-400 hover:text-zinc-600 p-1 cursor-pointer"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-4 space-y-3 text-xs">
+            <form onSubmit={handleSubmit} className="p-5 space-y-4 text-xs">
               {errorMsg && (
-                <div className="p-2 rounded bg-red-50 text-red-700 font-medium">
+                <div className="p-3 rounded-xl bg-red-50 text-red-700 font-medium">
                   {errorMsg}
                 </div>
               )}
@@ -210,7 +210,7 @@ export function SkillsSection({ skills }: SkillsSectionProps) {
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   placeholder="TypeScript"
-                  className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 bg-white text-zinc-900 text-xs"
+                  className="w-full px-5 py-3 rounded-full bg-zinc-100 text-zinc-900 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 transition placeholder-zinc-500"
                 />
               </div>
 
@@ -223,7 +223,7 @@ export function SkillsSection({ skills }: SkillsSectionProps) {
                   value={formData.category}
                   onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                   placeholder="Frontend / Backend"
-                  className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 bg-white text-zinc-900 text-xs"
+                  className="w-full px-5 py-3 rounded-full bg-zinc-100 text-zinc-900 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 transition placeholder-zinc-500"
                 />
               </div>
 
@@ -240,7 +240,7 @@ export function SkillsSection({ skills }: SkillsSectionProps) {
                         proficiency_level: e.target.value as SkillFormData["proficiency_level"],
                       })
                     }
-                    className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 bg-white text-zinc-900 text-xs"
+                    className="w-full px-5 py-3 rounded-full bg-zinc-100 text-zinc-900 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 transition cursor-pointer appearance-none"
                   >
                     <option value="Beginner">Beginner</option>
                     <option value="Intermediate">Intermediate</option>
@@ -266,7 +266,7 @@ export function SkillsSection({ skills }: SkillsSectionProps) {
                       })
                     }
                     placeholder="3"
-                    className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 bg-white text-zinc-900 text-xs"
+                    className="w-full px-5 py-3 rounded-full bg-zinc-100 text-zinc-900 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 transition placeholder-zinc-500"
                   />
                 </div>
               </div>
@@ -275,16 +275,16 @@ export function SkillsSection({ skills }: SkillsSectionProps) {
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-3 py-1.5 rounded-lg border border-zinc-200 text-zinc-700 font-medium hover:bg-zinc-50"
+                  className="px-6 py-3 rounded-full bg-zinc-100 hover:bg-zinc-200 text-zinc-700 font-semibold cursor-pointer transition text-sm"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={loading}
-                  className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-zinc-900 text-white font-medium hover:bg-zinc-800 disabled:opacity-50"
+                  className="flex items-center justify-center gap-2 py-3 px-6 rounded-full bg-zinc-900 hover:bg-zinc-800 text-white text-sm font-semibold disabled:opacity-50 transition cursor-pointer"
                 >
-                  {loading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                  {loading && <Loader2 className="h-4 w-4 animate-spin" />}
                   Save
                 </button>
               </div>
