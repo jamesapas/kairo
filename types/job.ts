@@ -28,55 +28,43 @@ export interface JobApplication {
 
 export const JOB_STATUS_CONFIG: Record<
   JobStatus,
-  { label: string; bg: string; text: string; border: string; dot: string }
+  { label: string; iconColor: string; dot: string }
 > = {
   applied: {
     label: "Applied",
-    bg: "bg-blue-50",
-    text: "text-blue-700",
-    border: "border-blue-200",
+    iconColor: "text-blue-500",
     dot: "bg-blue-500",
   },
   interviewing: {
     label: "Interviewing",
-    bg: "bg-purple-50",
-    text: "text-purple-700",
-    border: "border-purple-200",
+    iconColor: "text-purple-500",
     dot: "bg-purple-500",
   },
   offer: {
     label: "Offer",
-    bg: "bg-emerald-50",
-    text: "text-emerald-700",
-    border: "border-emerald-200",
+    iconColor: "text-emerald-500",
     dot: "bg-emerald-500",
   },
   no_response: {
     label: "No Response",
-    bg: "bg-amber-50",
-    text: "text-amber-800",
-    border: "border-amber-200",
+    iconColor: "text-amber-500",
     dot: "bg-amber-500",
   },
   rejected: {
     label: "Rejected",
-    bg: "bg-rose-50",
-    text: "text-rose-700",
-    border: "border-rose-200",
+    iconColor: "text-rose-500",
     dot: "bg-rose-500",
   },
   withdrawn: {
     label: "Withdrawn",
-    bg: "bg-zinc-100",
-    text: "text-zinc-600",
-    border: "border-zinc-200",
+    iconColor: "text-zinc-400",
     dot: "bg-zinc-400",
   },
 };
 
 export const MATCH_CONFIG: Record<
   JobMatch,
-  { label: string; iconType: "star" | "zap" | "minus"; bg: string; text: string; border: string }
+  { label: string; iconType: "star" | "star-outline" | "star-gray"; bg: string; text: string; border: string }
 > = {
   good: {
     label: "Good Match",
@@ -87,14 +75,14 @@ export const MATCH_CONFIG: Record<
   },
   mid: {
     label: "Mid Match",
-    iconType: "zap",
-    bg: "bg-blue-50",
-    text: "text-blue-700",
-    border: "border-blue-200",
+    iconType: "star-outline",
+    bg: "bg-amber-50",
+    text: "text-amber-700",
+    border: "border-amber-200",
   },
   far: {
     label: "Far Match",
-    iconType: "minus",
+    iconType: "star-gray",
     bg: "bg-zinc-100",
     text: "text-zinc-600",
     border: "border-zinc-200",
