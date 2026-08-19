@@ -10,13 +10,14 @@ import {
   User,
   LogOut,
   Loader2,
+  Briefcase,
 } from "lucide-react";
 
 interface SidebarProps {
   userEmail?: string;
 }
 
-export function Sidebar({ userEmail }: SidebarProps) {
+export function Sidebar({}: SidebarProps = {}) {
   const [loggingOut, setLoggingOut] = useState(false);
   const pathname = usePathname();
 
@@ -26,7 +27,8 @@ export function Sidebar({ userEmail }: SidebarProps) {
   };
 
   const navItems = [
-    { href: "/", label: "Resume Generator", icon: FileText },
+    { href: "/", label: "Job Tracker", icon: Briefcase },
+    { href: "/resume", label: "Resume Generator", icon: FileText },
     { href: "/profile", label: "My Profile", icon: User },
   ];
 
@@ -61,7 +63,7 @@ export function Sidebar({ userEmail }: SidebarProps) {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`w-full flex items-center gap-2.5 px-4 py-2.5 rounded-full text-xs font-semibold transition-colors cursor-pointer ${
+                className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
                   isActive
                     ? "bg-zinc-900 text-white font-bold"
                     : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900"
@@ -79,28 +81,17 @@ export function Sidebar({ userEmail }: SidebarProps) {
         </nav>
       </div>
 
-      {/* User Info & Logout Footer */}
-      <div className="p-4 m-3 rounded-2xl bg-zinc-50 border border-zinc-200/80 text-xs space-y-3">
-        {userEmail && (
-          <div className="space-y-0.5 border-b border-zinc-200 pb-2">
-            <p className="text-[10px] uppercase font-bold tracking-wider text-zinc-400">
-              Account
-            </p>
-            <p className="text-xs font-medium text-zinc-800 truncate" title={userEmail}>
-              {userEmail}
-            </p>
-          </div>
-        )}
-
+      {/* Simple Sign Out */}
+      <div className="p-3 border-t border-zinc-100">
         <button
           onClick={handleSignOut}
           disabled={loggingOut}
-          className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-full bg-white border border-zinc-200 hover:bg-zinc-100 text-zinc-700 font-semibold text-xs transition cursor-pointer disabled:opacity-50"
+          className="w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-zinc-600 hover:bg-zinc-100 hover:text-rose-600 transition cursor-pointer disabled:opacity-50"
         >
           {loggingOut ? (
-            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            <Loader2 className="h-4 w-4 animate-spin text-zinc-400" />
           ) : (
-            <LogOut className="h-3.5 w-3.5 text-zinc-500" />
+            <LogOut className="h-4 w-4 text-zinc-400" />
           )}
           Sign Out
         </button>
