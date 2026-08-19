@@ -16,6 +16,7 @@ import {
   JOB_STATUS_CONFIG,
   formatRelativeDate,
 } from "@/types/job";
+import { StatusIcon } from "./status-dropdown";
 
 interface JobKanbanProps {
   jobs: JobApplication[];
@@ -94,10 +95,10 @@ export function JobKanban({
             key={statusKey}
             className="bg-zinc-100/60 rounded-2xl p-3 border border-zinc-200/70 flex flex-col min-h-[420px]"
           >
-            {/* Column Header */}
+            {/* Column Header with StatusIcon */}
             <div className="flex items-center justify-between px-1 py-1.5 mb-2">
               <div className="flex items-center gap-1.5">
-                <span className={`w-2 h-2 rounded-full ${config.dot}`} />
+                <StatusIcon status={statusKey} className="w-3.5 h-3.5" />
                 <h4 className="text-xs font-bold text-zinc-900">{config.label}</h4>
               </div>
               <span className="px-2 py-0.2 rounded-full bg-white text-zinc-600 text-[10px] font-bold border border-zinc-200">

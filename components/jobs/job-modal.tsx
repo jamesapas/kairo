@@ -1,52 +1,118 @@
 "use client";
 
 import React, { useState } from "react";
-import { X, AlertCircle, Pin } from "lucide-react";
+import {
+  X,
+  AlertCircle,
+  Pin,
+  Globe,
+  Laptop,
+  Building2,
+  Building,
+  Star,
+} from "lucide-react";
 import {
   JobApplication,
   JobMatch,
   JobStatus,
   WorkplaceType,
-  JOB_STATUS_CONFIG,
   PLATFORM_OPTIONS,
 } from "@/types/job";
+import { StatusDropdown } from "./status-dropdown";
+import { CustomSelect, CustomSelectOption } from "./custom-select";
 
 interface JobModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (job: Omit<JobApplication, "id" | "createdAt" | "updatedAt"> & { id?: string }) => void;
+  onSave: (
+    job: Omit<JobApplication, "id" | "createdAt" | "updatedAt"> & { id?: string }
+  ) => void;
   initialJob?: JobApplication | null;
 }
 
-interface FormInnerProps {
+const MATCH_OPTIONS: CustomSelectOption<JobMatch>[] = [
+  {
+    value: "good",
+    label: "Good Match",
+    icon: <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />,
+  },
+  {
+    value: "mid",
+    label: "Mid Match",
+    icon: <Star className="w-3.5 h-3.5 text-amber-400 stroke-[2]" />,
+  },
+  {
+    value: "far",
+    label: "Far Match",
+    icon: <Star className="w-3.5 h-3.5 text-zinc-400 stroke-[2]" />,
+  },
+];
+
+const PLATFORM_SELECT_OPTIONS: CustomSelectOption<string>[] = PLATFORM_OPTIONS.map(
+  (plat) => ({
+    value: plat,
+    label: plat,
+    icon: <Globe className="w-3.5 h-3.5 text-zinc-400" />,
+  })
+);
+
+const WORKPLACE_SELECT_OPTIONS: CustomSelectOption<WorkplaceType>[] = [
+  {
+    value: "Remote",
+    label: "Remote",
+    icon: <Laptop className="w-3.5 h-3.5 text-emerald-600" />,
+  },
+  {
+    value: "Hybrid",
+    label: "Hybrid",
+    icon: <Building2 className="w-3.5 h-3.5 text-blue-600" />,
+  },
+  {
+    value: "On-site",
+    label: "On-site",
+    icon: <Building className="w-3.5 h-3.5 text-purple-600" />,
+  },
+];
+
+function JobModalForm({
+  initialJob,
+  onSave,
+  onClose,
+}: {
   initialJob?: JobApplication | null;
+  onSave: JobModalProps["onSave"];
   onClose: () => void;
-  onSave: (job: Omit<JobApplication, "id" | "createdAt" | "updatedAt"> & { id?: string }) => void;
-}
-
-function JobModalForm({ initialJob, onClose, onSave }: FormInnerProps) {
+}) {
   const [jobTitle, setJobTitle] = useState(initialJob?.jobTitle || "");
   const [company, setCompany] = useState(initialJob?.company || "");
   const [description, setDescription] = useState(initialJob?.description || "");
-  const [appliedOn, setAppliedOn] = useState(initialJob?.appliedOn || "LinkedIn");
+  const [appliedOn, setAppliedOn] = useState(
+    initialJob?.appliedOn || PLATFORM_OPTIONS[0]
+  );
   const [jobUrl, setJobUrl] = useState(initialJob?.jobUrl || "");
   const [dateApplied, setDateApplied] = useState(
     initialJob?.dateApplied || new Date().toISOString().split("T")[0]
   );
-  const [status, setStatus] = useState<JobStatus>(initialJob?.status || "applied");
+  const [status, setStatus] = useState<JobStatus>(
+    initialJob?.status || "applied"
+  );
   const [workplaceType, setWorkplaceType] = useState<WorkplaceType>(
     initialJob?.workplaceType || "Remote"
   );
   const [salary, setSalary] = useState(initialJob?.salary || "");
   const [match, setMatch] = useState<JobMatch>(initialJob?.match || "good");
   const [isPinned, setIsPinned] = useState(initialJob?.isPinned || false);
-  const [errors, setErrors] = useState<{ jobTitle?: string; company?: string; dateApplied?: string }>({});
+  const [errors, setErrors] = useState<{
+    jobTitle?: string;
+    company?: string;
+    dateApplied?: string;
+  }>({});
 
   const validate = () => {
     const newErrors: { jobTitle?: string; company?: string; dateApplied?: string } = {};
     if (!jobTitle.trim()) newErrors.jobTitle = "Job title is required";
-    if (!company.trim()) newErrors.company = "Company is required";
-    if (!dateApplied.trim()) newErrors.dateApplied = "Date is required";
+    if (!company.trim()) newErrors.company = "Company name is required";
+    if (!dateApplied) newErrors.dateApplied = "Date applied is required";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -144,17 +210,11 @@ function JobModalForm({ initialJob, onClose, onSave }: FormInnerProps) {
             <label className="block text-xs font-semibold text-zinc-700 mb-1">
               Status
             </label>
-            <select
+            <StatusDropdown
               value={status}
-              onChange={(e) => setStatus(e.target.value as JobStatus)}
-              className="w-full px-3 py-2 rounded-xl bg-zinc-50 border border-zinc-200 text-xs font-semibold text-zinc-900 focus:border-zinc-400 cursor-pointer"
-            >
-              {Object.entries(JOB_STATUS_CONFIG).map(([key, val]) => (
-                <option key={key} value={key}>
-                  {val.label}
-                </option>
-              ))}
-            </select>
+              onChange={(st) => setStatus(st)}
+              size="md"
+            />
           </div>
 
           <div>
@@ -176,15 +236,12 @@ function JobModalForm({ initialJob, onClose, onSave }: FormInnerProps) {
             <label className="block text-xs font-semibold text-zinc-700 mb-1">
               Match
             </label>
-            <select
+            <CustomSelect<JobMatch>
               value={match}
-              onChange={(e) => setMatch(e.target.value as JobMatch)}
-              className="w-full px-3 py-2 rounded-xl bg-zinc-50 border border-zinc-200 text-xs font-semibold text-zinc-900 focus:border-zinc-400 cursor-pointer"
-            >
-              <option value="good">⭐ Good Match</option>
-              <option value="mid">☆ Mid Match</option>
-              <option value="far">✩ Far Match</option>
-            </select>
+              onChange={(val) => setMatch(val)}
+              options={MATCH_OPTIONS}
+              className="w-full"
+            />
           </div>
         </div>
 
@@ -194,32 +251,24 @@ function JobModalForm({ initialJob, onClose, onSave }: FormInnerProps) {
             <label className="block text-xs font-semibold text-zinc-700 mb-1">
               Applied On
             </label>
-            <select
+            <CustomSelect<string>
               value={appliedOn}
-              onChange={(e) => setAppliedOn(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl bg-zinc-50 border border-zinc-200 text-xs font-semibold text-zinc-900 focus:border-zinc-400 cursor-pointer"
-            >
-              {PLATFORM_OPTIONS.map((plat) => (
-                <option key={plat} value={plat}>
-                  {plat}
-                </option>
-              ))}
-            </select>
+              onChange={(val) => setAppliedOn(val)}
+              options={PLATFORM_SELECT_OPTIONS}
+              className="w-full"
+            />
           </div>
 
           <div>
             <label className="block text-xs font-semibold text-zinc-700 mb-1">
               Workplace
             </label>
-            <select
+            <CustomSelect<WorkplaceType>
               value={workplaceType}
-              onChange={(e) => setWorkplaceType(e.target.value as WorkplaceType)}
-              className="w-full px-3 py-2 rounded-xl bg-zinc-50 border border-zinc-200 text-xs font-semibold text-zinc-900 focus:border-zinc-400 cursor-pointer"
-            >
-              <option value="Remote">Remote</option>
-              <option value="Hybrid">Hybrid</option>
-              <option value="On-site">On-site</option>
-            </select>
+              onChange={(val) => setWorkplaceType(val)}
+              options={WORKPLACE_SELECT_OPTIONS}
+              className="w-full"
+            />
           </div>
         </div>
 
@@ -284,40 +333,48 @@ function JobModalForm({ initialJob, onClose, onSave }: FormInnerProps) {
       </form>
 
       {/* Footer */}
-      <div className="px-6 py-3.5 border-t border-zinc-100 bg-zinc-50/50 flex items-center justify-end gap-2.5">
+      <div className="px-6 py-4 border-t border-zinc-100 bg-zinc-50/50 flex items-center justify-end gap-2.5">
         <button
           type="button"
           onClick={onClose}
-          className="px-4 py-2 rounded-full border border-zinc-200 bg-white text-zinc-700 text-xs font-semibold hover:bg-zinc-100 transition cursor-pointer"
+          className="px-4 py-2 rounded-full border border-zinc-200 hover:bg-zinc-100 text-zinc-700 font-semibold text-xs transition cursor-pointer"
         >
           Cancel
         </button>
         <button
           type="button"
           onClick={handleSubmit}
-          className="px-5 py-2 rounded-full bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-bold transition cursor-pointer"
+          className="px-5 py-2 rounded-full bg-zinc-900 hover:bg-zinc-800 text-white font-bold text-xs transition cursor-pointer shadow-sm"
         >
-          {initialJob ? "Save Changes" : "Add Application"}
+          {initialJob ? "Save Changes" : "Create Application"}
         </button>
       </div>
     </div>
   );
 }
 
-export function JobModal({ isOpen, onClose, onSave, initialJob }: JobModalProps) {
+export function JobModal({
+  isOpen,
+  onClose,
+  onSave,
+  initialJob,
+}: JobModalProps) {
   if (!isOpen) return null;
 
   return (
     <div
       onClick={onClose}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/60 backdrop-blur-xs overflow-y-auto animate-fade-in"
+      className="fixed inset-0 z-50 overflow-y-auto bg-zinc-950/40 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in"
     >
-      <div onClick={(e) => e.stopPropagation()} className="w-full max-w-2xl animate-modal">
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-2xl animate-modal"
+      >
         <JobModalForm
-          key={initialJob ? initialJob.id : "new-job"}
+          key={initialJob?.id || "new-job"}
           initialJob={initialJob}
-          onClose={onClose}
           onSave={onSave}
+          onClose={onClose}
         />
       </div>
     </div>

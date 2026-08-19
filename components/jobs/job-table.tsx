@@ -14,9 +14,9 @@ import {
   JobApplication,
   JobStatus,
   JobMatch,
-  JOB_STATUS_CONFIG,
   formatRelativeDate,
 } from "@/types/job";
+import { StatusDropdown } from "./status-dropdown";
 
 interface JobTableProps {
   jobs: JobApplication[];
@@ -90,8 +90,6 @@ export function JobTable({
 
   const renderJobRows = (list: JobApplication[], isMuted = false) => {
     return list.map((job) => {
-      const statusCfg = JOB_STATUS_CONFIG[job.status] || JOB_STATUS_CONFIG.applied;
-
       return (
         <tr
           key={job.id}
@@ -100,7 +98,7 @@ export function JobTable({
             isMuted ? "opacity-75 hover:opacity-100 bg-zinc-50/30" : ""
           }`}
         >
-          {/* First Side: Match Icon (No header text) */}
+          {/* First Side: Match Icon */}
           <td className="py-3.5 pl-4 pr-1 text-center align-middle">
             <MatchIcon match={job.match} />
           </td>
@@ -120,19 +118,13 @@ export function JobTable({
             </div>
           </td>
 
-          {/* Status Dropdown */}
+          {/* Custom Status Dropdown with icons on all options */}
           <td className="py-3.5 px-3" onClick={(e) => e.stopPropagation()}>
-            <select
+            <StatusDropdown
               value={job.status}
-              onChange={(e) => onStatusChange(job.id, e.target.value as JobStatus)}
-              className={`text-xs font-bold px-2.5 py-1 rounded-full border ${statusCfg.bg} ${statusCfg.text} ${statusCfg.border} cursor-pointer transition`}
-            >
-              {Object.entries(JOB_STATUS_CONFIG).map(([key, val]) => (
-                <option key={key} value={key} className="bg-white text-zinc-900 font-medium">
-                  {val.label}
-                </option>
-              ))}
-            </select>
+              onChange={(newStatus) => onStatusChange(job.id, newStatus)}
+              size="sm"
+            />
           </td>
 
           {/* Platform */}
@@ -154,7 +146,7 @@ export function JobTable({
             </span>
           </td>
 
-          {/* Date Applied (with relative indicator like 2d ago, 2w ago) */}
+          {/* Date Applied */}
           <td className="py-3.5 px-3 text-zinc-500 font-medium">
             <div className="flex items-center gap-1" title={job.dateApplied}>
               <Calendar className="w-3 h-3 text-zinc-400" />

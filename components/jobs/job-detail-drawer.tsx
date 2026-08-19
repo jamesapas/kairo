@@ -24,6 +24,7 @@ import {
   MATCH_CONFIG,
   formatRelativeDate,
 } from "@/types/job";
+import { StatusIcon } from "./status-dropdown";
 
 interface JobDetailDrawerProps {
   job: JobApplication | null;
@@ -96,10 +97,9 @@ export function JobDetailDrawer({
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <MatchBadge match={job.match} />
-              <span
-                className={`inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-bold border ${currentStatusConfig.bg} ${currentStatusConfig.text} ${currentStatusConfig.border}`}
-              >
-                <span className={`w-1.5 h-1.5 rounded-full ${currentStatusConfig.dot}`} />
+              {/* Neutral status badge with colored icon on the left */}
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-white border border-zinc-200 text-zinc-800 shadow-2xs">
+                <StatusIcon status={job.status} className="w-3.5 h-3.5" />
                 {currentStatusConfig.label}
               </span>
             </div>
@@ -162,13 +162,14 @@ export function JobDetailDrawer({
                   <button
                     key={st}
                     onClick={() => onStatusChange(job.id, st)}
-                    className={`px-2.5 py-1.5 rounded-xl font-bold text-[11px] transition text-center border cursor-pointer ${
+                    className={`px-2.5 py-2 rounded-xl font-semibold text-[11px] transition flex items-center justify-center gap-1.5 border cursor-pointer ${
                       isCurrent
-                        ? `${config.bg} ${config.text} ${config.border} shadow-2xs font-extrabold`
-                        : "bg-white text-zinc-600 border-zinc-200 hover:bg-zinc-100 hover:text-zinc-900"
+                        ? "bg-zinc-900 text-white border-zinc-900 shadow-2xs font-bold"
+                        : "bg-white text-zinc-700 border-zinc-200 hover:bg-zinc-100 hover:text-zinc-900"
                     }`}
                   >
-                    {config.label}
+                    <StatusIcon status={st} className="w-3 h-3" />
+                    <span>{config.label}</span>
                   </button>
                 );
               })}

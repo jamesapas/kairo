@@ -11,6 +11,14 @@ import {
   X,
   FileSpreadsheet,
   Star,
+  Globe,
+  Building2,
+  Building,
+  Laptop,
+  Calendar,
+  ArrowUpDown,
+  Filter,
+  Briefcase,
 } from "lucide-react";
 import {
   JobApplication,
@@ -24,6 +32,8 @@ import { JobTable } from "./job-table";
 import { JobKanban } from "./job-kanban";
 import { JobModal } from "./job-modal";
 import { JobDetailDrawer } from "./job-detail-drawer";
+import { CustomSelect, CustomSelectOption } from "./custom-select";
+import { StatusIcon } from "./status-dropdown";
 
 const STORAGE_KEY = "kairo_job_applications_v2";
 
@@ -224,6 +234,79 @@ export function JobDashboard({ userEmail }: JobDashboardProps) {
       });
   }, [jobs, searchQuery, statusFilter, platformFilter, workplaceFilter, sortBy]);
 
+  // Options for custom filter selectors
+  const statusOptions: CustomSelectOption<JobStatus | "all">[] = [
+    {
+      value: "all",
+      label: "All Statuses",
+      icon: <Filter className="w-3.5 h-3.5 text-zinc-400" />,
+    },
+    ...(Object.keys(JOB_STATUS_CONFIG) as JobStatus[]).map((st) => ({
+      value: st,
+      label: JOB_STATUS_CONFIG[st].label,
+      icon: <StatusIcon status={st} className="w-3.5 h-3.5" />,
+    })),
+  ];
+
+  const platformOptions: CustomSelectOption<string>[] = [
+    {
+      value: "all",
+      label: "All Platforms",
+      icon: <Globe className="w-3.5 h-3.5 text-zinc-400" />,
+    },
+    ...PLATFORM_OPTIONS.map((plat) => ({
+      value: plat,
+      label: plat,
+      icon: <Globe className="w-3.5 h-3.5 text-zinc-400" />,
+    })),
+  ];
+
+  const workplaceOptions: CustomSelectOption<WorkplaceType | "all">[] = [
+    {
+      value: "all",
+      label: "All Workplaces",
+      icon: <Briefcase className="w-3.5 h-3.5 text-zinc-400" />,
+    },
+    {
+      value: "Remote",
+      label: "Remote",
+      icon: <Laptop className="w-3.5 h-3.5 text-emerald-600" />,
+    },
+    {
+      value: "Hybrid",
+      label: "Hybrid",
+      icon: <Building2 className="w-3.5 h-3.5 text-blue-600" />,
+    },
+    {
+      value: "On-site",
+      label: "On-site",
+      icon: <Building className="w-3.5 h-3.5 text-purple-600" />,
+    },
+  ];
+
+  const sortOptions: CustomSelectOption<SortOption>[] = [
+    {
+      value: "date-desc",
+      label: "Newest First",
+      icon: <Calendar className="w-3.5 h-3.5 text-zinc-400" />,
+    },
+    {
+      value: "date-asc",
+      label: "Oldest First",
+      icon: <Calendar className="w-3.5 h-3.5 text-zinc-400" />,
+    },
+    {
+      value: "company-asc",
+      label: "Company (A-Z)",
+      icon: <Building2 className="w-3.5 h-3.5 text-zinc-400" />,
+    },
+    {
+      value: "title-asc",
+      label: "Role (A-Z)",
+      icon: <ArrowUpDown className="w-3.5 h-3.5 text-zinc-400" />,
+    },
+  ];
+
   return (
     <div className="min-h-screen bg-zinc-50 text-zinc-900">
       <Sidebar userEmail={userEmail} />
@@ -308,55 +391,35 @@ export function JobDashboard({ userEmail }: JobDashboardProps) {
               )}
             </div>
 
-            {/* Filters */}
+            {/* Custom Filter Selectors with Icons */}
             <div className="flex flex-wrap items-center gap-2">
-              <select
+              <CustomSelect<JobStatus | "all">
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value as JobStatus | "all")}
-                className="px-3 py-1.5 rounded-xl bg-zinc-50 border border-zinc-200 text-xs font-semibold text-zinc-700 focus:border-zinc-400 cursor-pointer"
-              >
-                <option value="all">All Statuses</option>
-                {Object.entries(JOB_STATUS_CONFIG).map(([key, val]) => (
-                  <option key={key} value={key}>
-                    {val.label}
-                  </option>
-                ))}
-              </select>
+                onChange={(val) => setStatusFilter(val)}
+                options={statusOptions}
+                width="170px"
+              />
 
-              <select
+              <CustomSelect<string>
                 value={platformFilter}
-                onChange={(e) => setPlatformFilter(e.target.value)}
-                className="px-3 py-1.5 rounded-xl bg-zinc-50 border border-zinc-200 text-xs font-semibold text-zinc-700 focus:border-zinc-400 cursor-pointer"
-              >
-                <option value="all">All Platforms</option>
-                {PLATFORM_OPTIONS.map((p) => (
-                  <option key={p} value={p}>
-                    {p}
-                  </option>
-                ))}
-              </select>
+                onChange={(val) => setPlatformFilter(val)}
+                options={platformOptions}
+                width="170px"
+              />
 
-              <select
+              <CustomSelect<WorkplaceType | "all">
                 value={workplaceFilter}
-                onChange={(e) => setWorkplaceFilter(e.target.value as WorkplaceType | "all")}
-                className="px-3 py-1.5 rounded-xl bg-zinc-50 border border-zinc-200 text-xs font-semibold text-zinc-700 focus:border-zinc-400 cursor-pointer"
-              >
-                <option value="all">All Workplaces</option>
-                <option value="Remote">Remote</option>
-                <option value="Hybrid">Hybrid</option>
-                <option value="On-site">On-site</option>
-              </select>
+                onChange={(val) => setWorkplaceFilter(val)}
+                options={workplaceOptions}
+                width="160px"
+              />
 
-              <select
+              <CustomSelect<SortOption>
                 value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as SortOption)}
-                className="px-3 py-1.5 rounded-xl bg-zinc-50 border border-zinc-200 text-xs font-semibold text-zinc-700 focus:border-zinc-400 cursor-pointer"
-              >
-                <option value="date-desc">Newest</option>
-                <option value="date-asc">Oldest</option>
-                <option value="company-asc">Company (A-Z)</option>
-                <option value="title-asc">Role (A-Z)</option>
-              </select>
+                onChange={(val) => setSortBy(val)}
+                options={sortOptions}
+                width="160px"
+              />
 
               {/* View Switcher */}
               <div className="flex items-center p-0.5 rounded-xl bg-zinc-100 border border-zinc-200 ml-1">
