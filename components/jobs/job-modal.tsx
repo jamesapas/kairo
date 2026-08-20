@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   X,
   AlertCircle,
@@ -360,22 +360,63 @@ export function JobModal({
   onSave,
   initialJob,
 }: JobModalProps) {
-  if (!isOpen) return null;
+  const [isRendered, setIsRendered] = useState(isOpen);
+  const [isClosing, setIsClosing] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setIsRendered(true);
+      setIsClosing(false);
+    } else if (isRendered) {
+      setIsClosing(true);
+      const timer = setTimeout(() => {
+        setIsRendered(false);
+        setIsClosing(false);
+      }, 200);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, isRendered]);
+
+  const handleClose = () => {
+    if (isClosing) return;
+    setIsClosing(true);
+    setTimeout(() => {
+      onClose();
+      setIsRendered(false);
+      setIsClosing(false);
+    }, 200);
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isRendered && !isClosing) {
+        handleClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isRendered, isClosing]);
+
+  if (!isRendered) return null;
 
   return (
     <div
-      onClick={onClose}
-      className="fixed inset-0 z-50 overflow-y-auto bg-zinc-950/40 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in"
+      onClick={handleClose}
+      className={`fixed inset-0 z-50 overflow-y-auto bg-zinc-950/40 backdrop-blur-xs flex items-center justify-center p-4 ${
+        isClosing ? "animate-fade-out" : "animate-fade-in"
+      }`}
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-2xl animate-modal"
+        className={`w-full max-w-2xl ${
+          isClosing ? "animate-modal-out" : "animate-modal"
+        }`}
       >
         <JobModalForm
           key={initialJob?.id || "new-job"}
           initialJob={initialJob}
           onSave={onSave}
-          onClose={onClose}
+          onClose={handleClose}
         />
       </div>
     </div>
