@@ -2,31 +2,22 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { headers } from "next/headers";
 
-const ALLOWED_EMAIL = "apasjameskarl@gmail.com";
-
-export async function sendMagicLink(email: string) {
+export async function signInWithPassword(email: string, password: string) {
   const normalizedEmail = email.trim().toLowerCase();
 
-  // Strict email check
-  if (normalizedEmail !== ALLOWED_EMAIL) {
+  if (!normalizedEmail || !password) {
     return {
       success: false,
-      error: "Access denied.",
+      error: "Email and password are required.",
     };
   }
 
   const supabase = await createClient();
-  const headerList = await headers();
-  const origin = headerList.get("origin") || "http://localhost:3000";
 
-  const { error } = await supabase.auth.signInWithOtp({
+  const { error } = await supabase.auth.signInWithPassword({
     email: normalizedEmail,
-    options: {
-      emailRedirectTo: `${origin}/auth/callback`,
-      shouldCreateUser: true, // Allow user creation for authorized email if first time
-    },
+    password,
   });
 
   if (error) {
@@ -38,7 +29,53 @@ export async function sendMagicLink(email: string) {
 
   return {
     success: true,
-    message: "Magic link sent! Check your inbox to sign in.",
+  };
+}
+
+export async function signUpWithPassword(email: string, password: string) {
+  const normalizedEmail = email.trim().toLowerCase();
+
+  if (!normalizedEmail || !password) {
+    return {
+      success: false,
+      error: "Email and password are required.",
+    };
+  }
+
+  if (password.length < 6) {
+    return {
+      success: false,
+      error: "Password must be at least 6 characters.",
+    };
+  }
+
+  const supabase = await createClient();
+
+  const { data, error } = await supabase.auth.signUp({
+    email: normalizedEmail,
+    password,
+  });
+
+  if (error) {
+    return {
+      success: false,
+      error: error.message,
+    };
+  }
+
+  // If Supabase has email confirmation enabled, session will be null
+  if (data.user && !data.session) {
+    return {
+      success: true,
+      requiresEmailConfirmation: true,
+      message: "Account created! Please check your email to confirm your account before signing in.",
+    };
+  }
+
+  return {
+    success: true,
+    requiresEmailConfirmation: false,
+    message: "Account created successfully!",
   };
 }
 

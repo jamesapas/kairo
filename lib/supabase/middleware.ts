@@ -1,8 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const ALLOWED_EMAIL = "apasjameskarl@gmail.com";
-
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
@@ -48,15 +46,6 @@ export async function updateSession(request: NextRequest) {
     // Redirect unauthenticated user to /login
     const url = request.nextUrl.clone();
     url.pathname = "/login";
-    return NextResponse.redirect(url);
-  }
-
-  // If user is logged in but email is not allowed, force sign out
-  if (user && user.email?.toLowerCase() !== ALLOWED_EMAIL) {
-    await supabase.auth.signOut();
-    const url = request.nextUrl.clone();
-    url.pathname = "/login";
-    url.searchParams.set("error", "unauthorized");
     return NextResponse.redirect(url);
   }
 

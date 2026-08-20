@@ -15,13 +15,11 @@ export async function getCareerData(): Promise<CareerData> {
   const supabase = await createClient();
 
   const [
-    { data: profiles },
     { data: experiences },
     { data: educations },
     { data: skills },
     { data: projects },
   ] = await Promise.all([
-    supabase.from("profiles").select("*").limit(1),
     supabase.from("experiences").select("*").order("start_date", { ascending: false }),
     supabase.from("educations").select("*").order("start_date", { ascending: false }),
     supabase.from("skills").select("*").order("category", { ascending: true }).order("name", { ascending: true }),
@@ -29,7 +27,7 @@ export async function getCareerData(): Promise<CareerData> {
   ]);
 
   return {
-    profile: profiles && profiles.length > 0 ? profiles[0] : null,
+    profile: null,
     experiences: experiences || [],
     educations: educations || [],
     skills: skills || [],
@@ -39,27 +37,7 @@ export async function getCareerData(): Promise<CareerData> {
 
 // ---------------- PROFILE ACTIONS ----------------
 export async function updateProfile(formData: ProfileFormData) {
-  const supabase = await createClient();
-  const { data: existing } = await supabase.from("profiles").select("id").limit(1);
-
-  let error;
-  if (existing && existing.length > 0) {
-    const profileId = existing[0].id;
-    const res = await supabase
-      .from("profiles")
-      .update({ ...formData, updated_at: new Date().toISOString() })
-      .eq("id", profileId);
-    error = res.error;
-  } else {
-    const res = await supabase.from("profiles").insert([formData]);
-    error = res.error;
-  }
-
-  if (error) {
-    throw new Error(`Failed to update profile: ${error.message}`);
-  }
-
-  revalidatePath("/");
+  // Profiles table has been removed in favor of the users table / future user-scoped profile data
   return { success: true };
 }
 
