@@ -6,7 +6,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOutAction } from "@/lib/actions/auth";
 import {
-  FileText,
   User,
   LogOut,
   Loader2,
@@ -43,7 +42,6 @@ export function Sidebar({ userEmail }: SidebarProps = {}) {
 
   const navItems = [
     { href: "/", label: "Job Tracker", icon: Briefcase },
-    { href: "/resume", label: "Resume Generator", icon: FileText },
   ];
 
   return (
