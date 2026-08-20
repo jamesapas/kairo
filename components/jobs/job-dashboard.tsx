@@ -172,6 +172,7 @@ export function JobDashboard({ userEmail }: JobDashboardProps) {
       "Workplace Type",
       "Salary",
       "Job URL",
+      "Contact URL",
       "Description",
     ];
 
@@ -185,6 +186,7 @@ export function JobDashboard({ userEmail }: JobDashboardProps) {
       `"${j.workplaceType}"`,
       `"${j.salary || ""}"`,
       `"${j.jobUrl || ""}"`,
+      `"${j.contactUrl || ""}"`,
       `"${(j.description || "").replace(/"/g, '""')}"`,
     ]);
 

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   X,
   AlertCircle,
@@ -74,6 +74,56 @@ const WORKPLACE_SELECT_OPTIONS: CustomSelectOption<WorkplaceType>[] = [
   },
 ];
 
+const CURRENCY_OPTIONS = [
+  { value: "₱", label: "₱ (PHP)" },
+  { value: "$", label: "$ (USD)" },
+  { value: "£", label: "£ (GBP)" },
+  { value: "€", label: "€ (EUR)" },
+  { value: "¥", label: "¥ (JPY)" },
+  { value: "C$", label: "C$ (CAD)" },
+  { value: "A$", label: "A$ (AUD)" },
+  { value: "S$", label: "S$ (SGD)" },
+];
+
+const PERIOD_OPTIONS = [
+  { value: "/mo", label: "/mo" },
+  { value: "/hr", label: "/hr" },
+  { value: "/yr", label: "/yr" },
+  { value: "/wk", label: "/wk" },
+];
+
+function parseSalary(rawSalary?: string): {
+  currency: string;
+  amount: string;
+  period: string;
+} {
+  if (!rawSalary) {
+    return { currency: "₱", amount: "", period: "/mo" };
+  }
+
+  let text = rawSalary.trim();
+  let currency = "₱";
+  let period = "/mo";
+
+  for (const c of CURRENCY_OPTIONS) {
+    if (text.startsWith(c.value)) {
+      currency = c.value;
+      text = text.slice(c.value.length).trim();
+      break;
+    }
+  }
+
+  for (const p of PERIOD_OPTIONS) {
+    if (text.toLowerCase().endsWith(p.value.toLowerCase())) {
+      period = p.value;
+      text = text.slice(0, text.length - p.value.length).trim();
+      break;
+    }
+  }
+
+  return { currency, amount: text, period };
+}
+
 function JobModalForm({
   initialJob,
   onSave,
@@ -90,6 +140,7 @@ function JobModalForm({
     initialJob?.appliedOn || PLATFORM_OPTIONS[0]
   );
   const [jobUrl, setJobUrl] = useState(initialJob?.jobUrl || "");
+  const [contactUrl, setContactUrl] = useState(initialJob?.contactUrl || "");
   const [dateApplied, setDateApplied] = useState(
     initialJob?.dateApplied || new Date().toISOString().split("T")[0]
   );
@@ -99,7 +150,13 @@ function JobModalForm({
   const [workplaceType, setWorkplaceType] = useState<WorkplaceType>(
     initialJob?.workplaceType || "Remote"
   );
-  const [salary, setSalary] = useState(initialJob?.salary || "");
+  const initialSalaryParsed = useMemo(
+    () => parseSalary(initialJob?.salary),
+    [initialJob?.salary]
+  );
+  const [salaryCurrency, setSalaryCurrency] = useState(initialSalaryParsed.currency);
+  const [salaryAmount, setSalaryAmount] = useState(initialSalaryParsed.amount);
+  const [salaryPeriod, setSalaryPeriod] = useState(initialSalaryParsed.period);
   const [match, setMatch] = useState<JobMatch>(initialJob?.match || "good");
   const [isPinned, setIsPinned] = useState(initialJob?.isPinned || false);
   const [errors, setErrors] = useState<{
@@ -121,6 +178,10 @@ function JobModalForm({
     e.preventDefault();
     if (!validate()) return;
 
+    const formattedSalary = salaryAmount.trim()
+      ? `${salaryCurrency}${salaryAmount.trim()}${salaryPeriod}`
+      : "";
+
     onSave({
       ...(initialJob ? { id: initialJob.id } : {}),
       jobTitle: jobTitle.trim(),
@@ -128,10 +189,11 @@ function JobModalForm({
       description: description.trim(),
       appliedOn,
       jobUrl: jobUrl.trim(),
+      contactUrl: contactUrl.trim(),
       dateApplied,
       status,
       workplaceType,
-      salary: salary.trim(),
+      salary: formattedSalary,
       match,
       isPinned,
     });
@@ -273,30 +335,68 @@ function JobModalForm({
           </div>
         </div>
 
-        {/* Salary & Job URL */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-          <div>
-            <label className="block text-xs font-semibold text-zinc-700 mb-1">
-              Salary / Range
-            </label>
+        {/* Salary */}
+        <div>
+          <label className="block text-xs font-semibold text-zinc-700 mb-1">
+            Salary / Range
+          </label>
+          <div className="flex items-center rounded-xl bg-zinc-50 border border-zinc-200 focus-within:border-zinc-400 transition overflow-hidden">
+            <select
+              value={salaryCurrency}
+              onChange={(e) => setSalaryCurrency(e.target.value)}
+              className="bg-zinc-100/80 text-xs font-bold text-zinc-800 py-2 pl-2.5 pr-1 border-r border-zinc-200 cursor-pointer focus:outline-none shrink-0 hover:bg-zinc-200/50 transition"
+            >
+              {CURRENCY_OPTIONS.map((c) => (
+                <option key={c.value} value={c.value}>
+                  {c.label}
+                </option>
+              ))}
+            </select>
             <input
               type="text"
-              placeholder="e.g. $120k - $140k"
-              value={salary}
-              onChange={(e) => setSalary(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl bg-zinc-50 border border-zinc-200 text-xs font-medium text-zinc-900 focus:border-zinc-400"
+              placeholder="e.g. 50,000 - 80,000"
+              value={salaryAmount}
+              onChange={(e) => setSalaryAmount(e.target.value)}
+              className="flex-1 min-w-0 bg-transparent px-2.5 py-2 text-xs font-medium text-zinc-900 focus:outline-none placeholder:text-zinc-400"
             />
+            <select
+              value={salaryPeriod}
+              onChange={(e) => setSalaryPeriod(e.target.value)}
+              className="bg-zinc-100/80 text-xs font-semibold text-zinc-600 py-2 pl-1.5 pr-2 border-l border-zinc-200 cursor-pointer focus:outline-none shrink-0 hover:bg-zinc-200/50 transition"
+            >
+              {PERIOD_OPTIONS.map((p) => (
+                <option key={p.value} value={p.value}>
+                  {p.label}
+                </option>
+              ))}
+            </select>
           </div>
+        </div>
 
+        {/* Job URL & Contact URL */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
           <div>
             <label className="block text-xs font-semibold text-zinc-700 mb-1">
               Job URL
             </label>
             <input
               type="url"
-              placeholder="https://..."
+              placeholder="https://company.com/careers/..."
               value={jobUrl}
               onChange={(e) => setJobUrl(e.target.value)}
+              className="w-full px-3 py-2 rounded-xl bg-zinc-50 border border-zinc-200 text-xs font-medium text-zinc-900 focus:border-zinc-400"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-zinc-700 mb-1">
+              Contact URL / Link
+            </label>
+            <input
+              type="url"
+              placeholder="e.g. LinkedIn message, recruiter profile..."
+              value={contactUrl}
+              onChange={(e) => setContactUrl(e.target.value)}
               className="w-full px-3 py-2 rounded-xl bg-zinc-50 border border-zinc-200 text-xs font-medium text-zinc-900 focus:border-zinc-400"
             />
           </div>

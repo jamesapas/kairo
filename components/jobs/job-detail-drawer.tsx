@@ -60,6 +60,7 @@ export function JobDetailDrawer({
   onTogglePin,
 }: JobDetailDrawerProps) {
   const [copiedLink, setCopiedLink] = useState(false);
+  const [copiedContactLink, setCopiedContactLink] = useState(false);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -80,6 +81,14 @@ export function JobDetailDrawer({
       navigator.clipboard.writeText(job.jobUrl);
       setCopiedLink(true);
       setTimeout(() => setCopiedLink(false), 2000);
+    }
+  };
+
+  const handleCopyContactLink = () => {
+    if (job.contactUrl) {
+      navigator.clipboard.writeText(job.contactUrl);
+      setCopiedContactLink(true);
+      setTimeout(() => setCopiedContactLink(false), 2000);
     }
   };
 
@@ -231,12 +240,12 @@ export function JobDetailDrawer({
                   href={job.jobUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-xs text-blue-600 hover:underline truncate block"
+                  className="text-xs text-blue-600 hover:underline truncate block font-medium"
                 >
                   {job.jobUrl}
                 </a>
               </div>
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1.5 shrink-0">
                 <button
                   onClick={handleCopyLink}
                   className="px-3 py-1.5 rounded-xl bg-white border border-zinc-200 hover:bg-zinc-50 text-zinc-700 font-semibold text-xs flex items-center gap-1 cursor-pointer transition"
@@ -246,6 +255,40 @@ export function JobDetailDrawer({
                 </button>
                 <a
                   href={job.jobUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3 py-1.5 rounded-xl bg-zinc-900 text-white hover:bg-zinc-800 font-semibold text-xs flex items-center gap-1 cursor-pointer transition"
+                >
+                  Visit <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+              </div>
+            </div>
+          )}
+
+          {/* Contact URL Link */}
+          {job.contactUrl && (
+            <div className="flex items-center justify-between p-3 rounded-2xl bg-zinc-100/70 border border-zinc-200">
+              <div className="truncate mr-3">
+                <p className="text-[10px] uppercase font-bold text-zinc-500">Contact / Outreach Link</p>
+                <a
+                  href={job.contactUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-blue-600 hover:underline truncate block font-medium"
+                >
+                  {job.contactUrl}
+                </a>
+              </div>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button
+                  onClick={handleCopyContactLink}
+                  className="px-3 py-1.5 rounded-xl bg-white border border-zinc-200 hover:bg-zinc-50 text-zinc-700 font-semibold text-xs flex items-center gap-1 cursor-pointer transition"
+                >
+                  {copiedContactLink ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                  {copiedContactLink ? "Copied" : "Copy"}
+                </button>
+                <a
+                  href={job.contactUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="px-3 py-1.5 rounded-xl bg-zinc-900 text-white hover:bg-zinc-800 font-semibold text-xs flex items-center gap-1 cursor-pointer transition"

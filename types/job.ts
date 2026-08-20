@@ -16,6 +16,7 @@ export interface JobApplication {
   description: string;
   appliedOn: string;
   jobUrl?: string;
+  contactUrl?: string;
   dateApplied: string; // YYYY-MM-DD
   status: JobStatus;
   workplaceType: WorkplaceType;
@@ -139,7 +140,7 @@ export const INITIAL_SAMPLE_JOBS: JobApplication[] = [
     dateApplied: "2026-08-14",
     status: "interviewing",
     workplaceType: "Remote",
-    salary: "$165,000 - $190,000",
+    salary: "₱120,000 - 150,000/mo",
     match: "good",
     isPinned: true,
     createdAt: "2026-08-14T09:00:00.000Z",
@@ -155,7 +156,7 @@ export const INITIAL_SAMPLE_JOBS: JobApplication[] = [
     dateApplied: "2026-08-18",
     status: "applied",
     workplaceType: "Remote",
-    salary: "$170,000 - $200,000",
+    salary: "₱140,000 - 180,000/mo",
     match: "good",
     isPinned: false,
     createdAt: "2026-08-18T10:30:00.000Z",
@@ -171,7 +172,7 @@ export const INITIAL_SAMPLE_JOBS: JobApplication[] = [
     dateApplied: "2026-08-01",
     status: "offer",
     workplaceType: "Hybrid",
-    salary: "$180,000 - $210,000",
+    salary: "₱95,000 - 125,000/mo",
     match: "mid",
     isPinned: false,
     createdAt: "2026-08-01T08:15:00.000Z",
@@ -187,7 +188,7 @@ export const INITIAL_SAMPLE_JOBS: JobApplication[] = [
     dateApplied: "2026-07-20",
     status: "rejected",
     workplaceType: "Remote",
-    salary: "$150,000 - $175,000",
+    salary: "₱85,000 - 110,000/mo",
     match: "far",
     isPinned: false,
     createdAt: "2026-07-20T10:00:00.000Z",
