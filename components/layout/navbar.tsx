@@ -1,10 +1,10 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { signOutAction } from "@/lib/actions/auth";
 import { User, LogOut, Loader2 } from "lucide-react";
+import { KairoLogo } from "@/components/ui/logo";
 
 interface NavbarProps {
   userEmail?: string;
@@ -36,14 +36,8 @@ export function Navbar({ userEmail }: NavbarProps = {}) {
     <header className="sticky top-0 z-30 w-full bg-white/80 backdrop-blur-md border-b border-zinc-200/80">
       <div className="w-full px-6 sm:px-8 lg:px-12 h-16 flex items-center justify-between">
         {/* Brand Logo & Name */}
-        <Link href="/" className="flex items-center gap-3 cursor-pointer hover:opacity-85 transition">
-          <Image
-            src="/logo.svg"
-            alt="Kairo Logo"
-            width={32}
-            height={32}
-            className="w-8 h-8 rounded-lg object-contain"
-          />
+        <Link href="/" className="flex items-center gap-2.5 cursor-pointer hover:opacity-85 transition">
+          <KairoLogo className="w-8 h-8 rounded-xl" iconClassName="w-4 h-4" />
           <h1 className="text-base font-bold tracking-tight text-zinc-900 leading-none">
             Kairo
           </h1>

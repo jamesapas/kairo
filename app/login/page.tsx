@@ -1,10 +1,10 @@
 "use client";
 
 import React, { useState } from "react";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { signInWithPassword, signUpWithPassword } from "@/lib/actions/auth";
 import { Loader2, AlertCircle, CheckCircle2, Eye, EyeOff } from "lucide-react";
+import { KairoLogo } from "@/components/ui/logo";
 
 interface FloatingInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label: string;
@@ -148,14 +148,7 @@ export default function LoginPage() {
         {/* Logo and App Title */}
         <div className="flex flex-col items-center justify-center space-y-2">
           <div className="flex justify-center">
-            <Image
-              src="/logo.svg"
-              alt="Kairo Logo"
-              width={56}
-              height={56}
-              className="w-14 h-14 rounded-2xl object-contain"
-              priority
-            />
+            <KairoLogo className="w-14 h-14 rounded-2xl" iconClassName="w-7 h-7" />
           </div>
           <h1 className="text-xl font-bold tracking-tight text-zinc-900">Kairo</h1>
           <p className="text-xs text-zinc-500">
