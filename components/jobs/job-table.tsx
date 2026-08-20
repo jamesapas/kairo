@@ -75,7 +75,7 @@ export function JobTable({
         </p>
         <button
           onClick={onAddNew}
-          className="mt-1 px-4 py-2 rounded-full bg-zinc-900 text-white font-bold text-xs hover:bg-zinc-800 transition cursor-pointer"
+          className="mt-1 px-4 py-2 rounded-xl bg-zinc-900 text-white font-semibold text-xs hover:bg-zinc-800 transition cursor-pointer shadow-sm"
         >
           + Add Job
         </button>
@@ -161,7 +161,7 @@ export function JobTable({
               <button
                 onClick={() => onTogglePin(job.id)}
                 title={job.isPinned ? "Unpin job" : "Pin job to top"}
-                className={`p-1.5 rounded-md transition cursor-pointer ${
+                className={`p-1.5 rounded-lg transition cursor-pointer ${
                   job.isPinned
                     ? "text-rose-600 bg-rose-50 hover:bg-rose-100"
                     : "text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100"
@@ -180,7 +180,7 @@ export function JobTable({
                   target="_blank"
                   rel="noopener noreferrer"
                   title="Open Link"
-                  className="p-1.5 rounded-md hover:bg-zinc-200 text-zinc-400 hover:text-zinc-900 transition cursor-pointer"
+                  className="p-1.5 rounded-lg hover:bg-zinc-100 text-zinc-400 hover:text-zinc-900 transition cursor-pointer"
                 >
                   <ExternalLink className="w-3.5 h-3.5" />
                 </a>
@@ -188,14 +188,14 @@ export function JobTable({
               <button
                 onClick={() => onEditJob(job)}
                 title="Edit Application"
-                className="p-1.5 rounded-md hover:bg-zinc-200 text-zinc-500 hover:text-zinc-900 transition cursor-pointer"
+                className="p-1.5 rounded-lg hover:bg-zinc-100 text-zinc-500 hover:text-zinc-900 transition cursor-pointer"
               >
                 <Edit3 className="w-3.5 h-3.5" />
               </button>
               <button
                 onClick={() => onDeleteJob(job.id)}
                 title="Delete Application"
-                className="p-1.5 rounded-md hover:bg-rose-50 text-zinc-400 hover:text-rose-600 transition cursor-pointer"
+                className="p-1.5 rounded-lg hover:bg-rose-50 text-zinc-400 hover:text-rose-600 transition cursor-pointer"
               >
                 <Trash2 className="w-3.5 h-3.5" />
               </button>

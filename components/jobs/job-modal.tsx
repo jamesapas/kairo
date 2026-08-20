@@ -209,7 +209,7 @@ function JobModalForm({
         </h2>
         <button
           onClick={onClose}
-          className="w-8 h-8 rounded-full bg-zinc-100 hover:bg-zinc-200 flex items-center justify-center text-zinc-500 hover:text-zinc-800 transition cursor-pointer"
+          className="w-8 h-8 rounded-xl bg-zinc-100 hover:bg-zinc-200 flex items-center justify-center text-zinc-500 hover:text-zinc-800 transition cursor-pointer"
         >
           <X className="w-4 h-4" />
         </button>
@@ -438,14 +438,14 @@ function JobModalForm({
         <button
           type="button"
           onClick={onClose}
-          className="px-4 py-2 rounded-full border border-zinc-200 hover:bg-zinc-100 text-zinc-700 font-semibold text-xs transition cursor-pointer"
+          className="px-4 py-2 rounded-xl border border-zinc-200 hover:border-zinc-300 hover:bg-zinc-100/70 text-zinc-700 font-semibold text-xs transition cursor-pointer shadow-2xs"
         >
           Cancel
         </button>
         <button
           type="button"
           onClick={handleSubmit}
-          className="px-5 py-2 rounded-full bg-zinc-900 hover:bg-zinc-800 text-white font-bold text-xs transition cursor-pointer shadow-sm"
+          className="px-5 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white font-semibold text-xs transition cursor-pointer shadow-sm"
         >
           {initialJob ? "Save Changes" : "Create Application"}
         </button>

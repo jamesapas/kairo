@@ -151,7 +151,7 @@ export function JobKanban({
                         {prev && (
                           <button
                             onClick={() => onStatusChange(job.id, prev)}
-                            className="p-1 rounded-md bg-zinc-50 hover:bg-zinc-200 text-zinc-500 transition cursor-pointer"
+                            className="p-1 rounded-lg bg-zinc-50 hover:bg-zinc-200 text-zinc-500 transition cursor-pointer"
                           >
                             <ArrowLeft className="w-3 h-3" />
                           </button>
@@ -159,7 +159,7 @@ export function JobKanban({
                         {next && (
                           <button
                             onClick={() => onStatusChange(job.id, next)}
-                            className="p-1 rounded-md bg-zinc-900 text-white hover:bg-zinc-800 transition cursor-pointer"
+                            className="p-1 rounded-lg bg-zinc-900 text-white hover:bg-zinc-800 transition cursor-pointer"
                           >
                             <ArrowRight className="w-3 h-3" />
                           </button>
@@ -169,13 +169,13 @@ export function JobKanban({
                       <div className="flex items-center gap-0.5">
                         <button
                           onClick={() => onEditJob(job)}
-                          className="p-1 rounded-md hover:bg-zinc-100 text-zinc-400 hover:text-zinc-800 transition cursor-pointer"
+                          className="p-1 rounded-lg hover:bg-zinc-100 text-zinc-400 hover:text-zinc-800 transition cursor-pointer"
                         >
                           <Edit3 className="w-3 h-3" />
                         </button>
                         <button
                           onClick={() => onDeleteJob(job.id)}
-                          className="p-1 rounded-md hover:bg-rose-50 text-zinc-400 hover:text-rose-600 transition cursor-pointer"
+                          className="p-1 rounded-lg hover:bg-rose-50 text-zinc-400 hover:text-rose-600 transition cursor-pointer"
                         >
                           <Trash2 className="w-3 h-3" />
                         </button>

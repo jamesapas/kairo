@@ -373,7 +373,7 @@ export function JobDashboard({ userEmail, initialJobs = [] }: JobDashboardProps)
               {jobs.length > 0 && (
                 <button
                   onClick={handleExportCSV}
-                  className="px-3.5 py-2 rounded-full bg-white border border-zinc-200 hover:bg-zinc-100 text-zinc-700 text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                  className="px-3.5 py-2 rounded-xl bg-white border border-zinc-200 hover:border-zinc-300 hover:bg-zinc-50 text-zinc-700 text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
                 >
                   <FileSpreadsheet className="w-3.5 h-3.5 text-zinc-500" />
                   Export
@@ -385,7 +385,7 @@ export function JobDashboard({ userEmail, initialJobs = [] }: JobDashboardProps)
                   setEditingJob(null);
                   setIsModalOpen(true);
                 }}
-                className="px-4 py-2 rounded-full bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-sm"
+                className="px-4 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer shadow-sm"
               >
                 <Plus className="w-4 h-4" />
                 Add Job

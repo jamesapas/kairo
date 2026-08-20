@@ -125,7 +125,7 @@ export function JobDetailDrawer({
             <button
               onClick={() => onTogglePin(job.id)}
               title={job.isPinned ? "Unpin job" : "Pin job to top"}
-              className={`p-2 rounded-full transition cursor-pointer ${
+              className={`p-2 rounded-xl transition cursor-pointer ${
                 job.isPinned
                   ? "bg-rose-50 text-rose-600 hover:bg-rose-100"
                   : "hover:bg-zinc-100 text-zinc-400 hover:text-zinc-900"
@@ -136,20 +136,20 @@ export function JobDetailDrawer({
             <button
               onClick={() => onEdit(job)}
               title="Edit Application"
-              className="p-2 rounded-full hover:bg-zinc-100 text-zinc-500 hover:text-zinc-900 transition cursor-pointer"
+              className="p-2 rounded-xl hover:bg-zinc-100 text-zinc-500 hover:text-zinc-900 transition cursor-pointer"
             >
               <Edit3 className="w-4 h-4" />
             </button>
             <button
               onClick={() => onDelete(job.id)}
               title="Delete Application"
-              className="p-2 rounded-full hover:bg-rose-50 text-zinc-400 hover:text-rose-600 transition cursor-pointer"
+              className="p-2 rounded-xl hover:bg-rose-50 text-zinc-400 hover:text-rose-600 transition cursor-pointer"
             >
               <Trash2 className="w-4 h-4" />
             </button>
             <button
               onClick={onClose}
-              className="p-2 rounded-full hover:bg-zinc-100 text-zinc-400 hover:text-zinc-900 transition cursor-pointer ml-1"
+              className="p-2 rounded-xl hover:bg-zinc-100 text-zinc-400 hover:text-zinc-900 transition cursor-pointer ml-1"
             >
               <X className="w-5 h-5" />
             </button>
@@ -319,7 +319,7 @@ export function JobDetailDrawer({
           </span>
           <button
             onClick={onClose}
-            className="px-5 py-2 rounded-full bg-zinc-900 text-white font-bold hover:bg-zinc-800 transition cursor-pointer text-xs"
+            className="px-5 py-2 rounded-xl bg-zinc-900 text-white font-semibold hover:bg-zinc-800 transition cursor-pointer text-xs shadow-sm"
           >
             Close
           </button>
