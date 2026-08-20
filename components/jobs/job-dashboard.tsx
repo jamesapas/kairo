@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
-import { Sidebar } from "@/components/layout/sidebar";
+import { Navbar } from "@/components/layout/navbar";
 import {
   Plus,
   Search,
@@ -307,20 +307,19 @@ export function JobDashboard({ userEmail }: JobDashboardProps) {
   ];
 
   return (
-    <div className="min-h-screen bg-zinc-50 text-zinc-900">
-      <Sidebar userEmail={userEmail} />
+    <div className="min-h-screen bg-zinc-50 text-zinc-900 flex flex-col">
+      <Navbar userEmail={userEmail} />
 
-      <main className="pl-60 min-h-screen flex flex-col">
-        {toastMessage && (
-          <div className="fixed bottom-6 right-6 z-50 bg-zinc-900 text-white px-5 py-3 rounded-2xl shadow-xl border border-zinc-800 flex items-center gap-2.5 text-xs font-semibold animate-in slide-in-from-bottom-5">
-            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-            <span>{toastMessage}</span>
-          </div>
-        )}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-50 bg-zinc-900 text-white px-5 py-3 rounded-2xl shadow-xl border border-zinc-800 flex items-center gap-2.5 text-xs font-semibold animate-in slide-in-from-bottom-5">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+          <span>{toastMessage}</span>
+        </div>
+      )}
 
-        <div className="flex-1 p-8 lg:p-10 max-w-7xl mx-auto w-full space-y-6">
-          {/* Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <h1 className="text-2xl font-bold tracking-tight text-zinc-900">
                 Job Tracker
@@ -477,7 +476,6 @@ export function JobDashboard({ userEmail }: JobDashboardProps) {
               onStatusChange={handleStatusChange}
             />
           )}
-        </div>
       </main>
 
       {/* Add / Edit Modal */}
