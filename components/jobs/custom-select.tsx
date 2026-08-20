@@ -50,8 +50,8 @@ export function CustomSelect<T extends string = string>({
 
       setCoords({
         top: openUpward ? rect.top - dropdownHeight - 6 : rect.bottom + 6,
-        left: Math.min(rect.left, window.innerWidth - 200),
-        width: rect.width > 160 ? rect.width : 176,
+        left: rect.left,
+        width: rect.width,
       });
     }
 
@@ -85,8 +85,10 @@ export function CustomSelect<T extends string = string>({
     };
   }, [isOpen, options.length]);
 
+  const isFullWidth = className.includes("w-full");
+
   return (
-    <div className={`relative inline-block ${className}`}>
+    <div className={`relative ${isFullWidth ? "w-full" : "inline-block"} ${className}`}>
       {/* Trigger Button */}
       <button
         ref={buttonRef}
@@ -95,7 +97,11 @@ export function CustomSelect<T extends string = string>({
           e.stopPropagation();
           setIsOpen(!isOpen);
         }}
-        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-50 border border-zinc-200 text-xs font-semibold text-zinc-700 hover:border-zinc-300 hover:bg-zinc-100/70 transition cursor-pointer shadow-2xs select-none"
+        className={`rounded-xl bg-zinc-50 border border-zinc-200 text-xs font-semibold text-zinc-700 hover:border-zinc-300 hover:bg-zinc-100/70 transition cursor-pointer shadow-2xs select-none ${
+          isFullWidth
+            ? "flex w-full items-center justify-between px-3 py-2"
+            : "inline-flex items-center gap-1.5 px-3 py-1.5"
+        }`}
       >
         <div className="flex items-center gap-1.5 truncate">
           {selectedOption?.icon ? selectedOption.icon : prefixIcon}

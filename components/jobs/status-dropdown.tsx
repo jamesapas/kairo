@@ -110,7 +110,7 @@ export function StatusDropdown({
   const statuses = Object.keys(JOB_STATUS_CONFIG) as JobStatus[];
 
   return (
-    <div className={`inline-block ${className}`}>
+    <div className={`${className.includes("w-full") ? "w-full" : "inline-block"} ${className}`}>
       {/* Trigger Button */}
       <button
         ref={buttonRef}
@@ -119,10 +119,10 @@ export function StatusDropdown({
           e.stopPropagation();
           setIsOpen(!isOpen);
         }}
-        className={`inline-flex items-center gap-1.5 rounded-full bg-white border border-zinc-200 text-zinc-800 shadow-2xs hover:border-zinc-300 transition cursor-pointer ${
+        className={`transition cursor-pointer ${
           size === "sm"
-            ? "px-2.5 py-1 text-xs font-semibold"
-            : "w-full justify-between px-3 py-2 text-xs font-semibold rounded-xl bg-zinc-50"
+            ? "inline-flex items-center gap-1.5 rounded-full bg-white border border-zinc-200 text-zinc-800 shadow-2xs hover:border-zinc-300 px-2.5 py-1 text-xs font-semibold"
+            : "flex w-full items-center justify-between px-3 py-2 text-xs font-semibold rounded-xl bg-zinc-50 border border-zinc-200 text-zinc-800 shadow-2xs hover:border-zinc-300"
         }`}
       >
         <div className="flex items-center gap-1.5 truncate">

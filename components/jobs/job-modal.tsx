@@ -214,6 +214,7 @@ function JobModalForm({
               value={status}
               onChange={(st) => setStatus(st)}
               size="md"
+              className="w-full"
             />
           </div>
 
