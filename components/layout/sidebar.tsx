@@ -44,7 +44,6 @@ export function Sidebar({ userEmail }: SidebarProps = {}) {
   const navItems = [
     { href: "/", label: "Job Tracker", icon: Briefcase },
     { href: "/resume", label: "Resume Generator", icon: FileText },
-    { href: "/profile", label: "My Profile", icon: User },
   ];
 
   return (
