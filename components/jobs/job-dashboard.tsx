@@ -24,10 +24,16 @@ import {
   JobApplication,
   JobStatus,
   WorkplaceType,
-  INITIAL_SAMPLE_JOBS,
   JOB_STATUS_CONFIG,
   PLATFORM_OPTIONS,
 } from "@/types/job";
+import {
+  createJobAction,
+  updateJobAction,
+  deleteJobAction,
+  updateJobStatusAction,
+  togglePinJobAction,
+} from "@/lib/actions/jobs";
 import { JobTable } from "./job-table";
 import { JobKanban } from "./job-kanban";
 import { JobModal } from "./job-modal";
@@ -35,30 +41,19 @@ import { JobDetailDrawer } from "./job-detail-drawer";
 import { CustomSelect, CustomSelectOption } from "./custom-select";
 import { StatusIcon } from "./status-dropdown";
 
-const STORAGE_KEY = "kairo_job_applications_v2";
-
 type SortOption = "date-desc" | "date-asc" | "company-asc" | "title-asc";
 
 interface JobDashboardProps {
   userEmail?: string;
+  initialJobs?: JobApplication[];
 }
 
-export function JobDashboard({ userEmail }: JobDashboardProps) {
-  const [jobs, setJobs] = useState<JobApplication[]>(INITIAL_SAMPLE_JOBS);
+export function JobDashboard({ userEmail, initialJobs = [] }: JobDashboardProps) {
+  const [jobs, setJobs] = useState<JobApplication[]>(initialJobs);
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setJobs(parsed);
-        }
-      }
-    } catch (e) {
-      console.error("Failed to parse stored jobs:", e);
-    }
-  }, []);
+    setJobs(initialJobs);
+  }, [initialJobs]);
 
   // Search & Filter state
   const [searchQuery, setSearchQuery] = useState("");
@@ -74,15 +69,6 @@ export function JobDashboard({ userEmail }: JobDashboardProps) {
   const [selectedJob, setSelectedJob] = useState<JobApplication | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  const persistJobs = (updatedJobs: JobApplication[]) => {
-    setJobs(updatedJobs);
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedJobs));
-    } catch (e) {
-      console.error("Failed to save jobs to localStorage:", e);
-    }
-  };
-
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => {
@@ -90,11 +76,12 @@ export function JobDashboard({ userEmail }: JobDashboardProps) {
     }, 3000);
   };
 
-  const handleSaveJob = (
+  const handleSaveJob = async (
     jobData: Omit<JobApplication, "id" | "createdAt" | "updatedAt"> & { id?: string }
   ) => {
     const now = new Date().toISOString();
     if (jobData.id) {
+      const prevJobs = [...jobs];
       const updated = jobs.map((j) =>
         j.id === jobData.id
           ? {
@@ -104,54 +91,91 @@ export function JobDashboard({ userEmail }: JobDashboardProps) {
             }
           : j
       );
-      persistJobs(updated);
+      setJobs(updated);
       showToast(`Updated ${jobData.jobTitle}`);
       if (selectedJob && selectedJob.id === jobData.id) {
         setSelectedJob({ ...selectedJob, ...jobData, updatedAt: now } as JobApplication);
       }
+
+      const res = await updateJobAction(jobData.id, jobData);
+      if (!res.success) {
+        setJobs(prevJobs);
+        showToast(res.error || "Failed to update application");
+      } else if (res.data) {
+        setJobs((curr) => curr.map((j) => (j.id === res.data!.id ? res.data! : j)));
+      }
     } else {
-      const newJob: JobApplication = {
+      const tempId = `temp-${Date.now()}`;
+      const tempJob: JobApplication = {
         ...jobData,
-        id: `job-${Date.now()}`,
+        id: tempId,
         createdAt: now,
         updatedAt: now,
       };
-      const updated = [newJob, ...jobs];
-      persistJobs(updated);
-      showToast(`Added ${newJob.jobTitle}`);
+      setJobs((prev) => [tempJob, ...prev]);
+      showToast(`Added ${jobData.jobTitle}`);
+
+      const res = await createJobAction(jobData);
+      if (!res.success) {
+        setJobs((curr) => curr.filter((j) => j.id !== tempId));
+        showToast(res.error || "Failed to save application");
+      } else if (res.data) {
+        setJobs((curr) => curr.map((j) => (j.id === tempId ? res.data! : j)));
+      }
     }
   };
 
-  const handleStatusChange = (id: string, newStatus: JobStatus) => {
+  const handleStatusChange = async (id: string, newStatus: JobStatus) => {
     const now = new Date().toISOString();
+    const prevJobs = [...jobs];
     const updated = jobs.map((j) => (j.id === id ? { ...j, status: newStatus, updatedAt: now } : j));
-    persistJobs(updated);
+    setJobs(updated);
     if (selectedJob && selectedJob.id === id) {
       setSelectedJob({ ...selectedJob, status: newStatus, updatedAt: now });
     }
+
+    const res = await updateJobStatusAction(id, newStatus);
+    if (!res.success) {
+      setJobs(prevJobs);
+      showToast(res.error || "Failed to update status");
+    }
   };
 
-  const handleTogglePin = (id: string) => {
-    const now = new Date().toISOString();
-    const updated = jobs.map((j) => (j.id === id ? { ...j, isPinned: !j.isPinned, updatedAt: now } : j));
-    persistJobs(updated);
+  const handleTogglePin = async (id: string) => {
     const target = jobs.find((j) => j.id === id);
-    if (target) {
-      showToast(target.isPinned ? `Unpinned ${target.jobTitle}` : `Pinned ${target.jobTitle}`);
-    }
+    if (!target) return;
+    const nextPin = !target.isPinned;
+    const now = new Date().toISOString();
+    const prevJobs = [...jobs];
+    const updated = jobs.map((j) => (j.id === id ? { ...j, isPinned: nextPin, updatedAt: now } : j));
+    setJobs(updated);
+    showToast(nextPin ? `Pinned ${target.jobTitle}` : `Unpinned ${target.jobTitle}`);
     if (selectedJob && selectedJob.id === id) {
-      setSelectedJob({ ...selectedJob, isPinned: !selectedJob.isPinned, updatedAt: now });
+      setSelectedJob({ ...selectedJob, isPinned: nextPin, updatedAt: now });
+    }
+
+    const res = await togglePinJobAction(id, nextPin);
+    if (!res.success) {
+      setJobs(prevJobs);
+      showToast(res.error || "Failed to update pin");
     }
   };
 
-  const handleDeleteJob = (id: string) => {
+  const handleDeleteJob = async (id: string) => {
     const target = jobs.find((j) => j.id === id);
     if (confirm(`Delete application for ${target?.jobTitle || "this job"}?`)) {
+      const prevJobs = [...jobs];
       const updated = jobs.filter((j) => j.id !== id);
-      persistJobs(updated);
+      setJobs(updated);
       showToast("Application deleted");
       if (selectedJob && selectedJob.id === id) {
         setSelectedJob(null);
+      }
+
+      const res = await deleteJobAction(id);
+      if (!res.success) {
+        setJobs(prevJobs);
+        showToast(res.error || "Failed to delete application");
       }
     }
   };

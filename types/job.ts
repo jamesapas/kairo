@@ -11,6 +11,7 @@ export type JobMatch = "good" | "mid" | "far";
 
 export interface JobApplication {
   id: string;
+  userId?: string;
   jobTitle: string;
   company: string;
   description: string;
@@ -25,6 +26,46 @@ export interface JobApplication {
   isPinned?: boolean;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface JobApplicationRow {
+  id: string;
+  user_id: string;
+  job_title: string;
+  company: string;
+  description: string | null;
+  applied_on: string | null;
+  job_url: string | null;
+  contact_url: string | null;
+  date_applied: string;
+  status: string;
+  workplace_type: string;
+  salary: string | null;
+  match: string;
+  is_pinned: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export function mapRowToJob(row: JobApplicationRow): JobApplication {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    jobTitle: row.job_title,
+    company: row.company,
+    description: row.description || "",
+    appliedOn: row.applied_on || "LinkedIn",
+    jobUrl: row.job_url || "",
+    contactUrl: row.contact_url || "",
+    dateApplied: row.date_applied,
+    status: (row.status as JobStatus) || "applied",
+    workplaceType: (row.workplace_type as WorkplaceType) || "Remote",
+    salary: row.salary || "",
+    match: (row.match as JobMatch) || "good",
+    isPinned: Boolean(row.is_pinned),
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
 }
 
 export const JOB_STATUS_CONFIG: Record<
