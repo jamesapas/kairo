@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Sidebar } from "@/components/layout/sidebar";
 import {
   Plus,
@@ -44,22 +44,21 @@ interface JobDashboardProps {
 }
 
 export function JobDashboard({ userEmail }: JobDashboardProps) {
-  const [jobs, setJobs] = useState<JobApplication[]>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            return parsed;
-          }
+  const [jobs, setJobs] = useState<JobApplication[]>(INITIAL_SAMPLE_JOBS);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setJobs(parsed);
         }
-      } catch (e) {
-        console.error("Failed to parse stored jobs:", e);
       }
+    } catch (e) {
+      console.error("Failed to parse stored jobs:", e);
     }
-    return INITIAL_SAMPLE_JOBS;
-  });
+  }, []);
 
   // Search & Filter state
   const [searchQuery, setSearchQuery] = useState("");
