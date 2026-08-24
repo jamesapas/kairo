@@ -17,6 +17,7 @@ import {
   formatRelativeDate,
 } from "@/types/job";
 import { StatusIcon } from "./status-dropdown";
+import { PlatformIcon } from "./platform-badge";
 
 interface JobKanbanProps {
   jobs: JobApplication[];
@@ -137,8 +138,11 @@ export function JobKanban({
                     </h5>
 
                     {/* Meta with relative date indicator */}
-                    <div className="pt-1.5 border-t border-zinc-100 flex items-center justify-between text-[10px] text-zinc-400 font-medium">
-                      <span>{job.appliedOn}</span>
+                    <div className="pt-1.5 border-t border-zinc-100 flex items-center justify-between text-[10px] text-zinc-500 font-medium">
+                      <div className="flex items-center gap-1.5 truncate max-w-[110px]" title={job.appliedOn}>
+                        <PlatformIcon platform={job.appliedOn} className="w-3 h-3 shrink-0" />
+                        <span className="truncate">{job.appliedOn}</span>
+                      </div>
                       <span title={job.dateApplied}>{formatRelativeDate(job.dateApplied)}</span>
                     </div>
 

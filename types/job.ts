@@ -134,13 +134,11 @@ export const MATCH_CONFIG: Record<
 export const PLATFORM_OPTIONS = [
   "LinkedIn",
   "Indeed",
-  "Company Website",
-  "Wellfound",
-  "Glassdoor",
-  "Referral",
   "JobStreet",
-  "Other",
-];
+  "Company Website",
+] as const;
+
+export type PlatformOption = (typeof PLATFORM_OPTIONS)[number];
 
 export function formatRelativeDate(dateStr: string): string {
   if (!dateStr) return "—";
@@ -168,6 +166,15 @@ export function formatRelativeDate(dateStr: string): string {
   } catch {
     return dateStr;
   }
+}
+
+export function formatSalaryDisplay(salary?: string | null): string {
+  if (!salary || !salary.trim()) return "";
+  return salary.replace(/[\d,]+/g, (match) => {
+    const raw = match.replace(/,/g, "");
+    if (!raw || isNaN(Number(raw))) return match;
+    return Number(raw).toLocaleString("en-US");
+  });
 }
 
 export const INITIAL_SAMPLE_JOBS: JobApplication[] = [
@@ -208,7 +215,7 @@ export const INITIAL_SAMPLE_JOBS: JobApplication[] = [
     jobTitle: "UI/UX Developer",
     company: "Stripe",
     description: "Craft world-class dashboard interfaces and design system component primitives.",
-    appliedOn: "Referral",
+    appliedOn: "JobStreet",
     jobUrl: "https://stripe.com/jobs",
     dateApplied: "2026-08-01",
     status: "offer",

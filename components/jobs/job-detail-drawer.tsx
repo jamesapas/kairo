@@ -23,8 +23,10 @@ import {
   JOB_STATUS_CONFIG,
   MATCH_CONFIG,
   formatRelativeDate,
+  formatSalaryDisplay,
 } from "@/types/job";
 import { StatusIcon } from "./status-dropdown";
+import { PlatformIcon } from "./platform-badge";
 
 interface JobDetailDrawerProps {
   job: JobApplication | null;
@@ -205,8 +207,8 @@ export function JobDetailDrawer({
                 Platform
               </span>
               <div className="flex items-center gap-2 font-semibold text-zinc-800">
-                <Globe className="w-3.5 h-3.5 text-zinc-400" />
-                {job.appliedOn}
+                <PlatformIcon platform={job.appliedOn} className="w-4 h-4" />
+                <span>{job.appliedOn}</span>
               </div>
             </div>
 
@@ -226,7 +228,7 @@ export function JobDetailDrawer({
               </span>
               <div className="flex items-center gap-2 font-semibold text-zinc-800">
                 <DollarSign className="w-3.5 h-3.5 text-zinc-400" />
-                {job.salary || "Not specified"}
+                {formatSalaryDisplay(job.salary) || "Not specified"}
               </div>
             </div>
           </div>

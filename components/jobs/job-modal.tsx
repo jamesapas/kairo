@@ -20,6 +20,7 @@ import {
 } from "@/types/job";
 import { StatusDropdown } from "./status-dropdown";
 import { CustomSelect, CustomSelectOption } from "./custom-select";
+import { PlatformIcon } from "./platform-badge";
 
 interface JobModalProps {
   isOpen: boolean;
@@ -52,7 +53,7 @@ const PLATFORM_SELECT_OPTIONS: CustomSelectOption<string>[] = PLATFORM_OPTIONS.m
   (plat) => ({
     value: plat,
     label: plat,
-    icon: <Globe className="w-3.5 h-3.5 text-zinc-400" />,
+    icon: <PlatformIcon platform={plat} className="w-3.5 h-3.5" />,
   })
 );
 
@@ -92,6 +93,31 @@ const PERIOD_OPTIONS = [
   { value: "/wk", label: "/wk" },
 ];
 
+export function formatSalaryInput(input: string): string {
+  if (!input) return "";
+
+  if (input.includes("-")) {
+    const parts = input.split("-");
+    const minClean = parts[0].replace(/[^\d]/g, "");
+    const formattedMin = minClean ? Number(minClean).toLocaleString("en-US") : "";
+
+    if (parts.length > 1) {
+      const maxClean = parts[1].replace(/[^\d]/g, "");
+      const formattedMax = maxClean ? Number(maxClean).toLocaleString("en-US") : "";
+
+      if (!maxClean) {
+        return formattedMin ? `${formattedMin} - ` : "- ";
+      }
+      return formattedMin ? `${formattedMin} - ${formattedMax}` : `- ${formattedMax}`;
+    }
+    return formattedMin;
+  }
+
+  const clean = input.replace(/[^\d]/g, "");
+  if (!clean) return "";
+  return Number(clean).toLocaleString("en-US");
+}
+
 function parseSalary(rawSalary?: string): {
   currency: string;
   amount: string;
@@ -121,7 +147,7 @@ function parseSalary(rawSalary?: string): {
     }
   }
 
-  return { currency, amount: text, period };
+  return { currency, amount: formatSalaryInput(text), period };
 }
 
 function JobModalForm({
@@ -356,7 +382,7 @@ function JobModalForm({
               type="text"
               placeholder="e.g. 50,000 - 80,000"
               value={salaryAmount}
-              onChange={(e) => setSalaryAmount(e.target.value)}
+              onChange={(e) => setSalaryAmount(formatSalaryInput(e.target.value))}
               className="flex-1 min-w-0 bg-transparent px-2.5 py-2 text-xs font-medium text-zinc-900 focus:outline-none placeholder:text-zinc-400"
             />
             <select

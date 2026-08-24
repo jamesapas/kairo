@@ -15,8 +15,10 @@ import {
   JobStatus,
   JobMatch,
   formatRelativeDate,
+  formatSalaryDisplay,
 } from "@/types/job";
 import { StatusDropdown } from "./status-dropdown";
+import { PlatformIcon } from "./platform-badge";
 
 interface JobTableProps {
   jobs: JobApplication[];
@@ -128,10 +130,11 @@ export function JobTable({
           </td>
 
           {/* Platform */}
-          <td className="py-3.5 px-3">
-            <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-zinc-100 text-zinc-700 text-[11px] font-medium">
-              {job.appliedOn}
-            </span>
+          <td className="py-3.5 px-3 text-zinc-600 font-medium">
+            <div className="flex items-center gap-1.5">
+              <PlatformIcon platform={job.appliedOn} className="w-3.5 h-3.5 shrink-0" />
+              <span>{job.appliedOn}</span>
+            </div>
           </td>
 
           {/* Workplace */}
@@ -141,8 +144,8 @@ export function JobTable({
 
           {/* Compensation */}
           <td className="py-3.5 px-3 text-zinc-600 font-medium">
-            <span className="truncate block max-w-[110px]">
-              {job.salary || "—"}
+            <span className="truncate block max-w-[120px]">
+              {formatSalaryDisplay(job.salary) || "—"}
             </span>
           </td>
 

@@ -40,6 +40,7 @@ import { JobModal } from "./job-modal";
 import { JobDetailDrawer } from "./job-detail-drawer";
 import { CustomSelect, CustomSelectOption } from "./custom-select";
 import { StatusIcon } from "./status-dropdown";
+import { PlatformIcon } from "./platform-badge";
 
 type SortOption = "date-desc" | "date-asc" | "company-asc" | "title-asc";
 
@@ -282,7 +283,7 @@ export function JobDashboard({ userEmail, initialJobs = [] }: JobDashboardProps)
     ...PLATFORM_OPTIONS.map((plat) => ({
       value: plat,
       label: plat,
-      icon: <Globe className="w-3.5 h-3.5 text-zinc-400" />,
+      icon: <PlatformIcon platform={plat} className="w-3.5 h-3.5" />,
     })),
   ];
 
