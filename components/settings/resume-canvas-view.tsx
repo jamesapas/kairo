@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import Image from "next/image";
 import { Icon } from "@iconify/react";
 import {
@@ -36,6 +36,7 @@ import {
 import { ProfileLink } from "@/types/profile";
 import { UserExperience, WorkplaceType } from "@/types/experience";
 import { UserEducation } from "@/types/education";
+import { UserSkill } from "@/types/skill";
 import { uploadAvatarAction } from "@/lib/actions/profile";
 import {
   createExperienceAction,
@@ -47,24 +48,17 @@ import {
   updateEducationAction,
   deleteEducationAction,
 } from "@/lib/actions/education";
+import {
+  createSkillAction,
+  deleteSkillAction,
+} from "@/lib/actions/skill";
+import {
+  PREDEFINED_SKILLS,
+  searchSkillSuggestions,
+  detectSkillCategory,
+  getSkillIcon,
+} from "@/lib/constants/skills";
 import { CustomSelect, CustomSelectOption } from "@/components/jobs/custom-select";
-
-export interface ExperienceItem {
-  id: string;
-  role: string;
-  company: string;
-  location: string;
-  period: string;
-  isCurrent?: boolean;
-  description: string;
-}
-
-export interface SkillItem {
-  id: string;
-  name: string;
-  icon?: string;
-  category?: string;
-}
 
 export interface EducationItem {
   id: string;
@@ -264,78 +258,6 @@ export function getPlatformDef(platformId: string): PlatformDefinition {
   );
 }
 
-// Icon mapper for tech stack using Iconify skill-icons / logos
-export function getSkillIcon(name: string): string {
-  const lower = name.toLowerCase().trim();
-  if (lower.includes("typescript") || lower === "ts") return "skill-icons:typescript";
-  if (lower.includes("javascript") || lower === "js") return "skill-icons:javascript";
-  if (lower.includes("next") || lower.includes("nextjs") || lower.includes("next.js")) return "skill-icons:nextjs-dark";
-  if (lower.includes("react")) return "skill-icons:react-dark";
-  if (lower.includes("vue")) return "skill-icons:vuejs-dark";
-  if (lower.includes("svelte")) return "skill-icons:svelte";
-  if (lower.includes("angular")) return "skill-icons:angular-dark";
-  if (lower.includes("node") || lower.includes("nodejs")) return "skill-icons:nodejs-dark";
-  if (lower.includes("python")) return "skill-icons:python-dark";
-  if (lower.includes("golang") || lower === "go") return "skill-icons:golang";
-  if (lower.includes("rust")) return "skill-icons:rust";
-  if (lower.includes("java") && !lower.includes("script")) return "skill-icons:java-dark";
-  if (lower.includes("c++") || lower === "cpp") return "skill-icons:cpp";
-  if (lower.includes("c#") || lower === "csharp" || lower === "cs") return "skill-icons:cs";
-  if (lower.includes("php")) return "skill-icons:php-dark";
-  if (lower.includes("ruby") || lower.includes("rails")) return "skill-icons:ruby";
-  if (lower.includes("postgres") || lower.includes("postgresql")) return "skill-icons:postgresql-dark";
-  if (lower.includes("mysql")) return "skill-icons:mysql-dark";
-  if (lower.includes("mongo") || lower.includes("mongodb")) return "skill-icons:mongodb";
-  if (lower.includes("redis")) return "skill-icons:redis-dark";
-  if (lower.includes("supabase")) return "skill-icons:supabase-dark";
-  if (lower.includes("firebase")) return "skill-icons:firebase-dark";
-  if (lower.includes("prisma")) return "skill-icons:prisma";
-  if (lower.includes("graphql")) return "skill-icons:graphql-dark";
-  if (lower.includes("tailwind")) return "skill-icons:tailwindcss-dark";
-  if (lower.includes("sass") || lower.includes("scss")) return "skill-icons:sass";
-  if (lower.includes("css")) return "skill-icons:css";
-  if (lower.includes("html")) return "skill-icons:html";
-  if (lower.includes("docker")) return "skill-icons:docker";
-  if (lower.includes("kubernetes") || lower === "k8s") return "skill-icons:kubernetes";
-  if (lower.includes("aws") || lower.includes("amazon web services")) return "skill-icons:aws-dark";
-  if (lower.includes("gcp") || lower.includes("google cloud")) return "skill-icons:gcp-dark";
-  if (lower.includes("azure")) return "skill-icons:azure-dark";
-  if (lower.includes("vercel")) return "skill-icons:vercel-dark";
-  if (lower.includes("git") && !lower.includes("hub")) return "skill-icons:git";
-  if (lower.includes("github")) return "skill-icons:github-dark";
-  if (lower.includes("figma")) return "skill-icons:figma-dark";
-  if (lower.includes("linux")) return "skill-icons:linux-dark";
-  if (lower.includes("jest")) return "skill-icons:jest";
-  if (lower.includes("vitest")) return "skill-icons:vitest-dark";
-  if (lower.includes("cypress")) return "skill-icons:cypress-dark";
-  if (lower.includes("terraform")) return "skill-icons:terraform-dark";
-  if (lower.includes("kafka")) return "skill-icons:kafka";
-  if (lower.includes("fastapi")) return "skill-icons:fastapi";
-  if (lower.includes("django")) return "skill-icons:django";
-  if (lower.includes("flutter")) return "skill-icons:flutter-dark";
-  if (lower.includes("swift")) return "skill-icons:swift";
-  if (lower.includes("kotlin")) return "skill-icons:kotlin-dark";
-
-  return "lucide:sparkles";
-}
-
-const POPULAR_SKILL_SUGGESTIONS = [
-  "TypeScript",
-  "React",
-  "Next.js",
-  "Node.js",
-  "Python",
-  "PostgreSQL",
-  "Tailwind CSS",
-  "Docker",
-  "AWS",
-  "GraphQL",
-  "Supabase",
-  "Git",
-  "Figma",
-  "Redis",
-];
-
 const WORKPLACE_SELECT_OPTIONS: CustomSelectOption<WorkplaceType>[] = [
   {
     value: "Remote",
@@ -387,21 +309,6 @@ function WorkplaceBadge({ type }: { type: WorkplaceType }) {
   );
 }
 
-const DEFAULT_SKILLS: SkillItem[] = [
-  { id: "sk-1", name: "TypeScript" },
-  { id: "sk-2", name: "React" },
-  { id: "sk-3", name: "Next.js" },
-  { id: "sk-4", name: "Node.js" },
-  { id: "sk-5", name: "PostgreSQL" },
-  { id: "sk-6", name: "Tailwind CSS" },
-  { id: "sk-7", name: "Docker" },
-  { id: "sk-8", name: "AWS" },
-  { id: "sk-9", name: "Supabase" },
-  { id: "sk-10", name: "GraphQL" },
-  { id: "sk-11", name: "Python" },
-  { id: "sk-12", name: "Git" },
-];
-
 interface ResumeCanvasViewProps {
   name: string;
   setName: (v: string) => void;
@@ -414,6 +321,8 @@ interface ResumeCanvasViewProps {
   setExperiences: React.Dispatch<React.SetStateAction<UserExperience[]>>;
   educations: UserEducation[];
   setEducations: React.Dispatch<React.SetStateAction<UserEducation[]>>;
+  skills: UserSkill[];
+  setSkills: React.Dispatch<React.SetStateAction<UserSkill[]>>;
   saving: boolean;
   errorMsg: string;
   successMsg: string;
@@ -433,15 +342,14 @@ export function ResumeCanvasView({
   setExperiences,
   educations,
   setEducations,
+  skills,
+  setSkills,
   saving,
   errorMsg,
   successMsg,
   isDirty,
   onSubmit,
 }: ResumeCanvasViewProps) {
-  const [skills, setSkills] = useState<SkillItem[]>(DEFAULT_SKILLS);
-  const [newSkillInput, setNewSkillInput] = useState("");
-
   // Link input state
   const [isAddingLink, setIsAddingLink] = useState(false);
   const [selectedPlatformId, setSelectedPlatformId] = useState<string>("linkedin");
@@ -703,15 +611,64 @@ export function ResumeCanvasView({
     }
   };
 
-  const handleAddSkill = (skillName: string) => {
+  // Skills state & handlers with interactive autocomplete recommendations
+  const [newSkillInput, setNewSkillInput] = useState("");
+  const [addingSkill, setAddingSkill] = useState(false);
+  const [isSkillDropdownOpen, setIsSkillDropdownOpen] = useState(false);
+  const [highlightedSkillIndex, setHighlightedSkillIndex] = useState(-1);
+  const skillInputRef = useRef<HTMLInputElement>(null);
+  const skillDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Dynamic live recommendations filtered against already added skills
+  const liveRecommendations = useMemo(() => {
+    if (!newSkillInput.trim()) return [];
+    return searchSkillSuggestions(
+      newSkillInput,
+      skills.map((s) => s.name),
+      8
+    );
+  }, [newSkillInput, skills]);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        skillDropdownRef.current &&
+        !skillDropdownRef.current.contains(e.target as Node) &&
+        skillInputRef.current &&
+        !skillInputRef.current.contains(e.target as Node)
+      ) {
+        setIsSkillDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleAddSkill = async (skillName: string) => {
     const trimmed = skillName.trim();
     if (!trimmed) return;
+
     if (skills.some((s) => s.name.toLowerCase() === trimmed.toLowerCase())) {
       setNewSkillInput("");
+      setIsSkillDropdownOpen(false);
       return;
     }
-    setSkills((prev) => [...prev, { id: `sk-${Date.now()}`, name: trimmed }]);
-    setNewSkillInput("");
+
+    const category = detectSkillCategory(trimmed);
+
+    setAddingSkill(true);
+    const res = await createSkillAction(trimmed, category);
+    if (res.success && res.data) {
+      setSkills((prev) => [...prev, res.data!]);
+      setNewSkillInput("");
+      setIsSkillDropdownOpen(false);
+    }
+    setAddingSkill(false);
+  };
+
+  const handleDeleteSkill = async (skillId: string) => {
+    setSkills((prev) => prev.filter((s) => s.id !== skillId));
+    await deleteSkillAction(skillId);
   };
 
   return (
@@ -1447,7 +1404,7 @@ export function ResumeCanvasView({
       </div>
 
       {/* =========================================================================
-          SECTION 3: SKILLS & TECH STACK (CLEAN LIGHT PILLS WITH ICONIFY)
+          SECTION 3: SKILLS (CLEAN STREAMLINED TECH STACK WITH LOGOS)
           ========================================================================= */}
       <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200/90 dark:border-zinc-800 shadow-xs overflow-hidden">
         <div className="px-6 sm:px-8 py-4 border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-800/30 flex items-center justify-between">
@@ -1467,94 +1424,175 @@ export function ResumeCanvasView({
         </div>
 
         <div className="p-6 sm:p-8 space-y-6">
-          {/* Skill Adder Input */}
+          {/* Skill Adder Input with Autocomplete Recommendations */}
           <div className="flex items-center gap-2.5">
             <div className="relative flex-1">
               <input
+                ref={skillInputRef}
                 type="text"
                 value={newSkillInput}
-                onChange={(e) => setNewSkillInput(e.target.value)}
+                onChange={(e) => {
+                  setNewSkillInput(e.target.value);
+                  setIsSkillDropdownOpen(true);
+                  setHighlightedSkillIndex(-1);
+                }}
+                onFocus={() => {
+                  if (newSkillInput.trim()) setIsSkillDropdownOpen(true);
+                }}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter") {
+                  if (e.key === "ArrowDown") {
                     e.preventDefault();
-                    handleAddSkill(newSkillInput);
+                    if (!isSkillDropdownOpen && liveRecommendations.length > 0) {
+                      setIsSkillDropdownOpen(true);
+                    } else if (liveRecommendations.length > 0) {
+                      setHighlightedSkillIndex((prev) =>
+                        prev < liveRecommendations.length - 1 ? prev + 1 : 0
+                      );
+                    }
+                  } else if (e.key === "ArrowUp") {
+                    e.preventDefault();
+                    if (liveRecommendations.length > 0) {
+                      setHighlightedSkillIndex((prev) =>
+                        prev > 0 ? prev - 1 : liveRecommendations.length - 1
+                      );
+                    }
+                  } else if (e.key === "Enter") {
+                    e.preventDefault();
+                    if (
+                      isSkillDropdownOpen &&
+                      highlightedSkillIndex >= 0 &&
+                      liveRecommendations[highlightedSkillIndex]
+                    ) {
+                      handleAddSkill(liveRecommendations[highlightedSkillIndex].name);
+                    } else if (newSkillInput.trim()) {
+                      handleAddSkill(newSkillInput);
+                    }
+                  } else if (e.key === "Escape") {
+                    setIsSkillDropdownOpen(false);
                   }
                 }}
-                placeholder="Add a technology or skill (e.g. TypeScript, React, Docker, Python)..."
+                placeholder="Search or add a technology (e.g. Swift, TypeScript, Next.js, Figma, Supabase)..."
                 className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 text-xs font-semibold text-zinc-900 dark:text-zinc-100 focus:bg-white dark:focus:bg-zinc-800 focus:border-zinc-400 transition"
               />
-              <Code2 className="w-4 h-4 text-zinc-400 absolute left-3.5 top-3" />
+              <Search className="w-4 h-4 text-zinc-400 absolute left-3.5 top-3" />
+
+              {/* Floating Autocomplete Dropdown */}
+              {isSkillDropdownOpen && liveRecommendations.length > 0 && (
+                <div
+                  ref={skillDropdownRef}
+                  className="absolute left-0 right-0 top-full mt-1.5 py-1.5 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100 divide-y divide-zinc-100 dark:divide-zinc-800/60"
+                >
+                  <div className="px-3.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-zinc-400 flex items-center justify-between">
+                    <span>Recommendations</span>
+                    <span className="text-[9px] lowercase font-normal text-zinc-400">↑↓ to navigate · Enter to add</span>
+                  </div>
+                  <div className="max-h-64 overflow-y-auto p-1 space-y-0.5">
+                    {liveRecommendations.map((rec, idx) => {
+                      const isHighlighted = idx === highlightedSkillIndex;
+                      return (
+                        <button
+                          key={rec.name}
+                          type="button"
+                          onMouseEnter={() => setHighlightedSkillIndex(idx)}
+                          onClick={() => handleAddSkill(rec.name)}
+                          className={`w-full px-3 py-2 rounded-xl flex items-center justify-between text-left transition cursor-pointer ${
+                            isHighlighted
+                              ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100"
+                              : "text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <Icon icon={rec.icon} className="w-4 h-4 shrink-0" />
+                            <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100 truncate">
+                              {rec.name}
+                            </span>
+                            <span className="text-[10px] px-2 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800 border border-zinc-200/60 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 font-semibold">
+                              {rec.category}
+                            </span>
+                          </div>
+                          <span className="text-[11px] font-bold text-blue-600 dark:text-blue-400 inline-flex items-center gap-1 shrink-0 ml-2">
+                            <Plus className="w-3 h-3" /> Add
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
 
             <button
               type="button"
               onClick={() => handleAddSkill(newSkillInput)}
-              disabled={!newSkillInput.trim()}
-              className="px-4 py-2.5 rounded-xl bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700 text-xs font-bold transition disabled:opacity-50 cursor-pointer shadow-2xs active:scale-[0.98]"
+              disabled={addingSkill || !newSkillInput.trim()}
+              className="px-5 py-2.5 rounded-xl bg-zinc-900 dark:bg-zinc-100 hover:bg-zinc-800 dark:hover:bg-white text-white dark:text-zinc-900 text-xs font-bold transition disabled:opacity-50 flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs active:scale-[0.98] shrink-0"
             >
-              Add Skill
+              {addingSkill ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+              <span>Add</span>
             </button>
           </div>
 
-          {/* Quick Suggestions Chips */}
-          <div className="space-y-1.5">
-            <p className="text-[10px] uppercase font-bold tracking-wider text-zinc-400">
-              Quick Suggestions:
-            </p>
-            <div className="flex flex-wrap gap-1.5">
-              {POPULAR_SKILL_SUGGESTIONS.map((sug) => {
-                const isSelected = skills.some((s) => s.name.toLowerCase() === sug.toLowerCase());
-                return (
-                  <button
-                    key={sug}
-                    type="button"
-                    onClick={() => {
-                      if (isSelected) {
-                        setSkills((prev) => prev.filter((s) => s.name.toLowerCase() !== sug.toLowerCase()));
-                      } else {
-                        handleAddSkill(sug);
-                      }
-                    }}
-                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border transition cursor-pointer ${
-                      isSelected
-                        ? "bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700 shadow-2xs font-semibold"
-                        : "bg-zinc-50/90 dark:bg-zinc-800/60 text-zinc-700 dark:text-zinc-300 border-zinc-200/80 dark:border-zinc-700/80 hover:border-zinc-300 dark:hover:border-zinc-600"
-                    }`}
+          {/* 1. Added Skills (On Top) */}
+          {skills.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-[10px] uppercase font-bold tracking-wider text-zinc-400">
+                Active Skills ({skills.length}):
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {skills.map((skill) => (
+                  <div
+                    key={skill.id}
+                    className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-xs font-semibold border border-zinc-200/90 dark:border-zinc-700/80 shadow-2xs group hover:border-zinc-300 dark:hover:border-zinc-600 transition"
                   >
-                    <Icon icon={getSkillIcon(sug)} className="w-3.5 h-3.5 shrink-0" />
-                    <span>{sug}</span>
-                    {isSelected && <Check className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />}
-                  </button>
-                );
-              })}
+                    <Icon icon={getSkillIcon(skill.name)} className="w-4 h-4 shrink-0" />
+                    <span>{skill.name}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteSkill(skill.id)}
+                      className="text-zinc-400 hover:text-rose-500 transition ml-0.5 p-0.5 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-700 cursor-pointer"
+                      title="Remove Skill"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
-          {/* Active Skills Cloud with Clean Light Badges */}
-          <div className="pt-2">
-            <p className="text-[10px] uppercase font-bold tracking-wider text-zinc-400 mb-2.5">
-              Your Tech Stack:
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {skills.map((skill) => (
-                <div
-                  key={skill.id}
-                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-zinc-50/80 dark:bg-zinc-800/70 text-zinc-800 dark:text-zinc-200 text-xs font-semibold border border-zinc-200/90 dark:border-zinc-700/80 shadow-2xs group hover:border-zinc-300 dark:hover:border-zinc-600 transition"
-                >
-                  <Icon icon={getSkillIcon(skill.name)} className="w-4 h-4 shrink-0" />
-                  <span>{skill.name}</span>
-                  <button
-                    type="button"
-                    onClick={() => setSkills((prev) => prev.filter((s) => s.id !== skill.id))}
-                    className="text-zinc-400 hover:text-rose-500 transition ml-0.5 p-0.5 rounded-md hover:bg-zinc-200/60 dark:hover:bg-zinc-700"
-                    title="Remove Skill"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
+          {/* 2. Quick Suggestions (Unadded Only, Below) */}
+          {(() => {
+            const unaddedPresets = PREDEFINED_SKILLS.filter(
+              (preset) =>
+                !skills.some(
+                  (s) => s.name.toLowerCase() === preset.name.toLowerCase()
+                )
+            );
+
+            if (unaddedPresets.length === 0) return null;
+
+            return (
+              <div className="space-y-2 pt-2 border-t border-zinc-100 dark:border-zinc-800">
+                <p className="text-[10px] uppercase font-bold tracking-wider text-zinc-400">
+                  Suggestions ({unaddedPresets.length}):
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {unaddedPresets.map((preset) => (
+                    <button
+                      key={preset.name}
+                      type="button"
+                      onClick={() => handleAddSkill(preset.name)}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-zinc-50/90 dark:bg-zinc-850/60 text-zinc-700 dark:text-zinc-300 border border-zinc-200/80 dark:border-zinc-750 hover:border-zinc-400 dark:hover:border-zinc-600 hover:bg-white dark:hover:bg-zinc-800 transition cursor-pointer shadow-2xs group active:scale-[0.98]"
+                    >
+                      <Icon icon={preset.icon} className="w-3.5 h-3.5 shrink-0" />
+                      <span>{preset.name}</span>
+                      <Plus className="w-2.5 h-2.5 text-zinc-400 group-hover:text-zinc-700 dark:group-hover:text-zinc-200" />
+                    </button>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </div>
+              </div>
+            );
+          })()}
         </div>
       </div>
 

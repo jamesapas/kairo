@@ -6,9 +6,11 @@ import { ChevronRight, Loader2, UserCheck } from "lucide-react";
 import { getProfileAction, updateProfileAction } from "@/lib/actions/profile";
 import { getExperiencesAction } from "@/lib/actions/experience";
 import { getEducationsAction } from "@/lib/actions/education";
+import { getSkillsAction } from "@/lib/actions/skill";
 import { ProfileLink } from "@/types/profile";
 import { UserExperience } from "@/types/experience";
 import { UserEducation } from "@/types/education";
+import { UserSkill } from "@/types/skill";
 import { ResumeCanvasView } from "./resume-canvas-view";
 
 export function SettingsView() {
@@ -24,6 +26,7 @@ export function SettingsView() {
   const [links, setLinks] = useState<ProfileLink[]>([]);
   const [experiences, setExperiences] = useState<UserExperience[]>([]);
   const [educations, setEducations] = useState<UserEducation[]>([]);
+  const [skills, setSkills] = useState<UserSkill[]>([]);
 
   const [savedSnapshot, setSavedSnapshot] = useState<string>("");
 
@@ -32,7 +35,8 @@ export function SettingsView() {
       getProfileAction(),
       getExperiencesAction(),
       getEducationsAction(),
-    ]).then(([profRes, expRes, eduRes]) => {
+      getSkillsAction(),
+    ]).then(([profRes, expRes, eduRes, skillRes]) => {
       if (profRes.success && profRes.data) {
         const initName = profRes.data.name || "";
         const initEmail = profRes.data.email || "";
@@ -61,6 +65,10 @@ export function SettingsView() {
 
       if (eduRes.success && eduRes.data) {
         setEducations(eduRes.data);
+      }
+
+      if (skillRes.success && skillRes.data) {
+        setSkills(skillRes.data);
       }
 
       setLoading(false);
@@ -165,6 +173,8 @@ export function SettingsView() {
           setExperiences={setExperiences}
           educations={educations}
           setEducations={setEducations}
+          skills={skills}
+          setSkills={setSkills}
           saving={saving}
           errorMsg={errorMsg}
           successMsg={successMsg}
