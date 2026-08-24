@@ -14,8 +14,12 @@ import { UserSkill } from "@/types/skill";
 import { ResumeCanvasView } from "./resume-canvas-view";
 
 export function SettingsView() {
-  // Profile data states
-  const [loading, setLoading] = useState(true);
+  // Independent section loading states
+  const [loadingProfile, setLoadingProfile] = useState(true);
+  const [loadingExp, setLoadingExp] = useState(true);
+  const [loadingEdu, setLoadingEdu] = useState(true);
+  const [loadingSkills, setLoadingSkills] = useState(true);
+
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
@@ -31,12 +35,8 @@ export function SettingsView() {
   const [savedSnapshot, setSavedSnapshot] = useState<string>("");
 
   useEffect(() => {
-    Promise.all([
-      getProfileAction(),
-      getExperiencesAction(),
-      getEducationsAction(),
-      getSkillsAction(),
-    ]).then(([profRes, expRes, eduRes, skillRes]) => {
+    // 1. Fetch Profile independently
+    getProfileAction().then((profRes) => {
       if (profRes.success && profRes.data) {
         const initName = profRes.data.name || "";
         const initEmail = profRes.data.email || "";
@@ -58,26 +58,37 @@ export function SettingsView() {
       } else if (profRes.error) {
         setErrorMsg(profRes.error || "Failed to load profile details");
       }
+      setLoadingProfile(false);
+    });
 
+    // 2. Fetch Experience independently
+    getExperiencesAction().then((expRes) => {
       if (expRes.success && expRes.data) {
         setExperiences(expRes.data);
       }
+      setLoadingExp(false);
+    });
 
+    // 3. Fetch Education independently
+    getEducationsAction().then((eduRes) => {
       if (eduRes.success && eduRes.data) {
         setEducations(eduRes.data);
       }
+      setLoadingEdu(false);
+    });
 
+    // 4. Fetch Skills independently
+    getSkillsAction().then((skillRes) => {
       if (skillRes.success && skillRes.data) {
         setSkills(skillRes.data);
       }
-
-      setLoading(false);
+      setLoadingSkills(false);
     });
   }, []);
 
   // Check if current details differ from last saved state
   const isDirty =
-    !loading &&
+    !loadingProfile &&
     savedSnapshot !== "" &&
     savedSnapshot !== JSON.stringify({ name, avatarUrl, links });
 
@@ -125,7 +136,7 @@ export function SettingsView() {
 
   return (
     <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-      {/* Header & Breadcrumb */}
+      {/* Header & Breadcrumb - Always rendered immediately without skeleton delay */}
       <div className="space-y-3">
         <div className="flex items-center gap-2 text-xs font-semibold text-zinc-400 dark:text-zinc-500">
           <Link href="/" className="hover:text-zinc-700 dark:hover:text-zinc-300 transition">
@@ -154,34 +165,31 @@ export function SettingsView() {
         </div>
       </div>
 
-      {/* Render Resume Canvas */}
-      {loading ? (
-        <div className="py-24 flex flex-col items-center justify-center space-y-3">
-          <Loader2 className="w-6 h-6 animate-spin text-zinc-400" />
-          <p className="text-xs text-zinc-500 font-medium">Loading career profile canvas...</p>
-        </div>
-      ) : (
-        <ResumeCanvasView
-          name={name}
-          setName={setName}
-          email={email}
-          avatarUrl={avatarUrl}
-          setAvatarUrl={setAvatarUrl}
-          links={links}
-          setLinks={setLinks}
-          experiences={experiences}
-          setExperiences={setExperiences}
-          educations={educations}
-          setEducations={setEducations}
-          skills={skills}
-          setSkills={setSkills}
-          saving={saving}
-          errorMsg={errorMsg}
-          successMsg={successMsg}
-          isDirty={isDirty}
-          onSubmit={handleSubmit}
-        />
-      )}
+      {/* Render Resume Canvas with granular streaming states */}
+      <ResumeCanvasView
+        name={name}
+        setName={setName}
+        email={email}
+        avatarUrl={avatarUrl}
+        setAvatarUrl={setAvatarUrl}
+        links={links}
+        setLinks={setLinks}
+        experiences={experiences}
+        setExperiences={setExperiences}
+        educations={educations}
+        setEducations={setEducations}
+        skills={skills}
+        setSkills={setSkills}
+        loadingProfile={loadingProfile}
+        loadingExp={loadingExp}
+        loadingEdu={loadingEdu}
+        loadingSkills={loadingSkills}
+        saving={saving}
+        errorMsg={errorMsg}
+        successMsg={successMsg}
+        isDirty={isDirty}
+        onSubmit={handleSubmit}
+      />
     </main>
   );
 }
