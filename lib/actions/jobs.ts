@@ -108,7 +108,6 @@ export async function createJobAction(
       status: jobData.status || "applied",
       workplace_type: jobData.workplaceType || "Remote",
       salary: jobData.salary || "",
-      match: jobData.match || "good",
       is_pinned: jobData.isPinned || false,
     };
 
@@ -164,7 +163,6 @@ export async function updateJobAction(
     if (updates.status !== undefined) rowUpdates.status = updates.status;
     if (updates.workplaceType !== undefined) rowUpdates.workplace_type = updates.workplaceType;
     if (updates.salary !== undefined) rowUpdates.salary = updates.salary;
-    if (updates.match !== undefined) rowUpdates.match = updates.match;
     if (updates.isPinned !== undefined) rowUpdates.is_pinned = updates.isPinned;
     if (updates.aiMatchAnalysis !== undefined) rowUpdates.ai_match_analysis = updates.aiMatchAnalysis;
 

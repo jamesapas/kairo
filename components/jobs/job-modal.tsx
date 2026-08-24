@@ -13,7 +13,6 @@ import {
 } from "lucide-react";
 import {
   JobApplication,
-  JobMatch,
   JobStatus,
   WorkplaceType,
   PLATFORM_OPTIONS,
@@ -30,24 +29,6 @@ interface JobModalProps {
   ) => void;
   initialJob?: JobApplication | null;
 }
-
-const MATCH_OPTIONS: CustomSelectOption<JobMatch>[] = [
-  {
-    value: "good",
-    label: "Good Match",
-    icon: <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />,
-  },
-  {
-    value: "mid",
-    label: "Mid Match",
-    icon: <Star className="w-3.5 h-3.5 text-amber-400 stroke-[2]" />,
-  },
-  {
-    value: "far",
-    label: "Far Match",
-    icon: <Star className="w-3.5 h-3.5 text-zinc-400 stroke-[2]" />,
-  },
-];
 
 const PLATFORM_SELECT_OPTIONS: CustomSelectOption<string>[] = PLATFORM_OPTIONS.map(
   (plat) => ({
@@ -183,7 +164,6 @@ function JobModalForm({
   const [salaryCurrency, setSalaryCurrency] = useState(initialSalaryParsed.currency);
   const [salaryAmount, setSalaryAmount] = useState(initialSalaryParsed.amount);
   const [salaryPeriod, setSalaryPeriod] = useState(initialSalaryParsed.period);
-  const [match, setMatch] = useState<JobMatch>(initialJob?.match || "good");
   const [isPinned, setIsPinned] = useState(initialJob?.isPinned || false);
   const [errors, setErrors] = useState<{
     jobTitle?: string;
@@ -220,7 +200,6 @@ function JobModalForm({
       status,
       workplaceType,
       salary: formattedSalary,
-      match,
       isPinned,
     });
     onClose();
@@ -292,8 +271,8 @@ function JobModalForm({
           </div>
         </div>
 
-        {/* Status, Date, Match */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+        {/* Status & Date Applied */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
           <div>
             <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
               Status
@@ -318,18 +297,6 @@ function JobModalForm({
                 if (errors.dateApplied) setErrors({ ...errors, dateApplied: undefined });
               }}
               className="w-full px-3 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 text-xs font-medium text-zinc-900 dark:text-zinc-100 focus:border-zinc-400 dark:focus:border-zinc-500 cursor-pointer"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-              Match
-            </label>
-            <CustomSelect<JobMatch>
-              value={match}
-              onChange={(val) => setMatch(val)}
-              options={MATCH_OPTIONS}
-              className="w-full"
             />
           </div>
         </div>

@@ -13,13 +13,13 @@ import {
 import {
   JobApplication,
   JobStatus,
-  JobMatch,
   JOB_STATUS_CONFIG,
   formatRelativeDate,
   formatSalaryDisplay,
 } from "@/types/job";
 import { StatusIcon } from "./status-dropdown";
 import { PlatformIcon } from "./platform-badge";
+import { MatchCircularProgress } from "./job-table";
 
 interface JobKanbanProps {
   jobs: JobApplication[];
@@ -39,32 +39,6 @@ const KANBAN_COLUMNS: JobStatus[] = [
   "rejected",
   "withdrawn",
 ];
-
-function MatchIcon({ match }: { match?: JobMatch }) {
-  const m = match || "good";
-
-  if (m === "good") {
-    return (
-      <span title="Good Match" className="inline-flex items-center justify-center">
-        <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400 shrink-0" />
-      </span>
-    );
-  }
-
-  if (m === "mid") {
-    return (
-      <span title="Mid Match" className="inline-flex items-center justify-center">
-        <Star className="w-3.5 h-3.5 text-amber-400 stroke-[2] shrink-0" />
-      </span>
-    );
-  }
-
-  return (
-    <span title="Far Match" className="inline-flex items-center justify-center">
-      <Star className="w-3.5 h-3.5 text-zinc-300 stroke-[2] shrink-0" />
-    </span>
-  );
-}
 
 export function JobKanban({
   jobs,
@@ -173,7 +147,7 @@ export function JobKanban({
                     onMouseEnter={() => router.prefetch(`/jobs/${job.id}`)}
                     className="bg-white dark:bg-zinc-900 p-3.5 rounded-2xl border border-zinc-200/90 dark:border-zinc-800 shadow-[0_1px_4px_rgba(0,0,0,0.03)] hover:shadow-md hover:border-zinc-300 dark:hover:border-zinc-700 cursor-pointer space-y-2.5 group relative"
                   >
-                    {/* Header: Company & Match */}
+                    {/* Header: Company & AI Match Badge */}
                     <div className="flex items-center justify-between gap-1.5">
                       <span className="text-xs font-bold text-zinc-700 dark:text-zinc-300 truncate">
                         {job.company}
@@ -182,7 +156,13 @@ export function JobKanban({
                         {job.isPinned && (
                           <Pin className="w-3 h-3 text-rose-500 fill-rose-500" />
                         )}
-                        <MatchIcon match={job.match} />
+                        {job.aiMatchAnalysis?.matchPercentage !== undefined && job.aiMatchAnalysis?.matchPercentage !== null ? (
+                          <MatchCircularProgress
+                            percentage={job.aiMatchAnalysis.matchPercentage}
+                            label={job.aiMatchAnalysis.matchLabel}
+                            size={28}
+                          />
+                        ) : null}
                       </div>
                     </div>
 

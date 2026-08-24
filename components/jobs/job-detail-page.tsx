@@ -9,7 +9,6 @@ import {
   Building2,
   Calendar,
   DollarSign,
-  Briefcase,
   Edit3,
   Trash2,
   Copy,
@@ -29,12 +28,7 @@ import {
   ListChecks,
   CheckCircle,
   Circle,
-  HelpCircle,
-  XCircle,
   AlertCircle,
-  Send,
-  UserCheck,
-  Award,
   Sparkles,
 } from "lucide-react";
 import Loading from "@/app/(workspace)/jobs/[id]/loading";
@@ -42,10 +36,8 @@ import {
   JobApplication,
   JobApplicationRow,
   JobStatus,
-  JobMatch,
   WorkplaceType,
   JOB_STATUS_CONFIG,
-  MATCH_CONFIG,
   formatRelativeDate,
   formatSalaryDisplay,
   mapRowToJob,
@@ -64,28 +56,7 @@ interface JobDetailPageProps {
   jobId: string;
 }
 
-type ActiveTab = "ai-match" | "description" | "checklist";
-
-const PRIMARY_STAGES: {
-  status: JobStatus;
-  label: string;
-  icon: React.ComponentType<{ className?: string }>;
-}[] = [
-  { status: "applied", label: "Applied", icon: Send },
-  { status: "interviewing", label: "Interviewing", icon: UserCheck },
-  { status: "offer", label: "Offer", icon: Award },
-];
-
-const RESOLUTION_STAGES: {
-  status: JobStatus;
-  label: string;
-  icon: React.ComponentType<{ className?: string }>;
-}[] = [
-  { status: "declined", label: "Declined", icon: AlertCircle },
-  { status: "rejected", label: "Rejected", icon: XCircle },
-  { status: "withdrawn", label: "Withdrawn", icon: HelpCircle },
-  { status: "no_response", label: "No Response", icon: Clock },
-];
+type ActiveTab = "ai-match" | "description";
 
 const DEFAULT_CHECKLIST_ITEMS = [
   "Customized resume & portfolio submitted",
@@ -93,22 +64,6 @@ const DEFAULT_CHECKLIST_ITEMS = [
   "Prepared questions for hiring team & interviewers",
   "Followed up with recruiter / sent thank-you note",
 ];
-
-function MatchBadge({ match }: { match?: JobMatch }) {
-  const m = match || "good";
-  const config = MATCH_CONFIG[m] || MATCH_CONFIG.good;
-
-  return (
-    <div
-      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-semibold tracking-wide transition-colors ${config.bg} ${config.text} ${config.border}`}
-    >
-      {m === "good" && <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400 shrink-0" />}
-      {m === "mid" && <Star className="w-3.5 h-3.5 text-amber-500 stroke-[2.2] shrink-0" />}
-      {m === "far" && <Star className="w-3.5 h-3.5 text-zinc-400 stroke-[2] shrink-0" />}
-      <span>{config.label}</span>
-    </div>
-  );
-}
 
 function WorkplaceBadge({ type }: { type: WorkplaceType }) {
   const config = {
@@ -340,7 +295,8 @@ export function JobDetailPage({ jobId }: JobDetailPageProps) {
 
   const handleCopySummary = () => {
     if (!job) return;
-    const summary = `${job.jobTitle} @ ${job.company}\nStatus: ${JOB_STATUS_CONFIG[job.status]?.label}\nWorkplace: ${job.workplaceType}\nApplied on: ${job.appliedOn} (${job.dateApplied})\nMatch: ${MATCH_CONFIG[job.match]?.label}${job.salary ? `\nSalary: ${job.salary}` : ""}${job.jobUrl ? `\nLink: ${job.jobUrl}` : ""}`;
+    const matchLine = job.aiMatchAnalysis?.matchPercentage !== undefined ? `AI Match: ${job.aiMatchAnalysis.matchPercentage}%\n` : "";
+    const summary = `${job.jobTitle} @ ${job.company}\nStatus: ${JOB_STATUS_CONFIG[job.status]?.label}\nWorkplace: ${job.workplaceType}\nApplied on: ${job.appliedOn} (${job.dateApplied})\n${matchLine}${job.salary ? `Salary: ${job.salary}\n` : ""}${job.jobUrl ? `Link: ${job.jobUrl}` : ""}`.trim();
     navigator.clipboard.writeText(summary);
     setCopiedSummary(true);
     showToast("Summary copied for sharing");
@@ -404,12 +360,6 @@ export function JobDetailPage({ jobId }: JobDetailPageProps) {
       </main>
     );
   }
-
-  const currentStatusConfig = JOB_STATUS_CONFIG[job.status] || JOB_STATUS_CONFIG.applied;
-  const isTerminalStatus = RESOLUTION_STAGES.some((s) => s.status === job.status);
-
-  // Stepper progress index
-  const primaryIndex = PRIMARY_STAGES.findIndex((s) => s.status === job.status);
 
   return (
     <>
@@ -490,95 +440,6 @@ export function JobDetailPage({ jobId }: JobDetailPageProps) {
           </div>
         </div>
 
-        {/* Interactive Hiring Pipeline Stepper */}
-        <div className="bg-white dark:bg-zinc-900 rounded-2xl p-4 sm:p-5 border border-zinc-200/90 dark:border-zinc-800 shadow-[0_2px_8px_rgba(0,0,0,0.03)] space-y-3">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <span className="text-[11px] uppercase font-bold tracking-wider text-zinc-400 dark:text-zinc-500">
-                Pipeline Stage
-              </span>
-              <span className={`inline-block w-2 h-2 rounded-full ${currentStatusConfig.dot}`} />
-              <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
-                {currentStatusConfig.label}
-              </span>
-            </div>
-
-            {/* Quick Resolution Tags for Terminal Stages */}
-            <div className="flex items-center gap-1.5 flex-wrap">
-              {RESOLUTION_STAGES.map((res) => {
-                const isSelected = job.status === res.status;
-                const Icon = res.icon;
-                return (
-                  <button
-                    key={res.status}
-                    onClick={() => handleStatusChange(res.status)}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 border ${
-                      isSelected
-                        ? "bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 border-zinc-900 dark:border-zinc-100 shadow-2xs"
-                        : "bg-zinc-50 dark:bg-zinc-800/60 text-zinc-500 dark:text-zinc-400 border-zinc-200/70 dark:border-zinc-700/60 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                    }`}
-                  >
-                    <Icon className="w-3 h-3" />
-                    <span>{res.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Primary Pipeline Steps */}
-          <div className="grid grid-cols-3 gap-2 sm:gap-3 pt-1">
-            {PRIMARY_STAGES.map((stage, idx) => {
-              const isActive = job.status === stage.status;
-              const isPast = primaryIndex > idx && !isTerminalStatus;
-              const Icon = stage.icon;
-
-              return (
-                <button
-                  key={stage.status}
-                  onClick={() => handleStatusChange(stage.status)}
-                  className={`group relative p-3 rounded-xl border text-left transition cursor-pointer flex items-center gap-3 ${
-                    isActive
-                      ? "bg-blue-50/60 dark:bg-blue-950/30 border-blue-300 dark:border-blue-800 text-blue-950 dark:text-blue-200 shadow-2xs"
-                      : isPast
-                      ? "bg-zinc-50/70 dark:bg-zinc-800/40 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300"
-                      : "bg-white dark:bg-zinc-900/60 border-zinc-200/80 dark:border-zinc-800/80 text-zinc-400 dark:text-zinc-500 hover:border-zinc-300 dark:hover:border-zinc-700"
-                  }`}
-                >
-                  <div
-                    className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition ${
-                      isActive
-                        ? "bg-blue-600 text-white shadow-sm"
-                        : isPast
-                        ? "bg-emerald-600 text-white"
-                        : "bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-500 group-hover:text-zinc-700 dark:group-hover:text-zinc-300"
-                    }`}
-                  >
-                    {isPast ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : <Icon className="w-3.5 h-3.5" />}
-                  </div>
-
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[10px] uppercase font-bold tracking-wider text-zinc-400 dark:text-zinc-500">
-                      Step {idx + 1}
-                    </div>
-                    <div
-                      className={`text-xs font-bold truncate ${
-                        isActive
-                          ? "text-blue-900 dark:text-blue-100"
-                          : isPast
-                          ? "text-zinc-800 dark:text-zinc-200"
-                          : "text-zinc-600 dark:text-zinc-400"
-                      }`}
-                    >
-                      {stage.label}
-                    </div>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
         {/* Two-Column Executive Workspace Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* LEFT MAIN COLUMN: Hero & Tabbed Workspace (8 cols) */}
@@ -588,8 +449,15 @@ export function JobDetailPage({ jobId }: JobDetailPageProps) {
               <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                 <div className="space-y-1.5 min-w-0 flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <MatchBadge match={job.match} />
-                    <span className="text-[11px] font-semibold text-zinc-400 dark:text-zinc-500">•</span>
+                    {job.aiMatchAnalysis?.matchPercentage !== undefined && (
+                      <>
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg border text-xs font-bold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border-indigo-200/60 dark:border-indigo-800/40">
+                          <Sparkles className="w-3 h-3 text-indigo-500" />
+                          <span>{job.aiMatchAnalysis.matchPercentage}% Match</span>
+                        </span>
+                        <span className="text-[11px] font-semibold text-zinc-400 dark:text-zinc-500">•</span>
+                      </>
+                    )}
                     <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">
                       Applied on {job.dateApplied} ({formatRelativeDate(job.dateApplied)})
                     </span>
@@ -603,6 +471,16 @@ export function JobDetailPage({ jobId }: JobDetailPageProps) {
                     <Building2 className="w-4 h-4 text-zinc-400 shrink-0" />
                     <span>{job.company}</span>
                   </div>
+                </div>
+
+                {/* Status Selector Dropdown */}
+                <div className="shrink-0 pt-0.5">
+                  <StatusDropdown
+                    value={job.status}
+                    onChange={handleStatusChange}
+                    size="md"
+                    className="w-full sm:w-auto min-w-[145px]"
+                  />
                 </div>
               </div>
 
@@ -660,21 +538,6 @@ export function JobDetailPage({ jobId }: JobDetailPageProps) {
               >
                 <FileText className="w-3.5 h-3.5 text-blue-500" />
                 <span>Job Description & Scope</span>
-              </button>
-
-              <button
-                onClick={() => setActiveTab("checklist")}
-                className={`flex-1 py-2.5 px-3.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer ${
-                  activeTab === "checklist"
-                    ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-xs"
-                    : "text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200"
-                }`}
-              >
-                <ListChecks className="w-3.5 h-3.5 text-emerald-500" />
-                <span>Checklist & Prep</span>
-                <span className="px-1.5 py-0.2 rounded-md bg-zinc-200/70 dark:bg-zinc-700/70 text-[10px]">
-                  {Object.values(checklist).filter(Boolean).length}/{DEFAULT_CHECKLIST_ITEMS.length}
-                </span>
               </button>
             </div>
 
@@ -743,94 +606,50 @@ export function JobDetailPage({ jobId }: JobDetailPageProps) {
                   )}
                 </div>
               )}
-
-              {/* Tab 3: Application Checklist & Prep */}
-              {activeTab === "checklist" && (
-                <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 sm:p-7 border border-zinc-200/90 dark:border-zinc-800 shadow-[0_2px_8px_rgba(0,0,0,0.03)] space-y-4">
-                  <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 pb-3">
-                    <div className="flex items-center gap-2">
-                      <ListChecks className="w-4 h-4 text-zinc-400" />
-                      <h2 className="text-xs uppercase font-bold tracking-wider text-zinc-500 dark:text-zinc-400">
-                        Application Checklist & Interview Prep
-                      </h2>
-                    </div>
-
-                    <span className="text-[11px] font-bold text-zinc-400 dark:text-zinc-500">
-                      {Object.values(checklist).filter(Boolean).length} of {DEFAULT_CHECKLIST_ITEMS.length} completed
-                    </span>
-                  </div>
-
-                  <div className="space-y-2 pt-1">
-                    {DEFAULT_CHECKLIST_ITEMS.map((item) => {
-                      const isChecked = !!checklist[item];
-                      return (
-                        <button
-                          key={item}
-                          onClick={() => toggleChecklistItem(item)}
-                          className={`w-full p-3.5 rounded-2xl border text-left transition cursor-pointer flex items-center gap-3 ${
-                            isChecked
-                              ? "bg-zinc-50/70 dark:bg-zinc-800/40 border-zinc-200/60 dark:border-zinc-800 text-zinc-400 dark:text-zinc-500 line-through"
-                              : "bg-white dark:bg-zinc-900 border-zinc-200/90 dark:border-zinc-800 text-zinc-800 dark:text-zinc-200 hover:border-zinc-300 dark:hover:border-zinc-700"
-                          }`}
-                        >
-                          {isChecked ? (
-                            <CheckCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                          ) : (
-                            <Circle className="w-4 h-4 text-zinc-300 dark:text-zinc-600 shrink-0" />
-                          )}
-                          <span className="text-xs font-semibold leading-relaxed">{item}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
             </div>
           </div>
 
           {/* RIGHT COLUMN: Sidebar Rail (4 cols) */}
           <div className="lg:col-span-4 space-y-6">
-            {/* Quick Application Checklist in Sidebar (when browsing AI Match or Description) */}
-            {activeTab !== "checklist" && (
-              <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 border border-zinc-200/90 dark:border-zinc-800 shadow-[0_2px_8px_rgba(0,0,0,0.03)] space-y-4">
-                <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 pb-3">
-                  <div className="flex items-center gap-2">
-                    <ListChecks className="w-4 h-4 text-zinc-400" />
-                    <h2 className="text-xs uppercase font-bold tracking-wider text-zinc-500 dark:text-zinc-400">
-                      Application Checklist
-                    </h2>
-                  </div>
-
-                  <span className="text-[11px] font-bold text-zinc-400 dark:text-zinc-500">
-                    {Object.values(checklist).filter(Boolean).length} of {DEFAULT_CHECKLIST_ITEMS.length}
-                  </span>
+            {/* Application Checklist */}
+            <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 border border-zinc-200/90 dark:border-zinc-800 shadow-[0_2px_8px_rgba(0,0,0,0.03)] space-y-4">
+              <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 pb-3">
+                <div className="flex items-center gap-2">
+                  <ListChecks className="w-4 h-4 text-zinc-400" />
+                  <h2 className="text-xs uppercase font-bold tracking-wider text-zinc-500 dark:text-zinc-400">
+                    Application Checklist
+                  </h2>
                 </div>
 
-                <div className="space-y-2 pt-1">
-                  {DEFAULT_CHECKLIST_ITEMS.map((item) => {
-                    const isChecked = !!checklist[item];
-                    return (
-                      <button
-                        key={item}
-                        onClick={() => toggleChecklistItem(item)}
-                        className={`w-full p-2.5 rounded-xl border text-left transition cursor-pointer flex items-center gap-2.5 ${
-                          isChecked
-                            ? "bg-zinc-50/70 dark:bg-zinc-800/40 border-zinc-200/60 dark:border-zinc-800 text-zinc-400 dark:text-zinc-500 line-through"
-                            : "bg-white dark:bg-zinc-900 border-zinc-200/90 dark:border-zinc-800 text-zinc-800 dark:text-zinc-200 hover:border-zinc-300 dark:hover:border-zinc-700"
-                        }`}
-                      >
-                        {isChecked ? (
-                          <CheckCircle className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                        ) : (
-                          <Circle className="w-3.5 h-3.5 text-zinc-300 dark:text-zinc-600 shrink-0" />
-                        )}
-                        <span className="text-xs font-semibold leading-snug">{item}</span>
-                      </button>
-                    );
-                  })}
-                </div>
+                <span className="text-[11px] font-bold text-zinc-400 dark:text-zinc-500">
+                  {Object.values(checklist).filter(Boolean).length} of {DEFAULT_CHECKLIST_ITEMS.length}
+                </span>
               </div>
-            )}
+
+              <div className="space-y-2 pt-1">
+                {DEFAULT_CHECKLIST_ITEMS.map((item) => {
+                  const isChecked = !!checklist[item];
+                  return (
+                    <button
+                      key={item}
+                      onClick={() => toggleChecklistItem(item)}
+                      className={`w-full p-2.5 rounded-xl border text-left transition cursor-pointer flex items-center gap-2.5 ${
+                        isChecked
+                          ? "bg-zinc-50/70 dark:bg-zinc-800/40 border-zinc-200/60 dark:border-zinc-800 text-zinc-400 dark:text-zinc-500 line-through"
+                          : "bg-white dark:bg-zinc-900 border-zinc-200/90 dark:border-zinc-800 text-zinc-800 dark:text-zinc-200 hover:border-zinc-300 dark:hover:border-zinc-700"
+                      }`}
+                    >
+                      {isChecked ? (
+                        <CheckCircle className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                      ) : (
+                        <Circle className="w-3.5 h-3.5 text-zinc-300 dark:text-zinc-600 shrink-0" />
+                      )}
+                      <span className="text-xs font-semibold leading-snug">{item}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
 
             {/* Direct Links Card */}
             {(job.jobUrl || job.contactUrl) && (

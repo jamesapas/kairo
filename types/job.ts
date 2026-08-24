@@ -10,7 +10,6 @@ export type JobStatus =
   | "withdrawn";
 
 export type WorkplaceType = "Remote" | "Hybrid" | "On-site";
-export type JobMatch = "good" | "mid" | "far";
 
 export interface JobApplication {
   id: string;
@@ -25,7 +24,6 @@ export interface JobApplication {
   status: JobStatus;
   workplaceType: WorkplaceType;
   salary?: string;
-  match: JobMatch;
   isPinned?: boolean;
   aiMatchAnalysis?: JobMatchAnalysis | null;
   createdAt: string;
@@ -45,7 +43,6 @@ export interface JobApplicationRow {
   status: string;
   workplace_type: string;
   salary: string | null;
-  match: string;
   is_pinned: boolean;
   ai_match_analysis?: JobMatchAnalysis | null;
   created_at: string;
@@ -66,7 +63,6 @@ export function mapRowToJob(row: JobApplicationRow): JobApplication {
     status: (row.status as JobStatus) || "applied",
     workplaceType: (row.workplace_type as WorkplaceType) || "Remote",
     salary: row.salary || "",
-    match: (row.match as JobMatch) || "good",
     isPinned: Boolean(row.is_pinned),
     aiMatchAnalysis: row.ai_match_analysis || null,
     createdAt: row.created_at,
@@ -112,33 +108,6 @@ export const JOB_STATUS_CONFIG: Record<
     label: "Withdrawn",
     iconColor: "text-zinc-400",
     dot: "bg-zinc-400",
-  },
-};
-
-export const MATCH_CONFIG: Record<
-  JobMatch,
-  { label: string; iconType: "star" | "star-outline" | "star-gray"; bg: string; text: string; border: string }
-> = {
-  good: {
-    label: "Good Match",
-    iconType: "star",
-    bg: "bg-amber-50",
-    text: "text-amber-700",
-    border: "border-amber-200",
-  },
-  mid: {
-    label: "Mid Match",
-    iconType: "star-outline",
-    bg: "bg-amber-50",
-    text: "text-amber-700",
-    border: "border-amber-200",
-  },
-  far: {
-    label: "Far Match",
-    iconType: "star-gray",
-    bg: "bg-zinc-100",
-    text: "text-zinc-600",
-    border: "border-zinc-200",
   },
 };
 
@@ -200,7 +169,6 @@ export const INITIAL_SAMPLE_JOBS: JobApplication[] = [
     status: "interviewing",
     workplaceType: "Remote",
     salary: "₱120,000 - 150,000/mo",
-    match: "good",
     isPinned: true,
     createdAt: "2026-08-14T09:00:00.000Z",
     updatedAt: "2026-08-18T14:30:00.000Z",
@@ -216,7 +184,6 @@ export const INITIAL_SAMPLE_JOBS: JobApplication[] = [
     status: "applied",
     workplaceType: "Remote",
     salary: "₱140,000 - 180,000/mo",
-    match: "good",
     isPinned: false,
     createdAt: "2026-08-18T10:30:00.000Z",
     updatedAt: "2026-08-18T10:30:00.000Z",
@@ -232,7 +199,6 @@ export const INITIAL_SAMPLE_JOBS: JobApplication[] = [
     status: "offer",
     workplaceType: "Hybrid",
     salary: "₱95,000 - 125,000/mo",
-    match: "mid",
     isPinned: false,
     createdAt: "2026-08-01T08:15:00.000Z",
     updatedAt: "2026-08-19T11:00:00.000Z",
@@ -248,7 +214,6 @@ export const INITIAL_SAMPLE_JOBS: JobApplication[] = [
     status: "rejected",
     workplaceType: "Remote",
     salary: "₱85,000 - 110,000/mo",
-    match: "far",
     isPinned: false,
     createdAt: "2026-07-20T10:00:00.000Z",
     updatedAt: "2026-07-28T12:00:00.000Z",

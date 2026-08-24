@@ -23,7 +23,6 @@ import {
 import {
   JobApplication,
   JobStatus,
-  JobMatch,
   formatRelativeDate,
   formatSalaryDisplay,
 } from "@/types/job";
@@ -41,31 +40,92 @@ interface JobTableProps {
   onAddNew: () => void;
 }
 
-export function MatchIcon({ match }: { match?: JobMatch }) {
-  const m = match || "good";
-
-  if (m === "good") {
+export function MatchCircularProgress({
+  percentage,
+  label,
+  size = 36,
+}: {
+  percentage?: number | null;
+  label?: string | null;
+  size?: number;
+}) {
+  if (percentage === undefined || percentage === null) {
     return (
-      <span title="Good Match" className="inline-flex items-center justify-center">
-        <Star className="w-4 h-4 fill-amber-400 text-amber-400 shrink-0" />
-      </span>
+      <div className="flex items-center justify-center" style={{ width: size, height: size }}>
+        <span className="text-[11px] font-mono text-zinc-300 dark:text-zinc-600 font-medium">
+          —
+        </span>
+      </div>
     );
   }
 
-  if (m === "mid") {
-    return (
-      <span title="Mid Match" className="inline-flex items-center justify-center">
-        <Star className="w-4 h-4 text-amber-400 stroke-[2] shrink-0" />
-      </span>
-    );
-  }
+  const radius = 13.5;
+  const circumference = 2 * Math.PI * radius; // ~84.82
+  const clamped = Math.min(100, Math.max(0, percentage));
+  const strokeDashoffset = circumference - (clamped / 100) * circumference;
+
+  const getScoreColor = (score: number) => {
+    if (score >= 80) return "#10b981"; // emerald-500
+    if (score >= 60) return "#3b82f6"; // blue-500
+    if (score >= 40) return "#f59e0b"; // amber-500
+    return "#f43f5e"; // rose-500
+  };
+
+  const getTextColorClass = (score: number) => {
+    if (score >= 80) return "text-emerald-700 dark:text-emerald-400";
+    if (score >= 60) return "text-blue-700 dark:text-blue-400";
+    if (score >= 40) return "text-amber-700 dark:text-amber-400";
+    return "text-rose-700 dark:text-rose-400";
+  };
 
   return (
-    <span title="Far Match" className="inline-flex items-center justify-center">
-      <Star className="w-4 h-4 text-zinc-300 stroke-[2] shrink-0" />
-    </span>
+    <div
+      title={label ? `AI Match: ${percentage}% (${label})` : `AI Match: ${percentage}%`}
+      className="relative flex items-center justify-center mx-auto shrink-0"
+      style={{ width: size, height: size }}
+    >
+      <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
+        {/* Background Ring */}
+        <circle
+          cx="18"
+          cy="18"
+          r={radius}
+          stroke="currentColor"
+          strokeWidth="3"
+          className="text-zinc-200/80 dark:text-zinc-800"
+          fill="transparent"
+        />
+        {/* Animated Progress Ring */}
+        <circle
+          cx="18"
+          cy="18"
+          r={radius}
+          stroke={getScoreColor(percentage)}
+          strokeWidth="3"
+          strokeDasharray={circumference}
+          strokeDashoffset={strokeDashoffset}
+          strokeLinecap="round"
+          fill="transparent"
+          className="transition-all duration-700 ease-out"
+        />
+      </svg>
+      {/* Percentage Center Text */}
+      <div className="absolute inset-0 flex items-center justify-center">
+        <span
+          className={`text-[9.5px] font-black tracking-tighter leading-none ${getTextColorClass(
+            percentage
+          )}`}
+        >
+          {percentage}%
+        </span>
+      </div>
+    </div>
   );
 }
+
+// Aliases
+export const MatchProgressBar = MatchCircularProgress;
+export const MatchScoreBadge = MatchCircularProgress;
 
 function JobRowActionMenu({
   job,
@@ -339,7 +399,7 @@ export function JobTable({
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50/80 dark:bg-zinc-800/80 text-[10px] uppercase font-bold tracking-wider text-zinc-400 dark:text-zinc-500">
-                <th className="py-3 pl-4 pr-1 w-8 text-center">Match</th>
+                <th className="py-3 pl-4 pr-1 w-14 text-center"></th>
                 <th className="py-3 px-4">Role & Company</th>
                 <th className="py-3 px-3">Status</th>
                 <th className="py-3 px-3">Platform</th>
@@ -354,7 +414,7 @@ export function JobTable({
                 <tr key={i} className="animate-pulse">
                   {/* Match */}
                   <td className="py-3.5 pl-4 pr-1 text-center align-middle">
-                    <Star className="w-3.5 h-3.5 text-zinc-200 dark:text-zinc-700 mx-auto" />
+                    <div className="w-8 h-8 rounded-full border-2 border-zinc-200 dark:border-zinc-800 mx-auto" />
                   </td>
 
                   {/* Role & Company */}
@@ -451,9 +511,12 @@ export function JobTable({
             isMuted ? "opacity-75 hover:opacity-100 bg-zinc-50/20 dark:bg-zinc-800/20" : ""
           }`}
         >
-          {/* Match Icon - Direct without box */}
+          {/* Match Progress Bar */}
           <td className="py-3.5 pl-4 pr-1 text-center align-middle">
-            <MatchIcon match={job.match} />
+            <MatchProgressBar
+              percentage={job.aiMatchAnalysis?.matchPercentage}
+              label={job.aiMatchAnalysis?.matchLabel}
+            />
           </td>
 
           {/* Role & Company */}
@@ -548,7 +611,7 @@ export function JobTable({
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b border-rose-100 dark:border-rose-900/50 bg-rose-50/40 dark:bg-rose-950/20 text-[10px] uppercase font-bold tracking-wider text-zinc-500 dark:text-zinc-400">
-                    <th className="py-3 pl-4 pr-1 w-8 text-center">Match</th>
+                    <th className="py-3 pl-4 pr-1 w-14 text-center"></th>
                     <th className="py-3 px-4">Role & Company</th>
                     <th className="py-3 px-3">Status</th>
                     <th className="py-3 px-3">Platform</th>
@@ -581,7 +644,7 @@ export function JobTable({
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50/80 dark:bg-zinc-800/80 text-[10px] uppercase font-bold tracking-wider text-zinc-400 dark:text-zinc-500">
-                  <th className="py-3 pl-4 pr-1 w-8 text-center">Match</th>
+                  <th className="py-3 pl-4 pr-1 w-14 text-center"></th>
                   <th className="py-3 px-4">Role & Company</th>
                   <th className="py-3 px-3">Status</th>
                   <th className="py-3 px-3">Platform</th>
@@ -740,7 +803,7 @@ export function JobTable({
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b border-zinc-200/70 bg-zinc-100/60 text-[10px] uppercase font-bold tracking-wider text-zinc-400">
-                    <th className="py-2.5 pl-4 pr-1 w-8 text-center">Match</th>
+                    <th className="py-2.5 pl-4 pr-1 w-14 text-center"></th>
                     <th className="py-2.5 px-4">Role & Company</th>
                     <th className="py-2.5 px-3">Status</th>
                     <th className="py-2.5 px-3">Platform</th>

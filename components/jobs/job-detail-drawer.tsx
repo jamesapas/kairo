@@ -12,7 +12,6 @@ import {
   Copy,
   Check,
   Globe,
-  Star,
   Pin,
   Laptop,
   Building,
@@ -20,14 +19,13 @@ import {
   Clock,
   ArrowUpRight,
   Link2,
+  Sparkles,
 } from "lucide-react";
 import {
   JobApplication,
   JobStatus,
-  JobMatch,
   WorkplaceType,
   JOB_STATUS_CONFIG,
-  MATCH_CONFIG,
   formatRelativeDate,
   formatSalaryDisplay,
 } from "@/types/job";
@@ -43,22 +41,6 @@ interface JobDetailDrawerProps {
   onDelete: (id: string) => void;
   onStatusChange: (id: string, newStatus: JobStatus) => void;
   onTogglePin: (id: string) => void;
-}
-
-function MatchBadge({ match }: { match?: JobMatch }) {
-  const m = match || "good";
-  const config = MATCH_CONFIG[m] || MATCH_CONFIG.good;
-
-  return (
-    <div
-      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-semibold tracking-wide transition-colors ${config.bg} ${config.text} ${config.border}`}
-    >
-      {m === "good" && <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400 shrink-0" />}
-      {m === "mid" && <Star className="w-3.5 h-3.5 text-amber-500 stroke-[2.2] shrink-0" />}
-      {m === "far" && <Star className="w-3.5 h-3.5 text-zinc-400 stroke-[2] shrink-0" />}
-      <span>{config.label}</span>
-    </div>
-  );
 }
 
 function WorkplaceBadge({ type }: { type: WorkplaceType }) {
@@ -198,7 +180,12 @@ export function JobDetailDrawer({
           {/* Top Row: Badges & Controls */}
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
-              <MatchBadge match={currentJob.match} />
+              {currentJob.aiMatchAnalysis?.matchPercentage !== undefined && (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border text-[11px] font-bold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border-indigo-200/60 dark:border-indigo-800/40">
+                  <Sparkles className="w-3 h-3 text-indigo-500" />
+                  <span>{currentJob.aiMatchAnalysis.matchPercentage}% Match</span>
+                </span>
+              )}
             </div>
 
             {/* Quick Actions */}
