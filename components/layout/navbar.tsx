@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { signOutAction } from "@/lib/actions/auth";
+import { createClient } from "@/lib/supabase/client";
 import {
   LogOut,
   Loader2,
@@ -16,10 +17,33 @@ interface NavbarProps {
   onOpenStreakModal?: () => void;
 }
 
-export function Navbar({ userEmail }: NavbarProps = {}) {
+export function Navbar({ userEmail: initialEmail }: NavbarProps = {}) {
+  const [userEmail, setUserEmail] = useState<string | undefined>(initialEmail);
   const [loggingOut, setLoggingOut] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (initialEmail) {
+      setUserEmail(initialEmail);
+      return;
+    }
+
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user?.email) {
+        setUserEmail(user.email);
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUserEmail(session?.user?.email);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [initialEmail]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {

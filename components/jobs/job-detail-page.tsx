@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 import {
   ArrowLeft,
   Building2,
@@ -35,9 +36,10 @@ import {
   UserCheck,
   Award,
 } from "lucide-react";
-import { Navbar } from "@/components/layout/navbar";
+import Loading from "@/app/(workspace)/jobs/[id]/loading";
 import {
   JobApplication,
+  JobApplicationRow,
   JobStatus,
   JobMatch,
   WorkplaceType,
@@ -45,6 +47,7 @@ import {
   MATCH_CONFIG,
   formatRelativeDate,
   formatSalaryDisplay,
+  mapRowToJob,
 } from "@/types/job";
 import { StatusDropdown } from "./status-dropdown";
 import { PlatformIcon, PlatformBadge } from "./platform-badge";
@@ -57,8 +60,7 @@ import {
 } from "@/lib/actions/jobs";
 
 interface JobDetailPageProps {
-  initialJob: JobApplication;
-  userEmail?: string;
+  jobId: string;
 }
 
 const PRIMARY_STAGES: { status: JobStatus; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
@@ -130,11 +132,44 @@ function getDomain(url?: string): string {
   }
 }
 
-export function JobDetailPage({ initialJob, userEmail }: JobDetailPageProps) {
+export function JobDetailPage({ jobId }: JobDetailPageProps) {
   const router = useRouter();
-  const [job, setJob] = useState<JobApplication>(initialJob);
+  const [job, setJob] = useState<JobApplication | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string | undefined>();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const fetchedRef = useRef(false);
+
+  useEffect(() => {
+    if (fetchedRef.current) return;
+    fetchedRef.current = true;
+
+    const supabase = createClient();
+
+    async function fetchData() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.email) setUserEmail(user.email);
+
+      const { data, error } = await supabase
+        .from("job_applications")
+        .select("*")
+        .eq("id", jobId)
+        .single();
+
+      if (error || !data) {
+        setLoadError("Application not found");
+        setIsLoading(false);
+        return;
+      }
+
+      setJob(mapRowToJob(data as JobApplicationRow));
+      setIsLoading(false);
+    }
+
+    fetchData();
+  }, [jobId]);
 
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedContactLink, setCopiedContactLink] = useState(false);
@@ -145,6 +180,7 @@ export function JobDetailPage({ initialJob, userEmail }: JobDetailPageProps) {
   const [checklist, setChecklist] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
+    if (!job) return;
     try {
       const saved = localStorage.getItem(`kairo-checklist-${job.id}`);
       if (saved) {
@@ -153,9 +189,10 @@ export function JobDetailPage({ initialJob, userEmail }: JobDetailPageProps) {
     } catch {
       // fallback
     }
-  }, [job.id]);
+  }, [job?.id]);
 
   const toggleChecklistItem = (item: string) => {
+    if (!job) return;
     setChecklist((prev) => {
       const next = { ...prev, [item]: !prev[item] };
       try {
@@ -175,9 +212,10 @@ export function JobDetailPage({ initialJob, userEmail }: JobDetailPageProps) {
   };
 
   const handleStatusChange = useCallback(async (newStatus: JobStatus) => {
+    if (!job) return;
     const prevJob = job;
     const now = new Date().toISOString();
-    setJob((curr) => ({ ...curr, status: newStatus, updatedAt: now }));
+    setJob((curr) => curr ? { ...curr, status: newStatus, updatedAt: now } : curr);
     showToast(`Stage updated to ${JOB_STATUS_CONFIG[newStatus]?.label || newStatus}`);
 
     const res = await updateJobStatusAction(job.id, newStatus);
@@ -188,10 +226,11 @@ export function JobDetailPage({ initialJob, userEmail }: JobDetailPageProps) {
   }, [job]);
 
   const handleTogglePin = useCallback(async () => {
+    if (!job) return;
     const nextPin = !job.isPinned;
     const prevJob = job;
     const now = new Date().toISOString();
-    setJob((curr) => ({ ...curr, isPinned: nextPin, updatedAt: now }));
+    setJob((curr) => curr ? { ...curr, isPinned: nextPin, updatedAt: now } : curr);
     showToast(nextPin ? "Pinned to top" : "Unpinned");
 
     const res = await togglePinJobAction(job.id, nextPin);
@@ -204,6 +243,7 @@ export function JobDetailPage({ initialJob, userEmail }: JobDetailPageProps) {
   const handleEditSave = async (
     jobData: Omit<JobApplication, "id" | "createdAt" | "updatedAt"> & { id?: string }
   ) => {
+    if (!job) return;
     const now = new Date().toISOString();
     const prevJob = job;
     const updated: JobApplication = {
@@ -225,6 +265,7 @@ export function JobDetailPage({ initialJob, userEmail }: JobDetailPageProps) {
   };
 
   const handleDelete = async () => {
+    if (!job) return;
     if (confirm(`Delete application for "${job.jobTitle}" at ${job.company}?`)) {
       showToast("Deleting application...");
       const res = await deleteJobAction(job.id);
@@ -237,6 +278,7 @@ export function JobDetailPage({ initialJob, userEmail }: JobDetailPageProps) {
   };
 
   const handleCopyLink = () => {
+    if (!job) return;
     if (job.jobUrl) {
       navigator.clipboard.writeText(job.jobUrl);
       setCopiedLink(true);
@@ -245,6 +287,7 @@ export function JobDetailPage({ initialJob, userEmail }: JobDetailPageProps) {
   };
 
   const handleCopyContactLink = () => {
+    if (!job) return;
     if (job.contactUrl) {
       navigator.clipboard.writeText(job.contactUrl);
       setCopiedContactLink(true);
@@ -253,6 +296,7 @@ export function JobDetailPage({ initialJob, userEmail }: JobDetailPageProps) {
   };
 
   const handleCopyDescription = () => {
+    if (!job) return;
     if (job.description) {
       navigator.clipboard.writeText(job.description);
       setCopiedDesc(true);
@@ -261,6 +305,7 @@ export function JobDetailPage({ initialJob, userEmail }: JobDetailPageProps) {
   };
 
   const handleCopySummary = () => {
+    if (!job) return;
     const summary = `${job.company} — ${job.jobTitle}\nStatus: ${JOB_STATUS_CONFIG[job.status]?.label}\nWorkplace: ${job.workplaceType}\nApplied: ${job.dateApplied}\nPlatform: ${job.appliedOn}${job.salary ? `\nCompensation: ${job.salary}` : ""}${job.jobUrl ? `\nLink: ${job.jobUrl}` : ""}`;
     navigator.clipboard.writeText(summary);
     setCopiedSummary(true);
@@ -295,6 +340,33 @@ export function JobDetailPage({ initialJob, userEmail }: JobDetailPageProps) {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [router, isModalOpen, handleTogglePin]);
 
+  if (isLoading) {
+    return <Loading />;
+  }
+
+  if (loadError || !job) {
+    return (
+      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-16 flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="w-12 h-12 mx-auto rounded-2xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center">
+            <AlertCircle className="w-6 h-6 text-zinc-400" />
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Application not found</h2>
+            <p className="text-sm text-zinc-500 mt-1">This application may have been deleted or doesn't exist.</p>
+          </div>
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-sm font-medium hover:opacity-90 transition-opacity"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to Dashboard
+          </Link>
+        </div>
+      </main>
+    );
+  }
+
   const currentStatusConfig = JOB_STATUS_CONFIG[job.status] || JOB_STATUS_CONFIG.applied;
   const isTerminalStatus = RESOLUTION_STAGES.some((s) => s.status === job.status);
 
@@ -303,12 +375,7 @@ export function JobDetailPage({ initialJob, userEmail }: JobDetailPageProps) {
   const currentStep = isTerminalStatus ? (job.status === "rejected" || job.status === "declined" ? 1 : 0) : primaryIndex;
 
   return (
-    <div className="min-h-screen bg-zinc-50/90 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 flex flex-col relative selection:bg-zinc-900 dark:selection:bg-zinc-100 selection:text-white dark:selection:text-zinc-900">
-      {/* Subtle Background Glow Accent */}
-      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-64 bg-gradient-to-b from-zinc-200/40 dark:from-zinc-800/20 via-zinc-100/20 dark:via-zinc-900/10 to-transparent pointer-events-none blur-3xl -z-10" />
-
-      <Navbar userEmail={userEmail} />
-
+    <>
       {toastMessage && (
         <div className="fixed bottom-6 right-6 z-50 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 px-4 py-2.5 rounded-2xl shadow-xl border border-zinc-800 dark:border-zinc-200 flex items-center gap-2.5 text-xs font-semibold animate-in slide-in-from-bottom-5 duration-200">
           <CheckCircle2 className="w-4 h-4 text-emerald-400 dark:text-emerald-600" />
@@ -787,6 +854,6 @@ export function JobDetailPage({ initialJob, userEmail }: JobDetailPageProps) {
         onSave={handleEditSave}
         initialJob={job}
       />
-    </div>
+    </>
   );
 }

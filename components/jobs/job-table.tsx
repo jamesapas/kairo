@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
 import {
   Calendar,
@@ -31,6 +32,7 @@ import { PlatformIcon } from "./platform-badge";
 
 interface JobTableProps {
   jobs: JobApplication[];
+  isLoading?: boolean;
   onSelectJob: (job: JobApplication) => void;
   onEditJob: (job: JobApplication) => void;
   onDeleteJob: (id: string) => void;
@@ -286,6 +288,7 @@ function getPageNumbers(current: number, total: number): (number | "...")[] {
 
 export function JobTable({
   jobs,
+  isLoading = false,
   onSelectJob,
   onEditJob,
   onDeleteJob,
@@ -293,6 +296,7 @@ export function JobTable({
   onTogglePin,
   onAddNew,
 }: JobTableProps) {
+  const router = useRouter();
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
@@ -328,6 +332,60 @@ export function JobTable({
 
   const endIndex = Math.min(startIndex + paginatedActiveJobs.length, totalActive);
 
+  if (isLoading) {
+    return (
+      <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200/90 dark:border-zinc-800 shadow-[0_2px_8px_rgba(0,0,0,0.03)] overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr className="border-b border-zinc-200/80 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50">
+                <th className="py-3 pl-4 pr-1 w-8 text-center" />
+                <th className="py-3 px-3 font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider text-[10px]">Position & Company</th>
+                <th className="py-3 px-3 font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider text-[10px]">Stage</th>
+                <th className="py-3 px-3 font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider text-[10px]">Source</th>
+                <th className="py-3 px-3 font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider text-[10px]">Type</th>
+                <th className="py-3 px-3 font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider text-[10px]">Salary</th>
+                <th className="py-3 px-3 font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider text-[10px]">Applied</th>
+                <th className="py-3 px-4 text-right font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider text-[10px]">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/80">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <tr key={i} className="animate-pulse">
+                  <td className="py-4 pl-4 pr-1 text-center">
+                    <div className="w-3.5 h-3.5 mx-auto rounded bg-zinc-200 dark:bg-zinc-800" />
+                  </td>
+                  <td className="py-4 px-3 space-y-1.5">
+                    <div className="w-36 h-4 rounded bg-zinc-200 dark:bg-zinc-800" />
+                    <div className="w-24 h-3 rounded bg-zinc-100 dark:bg-zinc-800" />
+                  </td>
+                  <td className="py-4 px-3">
+                    <div className="w-24 h-6 rounded-lg bg-zinc-200 dark:bg-zinc-800" />
+                  </td>
+                  <td className="py-4 px-3">
+                    <div className="w-20 h-4 rounded bg-zinc-100 dark:bg-zinc-800" />
+                  </td>
+                  <td className="py-4 px-3">
+                    <div className="w-14 h-5 rounded-md bg-zinc-100 dark:bg-zinc-800" />
+                  </td>
+                  <td className="py-4 px-3">
+                    <div className="w-20 h-4 rounded bg-zinc-100 dark:bg-zinc-800" />
+                  </td>
+                  <td className="py-4 px-3">
+                    <div className="w-16 h-4 rounded bg-zinc-100 dark:bg-zinc-800" />
+                  </td>
+                  <td className="py-4 px-4 text-right">
+                    <div className="w-7 h-7 ml-auto rounded-lg bg-zinc-100 dark:bg-zinc-800" />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  }
+
   if (jobs.length === 0) {
     return (
       <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200/90 dark:border-zinc-800 p-12 text-center flex flex-col items-center justify-center space-y-3 shadow-sm">
@@ -354,6 +412,7 @@ export function JobTable({
         <tr
           key={job.id}
           onClick={() => onSelectJob(job)}
+          onMouseEnter={() => router.prefetch(`/jobs/${job.id}`)}
           className={`hover:bg-zinc-50/90 dark:hover:bg-zinc-800/60 cursor-pointer group relative ${
             isMuted ? "opacity-75 hover:opacity-100 bg-zinc-50/20 dark:bg-zinc-800/20" : ""
           }`}

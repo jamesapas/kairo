@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Navbar } from "@/components/layout/navbar";
+import { createClient } from "@/lib/supabase/client";
 import {
   Plus,
   Search,
@@ -23,10 +23,12 @@ import {
 } from "lucide-react";
 import {
   JobApplication,
+  JobApplicationRow,
   JobStatus,
   WorkplaceType,
   JOB_STATUS_CONFIG,
   PLATFORM_OPTIONS,
+  mapRowToJob,
 } from "@/types/job";
 import {
   createJobAction,
@@ -52,12 +54,38 @@ interface JobDashboardProps {
   initialJobs?: JobApplication[];
 }
 
-export function JobDashboard({ userEmail, initialJobs = [] }: JobDashboardProps) {
+export function JobDashboard({ userEmail, initialJobs }: JobDashboardProps = {}) {
   const router = useRouter();
-  const [jobs, setJobs] = useState<JobApplication[]>(initialJobs);
+  const [jobs, setJobs] = useState<JobApplication[]>(initialJobs || []);
+  const [isLoading, setIsLoading] = useState(!initialJobs || initialJobs.length === 0);
+  const fetchedRef = useRef(false);
 
   useEffect(() => {
-    setJobs(initialJobs);
+    if (initialJobs && initialJobs.length > 0) {
+      setJobs(initialJobs);
+      setIsLoading(false);
+      return;
+    }
+
+    if (fetchedRef.current) return;
+    fetchedRef.current = true;
+
+    const supabase = createClient();
+    async function fetchJobs() {
+      const { data, error } = await supabase
+        .from("job_applications")
+        .select("*")
+        .order("is_pinned", { ascending: false })
+        .order("date_applied", { ascending: false })
+        .order("created_at", { ascending: false });
+
+      if (!error && data) {
+        setJobs((data as JobApplicationRow[]).map(mapRowToJob));
+      }
+      setIsLoading(false);
+    }
+
+    fetchJobs();
   }, [initialJobs]);
 
   // Search & Filter state
@@ -341,15 +369,7 @@ export function JobDashboard({ userEmail, initialJobs = [] }: JobDashboardProps)
   ];
 
   return (
-    <div className="min-h-screen bg-zinc-50/90 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 flex flex-col relative selection:bg-zinc-900 dark:selection:bg-zinc-100 selection:text-white dark:selection:text-zinc-900">
-      {/* Subtle Background Glow Accent */}
-      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-64 bg-gradient-to-b from-zinc-200/40 dark:from-zinc-800/20 via-zinc-100/20 dark:via-zinc-900/10 to-transparent pointer-events-none blur-3xl -z-10" />
-
-      <Navbar
-        userEmail={userEmail}
-        onOpenStreakModal={() => setIsStreakModalOpen(true)}
-      />
-
+    <>
       {toastMessage && (
         <div className="fixed bottom-6 right-6 z-50 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 px-4 py-2.5 rounded-2xl shadow-xl border border-zinc-800 dark:border-zinc-200 flex items-center gap-2.5 text-xs font-semibold animate-in slide-in-from-bottom-5 duration-200">
           <CheckCircle2 className="w-4 h-4 text-emerald-400 dark:text-emerald-600" />
@@ -374,6 +394,7 @@ export function JobDashboard({ userEmail, initialJobs = [] }: JobDashboardProps)
           {/* Stats Overview Metric Cards */}
           <JobStatsOverview
             jobs={jobs}
+            isLoading={isLoading}
             onOpenStreakModal={() => setIsStreakModalOpen(true)}
             onFilterThisWeek={() => setWeekOnlyFilter((prev) => !prev)}
             onFilterInterviewing={() =>
@@ -480,35 +501,37 @@ export function JobDashboard({ userEmail, initialJobs = [] }: JobDashboardProps)
           </div>
         </div>
 
-          {/* Main Content */}
-          {viewMode === "table" ? (
-            <JobTable
-              jobs={filteredJobs}
-              onSelectJob={handleSelectJob}
-              onEditJob={(job) => {
-                setEditingJob(job);
-                setIsModalOpen(true);
-              }}
-              onDeleteJob={handleDeleteJob}
-              onStatusChange={handleStatusChange}
-              onTogglePin={handleTogglePin}
-              onAddNew={() => {
-                setEditingJob(null);
-                setIsModalOpen(true);
-              }}
-            />
-          ) : (
-            <JobKanban
-              jobs={filteredJobs}
-              onSelectJob={handleSelectJob}
-              onEditJob={(job) => {
-                setEditingJob(job);
-                setIsModalOpen(true);
-              }}
-              onDeleteJob={handleDeleteJob}
-              onStatusChange={handleStatusChange}
-            />
-          )}
+        {/* Main Content */}
+        {viewMode === "table" ? (
+          <JobTable
+            jobs={filteredJobs}
+            isLoading={isLoading}
+            onSelectJob={handleSelectJob}
+            onEditJob={(job) => {
+              setEditingJob(job);
+              setIsModalOpen(true);
+            }}
+            onDeleteJob={handleDeleteJob}
+            onStatusChange={handleStatusChange}
+            onTogglePin={handleTogglePin}
+            onAddNew={() => {
+              setEditingJob(null);
+              setIsModalOpen(true);
+            }}
+          />
+        ) : (
+          <JobKanban
+            jobs={filteredJobs}
+            isLoading={isLoading}
+            onSelectJob={handleSelectJob}
+            onEditJob={(job) => {
+              setEditingJob(job);
+              setIsModalOpen(true);
+            }}
+            onDeleteJob={handleDeleteJob}
+            onStatusChange={handleStatusChange}
+          />
+        )}
       </main>
 
       {/* Add / Edit Modal */}
@@ -529,6 +552,6 @@ export function JobDashboard({ userEmail, initialJobs = [] }: JobDashboardProps)
         jobs={jobs}
         onSelectJob={handleSelectJob}
       />
-    </div>
+    </>
   );
 }

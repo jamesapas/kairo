@@ -109,6 +109,7 @@ export function calculateJobStats(jobs: JobApplication[]): JobStats {
 
 interface JobStatsOverviewProps {
   jobs: JobApplication[];
+  isLoading?: boolean;
   onOpenStreakModal?: () => void;
   onFilterThisWeek?: () => void;
   onFilterInterviewing?: () => void;
@@ -117,12 +118,41 @@ interface JobStatsOverviewProps {
 
 export function JobStatsOverview({
   jobs,
+  isLoading = false,
   onOpenStreakModal,
   onFilterThisWeek,
   onFilterInterviewing,
   className = "",
 }: JobStatsOverviewProps) {
   const stats = useMemo(() => calculateJobStats(jobs), [jobs]);
+
+  if (isLoading) {
+    return (
+      <div className={`space-y-3 ${className}`}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div
+              key={i}
+              className="relative text-left p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200/90 dark:border-zinc-800 shadow-[0_2px_8px_rgba(0,0,0,0.04)] overflow-hidden select-none space-y-3"
+            >
+              <div className="flex items-center justify-between">
+                <div className="w-20 h-3 rounded bg-zinc-200 dark:bg-zinc-800 animate-pulse" />
+                <div className="w-9 h-9 rounded-xl bg-zinc-100 dark:bg-zinc-800 animate-pulse" />
+              </div>
+              <div className="flex items-baseline gap-2">
+                <div className="w-12 h-8 rounded-lg bg-zinc-200 dark:bg-zinc-800 animate-pulse" />
+                <div className="w-16 h-3 rounded bg-zinc-100 dark:bg-zinc-800 animate-pulse" />
+              </div>
+              <div className="pt-2.5 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
+                <div className="w-24 h-3 rounded bg-zinc-100 dark:bg-zinc-800 animate-pulse" />
+                <div className="w-10 h-3 rounded bg-zinc-100 dark:bg-zinc-800 animate-pulse" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`space-y-3 ${className}`}>

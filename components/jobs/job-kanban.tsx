@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useRouter } from "next/navigation";
 import {
   ArrowRight,
   ArrowLeft,
@@ -22,6 +23,7 @@ import { PlatformIcon } from "./platform-badge";
 
 interface JobKanbanProps {
   jobs: JobApplication[];
+  isLoading?: boolean;
   onSelectJob: (job: JobApplication) => void;
   onEditJob: (job: JobApplication) => void;
   onDeleteJob: (id: string) => void;
@@ -66,11 +68,14 @@ function MatchIcon({ match }: { match?: JobMatch }) {
 
 export function JobKanban({
   jobs,
+  isLoading = false,
   onSelectJob,
   onEditJob,
   onDeleteJob,
   onStatusChange,
 }: JobKanbanProps) {
+  const router = useRouter();
+
   const getNextStatus = (current: JobStatus): JobStatus | null => {
     const idx = KANBAN_COLUMNS.indexOf(current);
     if (idx >= 0 && idx < KANBAN_COLUMNS.length - 1) {
@@ -86,6 +91,50 @@ export function JobKanban({
     }
     return null;
   };
+
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-7 gap-3.5 items-start">
+        {KANBAN_COLUMNS.map((statusKey) => {
+          const config = JOB_STATUS_CONFIG[statusKey];
+          return (
+            <div
+              key={statusKey}
+              className="bg-zinc-100/70 dark:bg-zinc-900/60 rounded-2xl p-3 border border-zinc-200/80 dark:border-zinc-800 flex flex-col min-h-[460px] shadow-2xs space-y-3"
+            >
+              <div className="flex items-center justify-between px-1.5 py-1.5">
+                <div className="flex items-center gap-2">
+                  <div className="p-1 rounded-lg bg-white dark:bg-zinc-800 shadow-2xs">
+                    <StatusIcon status={statusKey} className="w-3.5 h-3.5" />
+                  </div>
+                  <h4 className="text-xs font-bold text-zinc-900 dark:text-zinc-100">{config.label}</h4>
+                </div>
+                <div className="w-5 h-4 rounded-full bg-zinc-200 dark:bg-zinc-800 animate-pulse" />
+              </div>
+              <div className="space-y-2.5 flex-1">
+                {[1, 2].map((k) => (
+                  <div
+                    key={k}
+                    className="bg-white dark:bg-zinc-900 p-3.5 rounded-2xl border border-zinc-200/90 dark:border-zinc-800 shadow-xs space-y-2.5 animate-pulse"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="w-20 h-3 rounded bg-zinc-200 dark:bg-zinc-800" />
+                      <div className="w-3.5 h-3.5 rounded-full bg-zinc-200 dark:bg-zinc-800" />
+                    </div>
+                    <div className="w-32 h-4 rounded bg-zinc-200 dark:bg-zinc-800" />
+                    <div className="flex items-center gap-2 pt-1 border-t border-zinc-100 dark:border-zinc-800">
+                      <div className="w-14 h-3 rounded bg-zinc-100 dark:bg-zinc-800" />
+                      <div className="w-12 h-3 rounded bg-zinc-100 dark:bg-zinc-800" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-7 gap-3.5 items-start">
@@ -121,6 +170,7 @@ export function JobKanban({
                   <div
                     key={job.id}
                     onClick={() => onSelectJob(job)}
+                    onMouseEnter={() => router.prefetch(`/jobs/${job.id}`)}
                     className="bg-white dark:bg-zinc-900 p-3.5 rounded-2xl border border-zinc-200/90 dark:border-zinc-800 shadow-[0_1px_4px_rgba(0,0,0,0.03)] hover:shadow-md hover:border-zinc-300 dark:hover:border-zinc-700 cursor-pointer space-y-2.5 group relative"
                   >
                     {/* Header: Company & Match */}
