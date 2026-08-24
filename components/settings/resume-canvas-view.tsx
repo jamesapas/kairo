@@ -284,10 +284,36 @@ const MONTH_OPTIONS = [
 const CURRENT_YEAR = new Date().getFullYear();
 const YEAR_OPTIONS = Array.from({ length: 45 }, (_, i) => String(CURRENT_YEAR - i));
 
+function EntityAvatar({
+  name,
+  fallbackIcon: FallbackIcon,
+  isActive = false,
+}: {
+  name: string;
+  fallbackIcon: React.ElementType;
+  isActive?: boolean;
+}) {
+  const initial = name.trim().charAt(0).toUpperCase() || "";
+  return (
+    <div className="relative shrink-0">
+      <div className="w-10 h-10 rounded-xl bg-zinc-100 dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700/80 flex items-center justify-center font-bold text-xs text-zinc-900 dark:text-zinc-100 shadow-2xs">
+        {initial ? (
+          <span className="font-mono text-sm font-bold tracking-tight">{initial}</span>
+        ) : (
+          <FallbackIcon className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />
+        )}
+      </div>
+      {isActive && (
+        <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-zinc-900" />
+      )}
+    </div>
+  );
+}
+
 function WorkplaceBadge({ type }: { type: WorkplaceType }) {
   if (type === "Remote") {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/60">
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200/70 dark:border-emerald-800/60">
         <Laptop className="w-3 h-3" />
         Remote
       </span>
@@ -295,14 +321,14 @@ function WorkplaceBadge({ type }: { type: WorkplaceType }) {
   }
   if (type === "Hybrid") {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400 border border-blue-200/60 dark:border-blue-800/60">
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200/70 dark:border-blue-800/60">
         <Building2 className="w-3 h-3" />
         Hybrid
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-400 border border-purple-200/60 dark:border-purple-800/60">
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200/80 dark:border-zinc-700/80">
       <Building className="w-3 h-3" />
       On-site
     </span>
@@ -1013,7 +1039,7 @@ export function ResumeCanvasView({
       </div>
 
       {/* =========================================================================
-          SECTION 2: WORK EXPERIENCE TIMELINE CARD
+          SECTION 2: WORK EXPERIENCE (EDITORIAL TIMELINE)
           ========================================================================= */}
       <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200/90 dark:border-zinc-800 shadow-xs overflow-hidden">
         <div className="px-6 sm:px-8 py-4 border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-800/30 flex items-center justify-between">
@@ -1038,20 +1064,20 @@ export function ResumeCanvasView({
               className="px-3.5 py-1.5 rounded-xl bg-zinc-100 hover:bg-zinc-200/80 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 border border-zinc-200/80 dark:border-zinc-700 text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer shadow-2xs active:scale-[0.98]"
             >
               <Plus className="w-3.5 h-3.5" />
-              <span>Add Experience</span>
+              <span>Add Position</span>
             </button>
           )}
         </div>
 
-        <div className="p-6 sm:p-8 space-y-4">
+        <div className="p-6 sm:p-8 space-y-6">
           {/* Add / Edit Experience Inline Form */}
           {isAddingExp && (
-            <div className="p-5 sm:p-6 rounded-2xl bg-zinc-50/90 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700 space-y-4 animate-in fade-in shadow-xs">
-              <div className="flex items-center justify-between border-b border-zinc-200/60 dark:border-zinc-700/60 pb-3">
+            <div className="p-5 sm:p-6 rounded-2xl bg-zinc-50/80 dark:bg-zinc-850/40 border border-zinc-200/90 dark:border-zinc-750/90 space-y-5 animate-in fade-in duration-150 shadow-xs">
+              <div className="flex items-center justify-between border-b border-zinc-200/70 dark:border-zinc-700/70 pb-3">
                 <div className="flex items-center gap-2">
                   <Briefcase className="w-4 h-4 text-zinc-700 dark:text-zinc-300" />
                   <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-zinc-100">
-                    {editingExpId ? "Edit Work Experience" : "Add Work Experience"}
+                    {editingExpId ? "Edit Position" : "Add New Position"}
                   </h3>
                 </div>
                 <button
@@ -1069,8 +1095,8 @@ export function ResumeCanvasView({
 
               <div className="space-y-4">
                 {/* Row 1: Job Title & Company Name */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                  <div className="space-y-1">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
                     <label className="text-xs font-bold text-zinc-800 dark:text-zinc-200 flex items-center gap-1">
                       Job Title <span className="text-rose-500">*</span>
                     </label>
@@ -1078,12 +1104,12 @@ export function ResumeCanvasView({
                       type="text"
                       value={expJobTitle}
                       onChange={(e) => setExpJobTitle(e.target.value)}
-                      placeholder="e.g. Senior Frontend Engineer"
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-xs font-semibold text-zinc-900 dark:text-zinc-100 focus:border-zinc-400 transition"
+                      placeholder="e.g. Senior Full-Stack Engineer"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-xs font-semibold text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:border-zinc-400 transition"
                     />
                   </div>
 
-                  <div className="space-y-1">
+                  <div className="space-y-1.5">
                     <label className="text-xs font-bold text-zinc-800 dark:text-zinc-200 flex items-center gap-1">
                       Company Name <span className="text-rose-500">*</span>
                     </label>
@@ -1091,27 +1117,40 @@ export function ResumeCanvasView({
                       type="text"
                       value={expCompanyName}
                       onChange={(e) => setExpCompanyName(e.target.value)}
-                      placeholder="e.g. Stripe, OpenAI"
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-xs font-semibold text-zinc-900 dark:text-zinc-100 focus:border-zinc-400 transition"
+                      placeholder="e.g. Stripe, Linear"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-xs font-semibold text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:border-zinc-400 transition"
                     />
                   </div>
                 </div>
 
-                {/* Row 2: Workplace & Location */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                  <div className="space-y-1">
+                {/* Row 2: Workplace Type & Location */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
                     <label className="text-xs font-bold text-zinc-800 dark:text-zinc-200">
-                      Workplace
+                      Workplace Type
                     </label>
-                    <CustomSelect<WorkplaceType>
-                      value={expWorkplaceType}
-                      onChange={(val) => setExpWorkplaceType(val)}
-                      options={WORKPLACE_SELECT_OPTIONS}
-                      className="w-full"
-                    />
+                    <div className="grid grid-cols-3 gap-1.5 p-1 rounded-xl bg-zinc-100 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-750">
+                      {(["Remote", "Hybrid", "On-site"] as WorkplaceType[]).map((type) => (
+                        <button
+                          key={type}
+                          type="button"
+                          onClick={() => setExpWorkplaceType(type)}
+                          className={`py-1.5 px-2 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center justify-center gap-1.5 ${
+                            expWorkplaceType === type
+                              ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-2xs border border-zinc-200/60 dark:border-zinc-700"
+                              : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200"
+                          }`}
+                        >
+                          {type === "Remote" && <Laptop className="w-3 h-3 text-emerald-500" />}
+                          {type === "Hybrid" && <Building2 className="w-3 h-3 text-blue-500" />}
+                          {type === "On-site" && <Building className="w-3 h-3 text-purple-500" />}
+                          <span>{type}</span>
+                        </button>
+                      ))}
+                    </div>
                   </div>
 
-                  <div className="space-y-1">
+                  <div className="space-y-1.5">
                     <label className="text-xs font-bold text-zinc-800 dark:text-zinc-200">
                       Location
                     </label>
@@ -1120,16 +1159,16 @@ export function ResumeCanvasView({
                       value={expLocation}
                       onChange={(e) => setExpLocation(e.target.value)}
                       placeholder="e.g. Cebu, Philippines"
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-xs font-semibold text-zinc-900 dark:text-zinc-100 focus:border-zinc-400 transition"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-xs font-semibold text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:border-zinc-400 transition"
                     />
                   </div>
                 </div>
 
                 {/* Row 3: Start Date & End Date */}
                 <div className="space-y-2">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {/* Start Date */}
-                    <div className="space-y-1">
+                    <div className="space-y-1.5">
                       <label className="text-xs font-bold text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5">
                         <Calendar className="w-3.5 h-3.5 text-zinc-400" />
                         Start Date
@@ -1161,7 +1200,7 @@ export function ResumeCanvasView({
                     </div>
 
                     {/* End Date */}
-                    <div className="space-y-1">
+                    <div className="space-y-1.5">
                       <div className="flex items-center justify-between">
                         <label className="text-xs font-bold text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5">
                           <Calendar className="w-3.5 h-3.5 text-zinc-400" />
@@ -1179,9 +1218,9 @@ export function ResumeCanvasView({
                       </div>
 
                       {expIsCurrent ? (
-                        <div className="px-3.5 py-2 rounded-xl bg-zinc-100/80 dark:bg-zinc-800/40 border border-zinc-200/70 dark:border-zinc-800 text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5 h-[38px]">
+                        <div className="px-3.5 py-2 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-800/60 text-xs font-bold text-emerald-700 dark:text-emerald-300 flex items-center gap-2 h-[38px]">
                           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                          <span>Present</span>
+                          <span>Present (Active Role)</span>
                         </div>
                       ) : (
                         <div className="grid grid-cols-2 gap-2">
@@ -1214,18 +1253,23 @@ export function ResumeCanvasView({
                 </div>
 
                 {/* Row 4: Key Accomplishments */}
-                <div className="space-y-2 pt-1 border-t border-zinc-200/60 dark:border-zinc-700/60">
-                  <label className="text-xs font-bold text-zinc-800 dark:text-zinc-200">
-                    Key Accomplishments
-                  </label>
+                <div className="space-y-2.5 pt-2 border-t border-zinc-200/60 dark:border-zinc-700/60">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-zinc-800 dark:text-zinc-200">
+                      Key Accomplishments
+                    </label>
+                    <span className="text-[10px] text-zinc-400 font-medium">
+                      Press Enter to append bullet
+                    </span>
+                  </div>
 
                   {/* Bullets List */}
                   {expBullets.length > 0 && (
-                    <div className="space-y-1.5">
+                    <div className="space-y-2">
                       {expBullets.map((bullet, idx) => (
                         <div
                           key={idx}
-                          className="flex items-start gap-2.5 p-2.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-700/80 text-xs shadow-2xs group"
+                          className="flex items-start gap-2.5 p-3 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-700/80 text-xs shadow-2xs group hover:border-zinc-300 dark:hover:border-zinc-600 transition"
                         >
                           <span className="text-zinc-400 font-bold mt-0.5">•</span>
                           <span className="flex-1 text-zinc-800 dark:text-zinc-200 leading-relaxed font-medium">
@@ -1234,8 +1278,8 @@ export function ResumeCanvasView({
                           <button
                             type="button"
                             onClick={() => handleRemoveBullet(idx)}
-                            className="p-1 rounded-lg text-zinc-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition cursor-pointer"
-                            title="Remove"
+                            className="p-1 rounded-lg text-zinc-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition cursor-pointer shrink-0"
+                            title="Remove bullet"
                           >
                             <Trash2 className="w-3 h-3" />
                           </button>
@@ -1256,14 +1300,14 @@ export function ResumeCanvasView({
                           handleAddBullet();
                         }
                       }}
-                      placeholder="Add an accomplishment or responsibility..."
-                      className="flex-1 px-3.5 py-2 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-xs font-medium text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:border-zinc-400 transition"
+                      placeholder="e.g. Led redesign of core checkout flow, improving conversion rate by 24%..."
+                      className="flex-1 px-3.5 py-2.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-xs font-medium text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:border-zinc-400 transition"
                     />
                     <button
                       type="button"
                       onClick={handleAddBullet}
                       disabled={!newBulletInput.trim()}
-                      className="px-3.5 py-2 rounded-xl bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700 text-xs font-bold transition disabled:opacity-50 cursor-pointer shadow-2xs active:scale-[0.98] shrink-0"
+                      className="px-4 py-2.5 rounded-xl bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700 text-xs font-bold transition disabled:opacity-50 cursor-pointer shadow-2xs active:scale-[0.98] shrink-0"
                     >
                       Add
                     </button>
@@ -1272,14 +1316,14 @@ export function ResumeCanvasView({
               </div>
 
               {/* Form Action Buttons */}
-              <div className="flex justify-end items-center gap-2 pt-2 border-t border-zinc-200/60 dark:border-zinc-700/60">
+              <div className="flex justify-end items-center gap-2.5 pt-3 border-t border-zinc-200/60 dark:border-zinc-700/60">
                 <button
                   type="button"
                   onClick={() => {
                     setIsAddingExp(false);
                     setEditingExpId(null);
                   }}
-                  className="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-zinc-500 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition cursor-pointer"
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-200/60 dark:hover:bg-zinc-700 transition cursor-pointer"
                 >
                   Cancel
                 </button>
@@ -1290,7 +1334,7 @@ export function ResumeCanvasView({
                   className="px-5 py-2 rounded-xl bg-zinc-900 dark:bg-zinc-100 hover:bg-zinc-800 dark:hover:bg-white text-white dark:text-zinc-900 text-xs font-bold transition disabled:opacity-50 flex items-center gap-2 cursor-pointer shadow-2xs active:scale-[0.98]"
                 >
                   {savingExp ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-                  <span>{savingExp ? "Saving..." : editingExpId ? "Update Experience" : "Save Experience"}</span>
+                  <span>{savingExp ? "Saving..." : editingExpId ? "Update Position" : "Save Position"}</span>
                 </button>
               </div>
             </div>
@@ -1298,74 +1342,72 @@ export function ResumeCanvasView({
 
           {/* List of Experience Timeline Cards */}
           {experiences.length > 0 ? (
-            <div className="space-y-3.5">
+            <div className="relative pl-2 sm:pl-4 space-y-6 before:absolute before:left-6 sm:before:left-8 before:top-4 before:bottom-4 before:w-[2px] before:bg-zinc-200 dark:before:bg-zinc-800">
               {experiences.map((exp) => (
                 <div
                   key={exp.id}
-                  className="p-5 rounded-2xl border border-zinc-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-850/40 hover:border-zinc-300 dark:hover:border-zinc-700 transition flex flex-col sm:flex-row sm:items-start justify-between gap-4 group shadow-2xs"
+                  className="relative flex items-start gap-4 p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 shadow-2xs hover:shadow-xs transition group"
                 >
-                  <div className="flex items-start gap-3.5 min-w-0 flex-1">
-                    <div className="w-10 h-10 rounded-2xl bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center text-zinc-700 dark:text-zinc-300 shrink-0 font-bold text-xs mt-0.5">
-                      {exp.workplaceType === "Remote" ? (
-                        <Laptop className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                      ) : exp.workplaceType === "Hybrid" ? (
-                        <Building2 className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                      ) : (
-                        <Building className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                      )}
-                    </div>
+                  <EntityAvatar
+                    name={exp.companyName}
+                    fallbackIcon={Briefcase}
+                    isActive={exp.isCurrent}
+                  />
 
-                    <div className="space-y-1.5 min-w-0 flex-1">
+                  <div className="space-y-2 min-w-0 flex-1">
+                    {/* Header Row */}
+                    <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-1 sm:gap-2">
                       <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
+                        <h3 className="text-sm font-bold tracking-tight text-zinc-950 dark:text-zinc-50">
                           {exp.jobTitle}
                         </h3>
-                        <span className="text-zinc-300 dark:text-zinc-700">•</span>
+                        <span className="text-zinc-300 dark:text-zinc-700 hidden sm:inline">·</span>
                         <span className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
                           {exp.companyName}
                         </span>
                         <WorkplaceBadge type={exp.workplaceType} />
                         {exp.isCurrent && (
-                          <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60">
+                          <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/60">
                             Current
                           </span>
                         )}
                       </div>
 
-                      <div className="flex flex-wrap items-center gap-3 text-xs text-zinc-400 font-medium">
-                        <div className="flex items-center gap-1">
-                          <Calendar className="w-3.5 h-3.5 text-zinc-400" />
-                          <span>
-                            {exp.startMonth} {exp.startYear} —{" "}
-                            {exp.isCurrent ? "Present" : `${exp.endMonth || ""} ${exp.endYear || ""}`}
-                          </span>
-                        </div>
-                        {exp.location && (
-                          <div className="flex items-center gap-1">
-                            <MapPin className="w-3.5 h-3.5 text-zinc-400" />
-                            <span>{exp.location}</span>
-                          </div>
-                        )}
+                      <div className="flex items-center gap-1.5 text-xs text-zinc-400 font-medium shrink-0 pt-0.5">
+                        <Calendar className="w-3.5 h-3.5 text-zinc-400" />
+                        <span>
+                          {exp.startMonth} {exp.startYear} —{" "}
+                          {exp.isCurrent ? "Present" : `${exp.endMonth || ""} ${exp.endYear || ""}`}
+                        </span>
                       </div>
-
-                      {/* Bullets List */}
-                      {exp.bullets && exp.bullets.length > 0 && (
-                        <ul className="pt-2 space-y-1.5">
-                          {exp.bullets.map((bullet, i) => (
-                            <li
-                              key={i}
-                              className="text-xs text-zinc-600 dark:text-zinc-400 flex items-start gap-2 leading-relaxed"
-                            >
-                              <span className="text-zinc-400 font-bold mt-0.5 shrink-0">•</span>
-                              <span>{bullet}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
                     </div>
+
+                    {/* Location */}
+                    {exp.location && (
+                      <div className="flex items-center gap-1 text-xs text-zinc-400 font-medium">
+                        <MapPin className="w-3 h-3 text-zinc-400" />
+                        <span>{exp.location}</span>
+                      </div>
+                    )}
+
+                    {/* Key Accomplishments Bullets */}
+                    {exp.bullets && exp.bullets.length > 0 && (
+                      <ul className="pt-1.5 space-y-1.5">
+                        {exp.bullets.map((bullet, i) => (
+                          <li
+                            key={i}
+                            className="text-xs text-zinc-600 dark:text-zinc-400 flex items-start gap-2.5 leading-relaxed"
+                          >
+                            <span className="text-zinc-300 dark:text-zinc-600 font-bold select-none mt-0.5">•</span>
+                            <span>{bullet}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </div>
 
-                  <div className="flex items-center gap-1 self-end sm:self-start opacity-80 group-hover:opacity-100 transition shrink-0">
+                  {/* Actions on hover */}
+                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition shrink-0 self-start">
                     <button
                       type="button"
                       onClick={() => handleStartEditExperience(exp)}
@@ -1391,12 +1433,12 @@ export function ResumeCanvasView({
               <button
                 type="button"
                 onClick={handleStartAddExperience}
-                className="w-full py-6 rounded-2xl border border-dashed border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 bg-zinc-50/40 dark:bg-zinc-850/20 text-xs font-semibold text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 transition flex flex-col items-center justify-center gap-2 cursor-pointer shadow-2xs"
+                className="w-full py-8 rounded-2xl border border-dashed border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 bg-zinc-50/40 dark:bg-zinc-850/20 text-xs font-semibold text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 transition flex flex-col items-center justify-center gap-2 cursor-pointer shadow-2xs"
               >
                 <div className="w-8 h-8 rounded-xl bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center text-zinc-400">
                   <Briefcase className="w-4 h-4" />
                 </div>
-                <span>+ Add your first work experience</span>
+                <span>+ Add your work experience</span>
               </button>
             )
           )}
@@ -1597,7 +1639,7 @@ export function ResumeCanvasView({
       </div>
 
       {/* =========================================================================
-          SECTION 4: EDUCATION HISTORY CARD
+          SECTION 4: EDUCATION HISTORY (EDITORIAL TIMELINE)
           ========================================================================= */}
       <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200/90 dark:border-zinc-800 shadow-xs overflow-hidden">
         <div className="px-6 sm:px-8 py-4 border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-800/30 flex items-center justify-between">
@@ -1627,11 +1669,11 @@ export function ResumeCanvasView({
           )}
         </div>
 
-        <div className="p-6 sm:p-8 space-y-4">
+        <div className="p-6 sm:p-8 space-y-6">
           {/* Add / Edit Education Inline Form */}
           {isAddingEdu && (
-            <div className="p-5 sm:p-6 rounded-2xl bg-zinc-50/90 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700 space-y-4 animate-in fade-in shadow-xs">
-              <div className="flex items-center justify-between border-b border-zinc-200/60 dark:border-zinc-700/60 pb-3">
+            <div className="p-5 sm:p-6 rounded-2xl bg-zinc-50/80 dark:bg-zinc-850/40 border border-zinc-200/90 dark:border-zinc-750/90 space-y-5 animate-in fade-in duration-150 shadow-xs">
+              <div className="flex items-center justify-between border-b border-zinc-200/70 dark:border-zinc-700/70 pb-3">
                 <div className="flex items-center gap-2">
                   <GraduationCap className="w-4 h-4 text-zinc-700 dark:text-zinc-300" />
                   <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-zinc-100">
@@ -1653,8 +1695,8 @@ export function ResumeCanvasView({
 
               <div className="space-y-4">
                 {/* Row 1: School & Degree */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                  <div className="space-y-1">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
                     <label className="text-xs font-bold text-zinc-800 dark:text-zinc-200 flex items-center gap-1">
                       School / University <span className="text-rose-500">*</span>
                     </label>
@@ -1663,11 +1705,11 @@ export function ResumeCanvasView({
                       value={eduSchool}
                       onChange={(e) => setEduSchool(e.target.value)}
                       placeholder="e.g. Cebu Technological University"
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-xs font-semibold text-zinc-900 dark:text-zinc-100 focus:border-zinc-400 transition"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-xs font-semibold text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:border-zinc-400 transition"
                     />
                   </div>
 
-                  <div className="space-y-1">
+                  <div className="space-y-1.5">
                     <label className="text-xs font-bold text-zinc-800 dark:text-zinc-200 flex items-center gap-1">
                       Degree / Major <span className="text-rose-500">*</span>
                     </label>
@@ -1676,14 +1718,14 @@ export function ResumeCanvasView({
                       value={eduDegree}
                       onChange={(e) => setEduDegree(e.target.value)}
                       placeholder="e.g. Bachelor of Science in Information Technology"
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-xs font-semibold text-zinc-900 dark:text-zinc-100 focus:border-zinc-400 transition"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-xs font-semibold text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:border-zinc-400 transition"
                     />
                   </div>
                 </div>
 
                 {/* Row 2: Location & Honors Received */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                  <div className="space-y-1">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
                     <label className="text-xs font-bold text-zinc-800 dark:text-zinc-200">
                       Location
                     </label>
@@ -1692,29 +1734,29 @@ export function ResumeCanvasView({
                       value={eduLocation}
                       onChange={(e) => setEduLocation(e.target.value)}
                       placeholder="e.g. Cebu, Philippines"
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-xs font-semibold text-zinc-900 dark:text-zinc-100 focus:border-zinc-400 transition"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-xs font-semibold text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:border-zinc-400 transition"
                     />
                   </div>
 
-                  <div className="space-y-1">
+                  <div className="space-y-1.5">
                     <label className="text-xs font-bold text-zinc-800 dark:text-zinc-200">
-                      Honors Received
+                      Honors Received (Optional)
                     </label>
                     <input
                       type="text"
                       value={eduHonors}
                       onChange={(e) => setEduHonors(e.target.value)}
                       placeholder="e.g. Magna Cum Laude"
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-xs font-semibold text-zinc-900 dark:text-zinc-100 focus:border-zinc-400 transition"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-xs font-semibold text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:border-zinc-400 transition"
                     />
                   </div>
                 </div>
 
                 {/* Row 3: Start Date & Graduation Date */}
                 <div className="space-y-2">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {/* Start Date */}
-                    <div className="space-y-1">
+                    <div className="space-y-1.5">
                       <label className="text-xs font-bold text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5">
                         <Calendar className="w-3.5 h-3.5 text-zinc-400" />
                         Start Date
@@ -1746,7 +1788,7 @@ export function ResumeCanvasView({
                     </div>
 
                     {/* Graduation / End Date */}
-                    <div className="space-y-1">
+                    <div className="space-y-1.5">
                       <div className="flex items-center justify-between">
                         <label className="text-xs font-bold text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5">
                           <Calendar className="w-3.5 h-3.5 text-zinc-400" />
@@ -1764,9 +1806,9 @@ export function ResumeCanvasView({
                       </div>
 
                       {eduIsCurrent ? (
-                        <div className="px-3.5 py-2 rounded-xl bg-zinc-100/80 dark:bg-zinc-800/40 border border-zinc-200/70 dark:border-zinc-800 text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5 h-[38px]">
+                        <div className="px-3.5 py-2 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-800/60 text-xs font-bold text-emerald-700 dark:text-emerald-300 flex items-center gap-2 h-[38px]">
                           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                          <span>Present</span>
+                          <span>Present (Current Student)</span>
                         </div>
                       ) : (
                         <div className="grid grid-cols-2 gap-2">
@@ -1800,14 +1842,14 @@ export function ResumeCanvasView({
               </div>
 
               {/* Form Action Buttons */}
-              <div className="flex justify-end items-center gap-2 pt-2 border-t border-zinc-200/60 dark:border-zinc-700/60">
+              <div className="flex justify-end items-center gap-2.5 pt-3 border-t border-zinc-200/60 dark:border-zinc-700/60">
                 <button
                   type="button"
                   onClick={() => {
                     setIsAddingEdu(false);
                     setEditingEduId(null);
                   }}
-                  className="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-zinc-500 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition cursor-pointer"
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-200/60 dark:hover:bg-zinc-700 transition cursor-pointer"
                 >
                   Cancel
                 </button>
@@ -1826,62 +1868,65 @@ export function ResumeCanvasView({
 
           {/* List of Education Timeline Cards */}
           {educations.length > 0 ? (
-            <div className="space-y-3.5">
+            <div className="relative pl-2 sm:pl-4 space-y-6 before:absolute before:left-6 sm:before:left-8 before:top-4 before:bottom-4 before:w-[2px] before:bg-zinc-200 dark:before:bg-zinc-800">
               {educations.map((edu) => (
                 <div
                   key={edu.id}
-                  className="p-5 rounded-2xl border border-zinc-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-850/40 hover:border-zinc-300 dark:hover:border-zinc-700 transition flex flex-col sm:flex-row sm:items-start justify-between gap-4 group shadow-2xs"
+                  className="relative flex items-start gap-4 p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 shadow-2xs hover:shadow-xs transition group"
                 >
-                  <div className="flex items-start gap-3.5 min-w-0 flex-1">
-                    <div className="w-10 h-10 rounded-2xl bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center text-zinc-700 dark:text-zinc-300 shrink-0 font-bold text-xs mt-0.5">
-                      <GraduationCap className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                    </div>
+                  <EntityAvatar
+                    name={edu.school}
+                    fallbackIcon={GraduationCap}
+                    isActive={edu.isCurrent}
+                  />
 
-                    <div className="space-y-1.5 min-w-0 flex-1">
+                  <div className="space-y-1.5 min-w-0 flex-1">
+                    {/* Header Line */}
+                    <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-1 sm:gap-2">
                       <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
+                        <h3 className="text-sm font-bold tracking-tight text-zinc-950 dark:text-zinc-50">
                           {edu.school}
                         </h3>
                         {edu.isCurrent && (
-                          <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60">
+                          <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/60">
                             Current Student
                           </span>
                         )}
                       </div>
 
-                      <p className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
-                        {edu.degree}
-                      </p>
-
-                      <div className="flex flex-wrap items-center gap-3 text-xs text-zinc-400 font-medium">
-                        <div className="flex items-center gap-1">
-                          <Calendar className="w-3.5 h-3.5 text-zinc-400" />
-                          <span>
-                            {edu.startMonth} {edu.startYear} —{" "}
-                            {edu.isCurrent ? "Present" : `${edu.endMonth || ""} ${edu.endYear || ""}`}
-                          </span>
-                        </div>
-                        {edu.location && (
-                          <div className="flex items-center gap-1">
-                            <MapPin className="w-3.5 h-3.5 text-zinc-400" />
-                            <span>{edu.location}</span>
-                          </div>
-                        )}
+                      <div className="flex items-center gap-1.5 text-xs text-zinc-400 font-medium shrink-0 pt-0.5">
+                        <Calendar className="w-3.5 h-3.5 text-zinc-400" />
+                        <span>
+                          {edu.startMonth} {edu.startYear} —{" "}
+                          {edu.isCurrent ? "Present" : `${edu.endMonth || ""} ${edu.endYear || ""}`}
+                        </span>
                       </div>
-
-                      {/* Honors Badge */}
-                      {edu.honors && (
-                        <div className="pt-1.5 flex items-center">
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200/70 dark:border-amber-800/60 shadow-2xs">
-                            <Award className="w-3.5 h-3.5 text-amber-500" />
-                            <span>{edu.honors}</span>
-                          </span>
-                        </div>
-                      )}
                     </div>
+
+                    <p className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+                      {edu.degree}
+                    </p>
+
+                    {edu.location && (
+                      <div className="flex items-center gap-1 text-xs text-zinc-400 font-medium">
+                        <MapPin className="w-3 h-3 text-zinc-400" />
+                        <span>{edu.location}</span>
+                      </div>
+                    )}
+
+                    {/* Honors Badge */}
+                    {edu.honors && (
+                      <div className="pt-1 flex items-center">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-300/40 dark:border-amber-700/40 shadow-2xs">
+                          <Award className="w-3.5 h-3.5 text-amber-500" />
+                          <span>{edu.honors}</span>
+                        </span>
+                      </div>
+                    )}
                   </div>
 
-                  <div className="flex items-center gap-1 self-end sm:self-start opacity-80 group-hover:opacity-100 transition shrink-0">
+                  {/* Actions on hover */}
+                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition shrink-0 self-start">
                     <button
                       type="button"
                       onClick={() => handleStartEditEducation(edu)}
@@ -1907,7 +1952,7 @@ export function ResumeCanvasView({
               <button
                 type="button"
                 onClick={handleStartAddEducation}
-                className="w-full py-6 rounded-2xl border border-dashed border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 bg-zinc-50/40 dark:bg-zinc-850/20 text-xs font-semibold text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 transition flex flex-col items-center justify-center gap-2 cursor-pointer shadow-2xs"
+                className="w-full py-8 rounded-2xl border border-dashed border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 bg-zinc-50/40 dark:bg-zinc-850/20 text-xs font-semibold text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 transition flex flex-col items-center justify-center gap-2 cursor-pointer shadow-2xs"
               >
                 <div className="w-8 h-8 rounded-xl bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center text-zinc-400">
                   <GraduationCap className="w-4 h-4" />
