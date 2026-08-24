@@ -143,7 +143,7 @@ export function JobTable({
         <tr
           key={job.id}
           onClick={() => onSelectJob(job)}
-          className={`hover:bg-zinc-50/90 dark:hover:bg-zinc-800/60 transition-colors cursor-pointer group relative ${
+          className={`hover:bg-zinc-50/90 dark:hover:bg-zinc-800/60 cursor-pointer group relative ${
             isMuted ? "opacity-75 hover:opacity-100 bg-zinc-50/20 dark:bg-zinc-800/20" : ""
           }`}
         >
@@ -156,7 +156,7 @@ export function JobTable({
           <td className="py-3.5 px-4">
             <div className="min-w-0">
               <div className="flex items-center gap-1.5">
-                <p className="font-bold text-zinc-900 dark:text-zinc-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate">
+                <p className="font-bold text-zinc-900 dark:text-zinc-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 truncate">
                   {job.jobTitle}
                 </p>
                 {job.isPinned && (

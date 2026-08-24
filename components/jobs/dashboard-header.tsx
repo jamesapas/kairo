@@ -36,7 +36,7 @@ export function DashboardHeader({
   }, []);
 
   return (
-    <div className="p-6 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200/90 dark:border-zinc-800 shadow-[0_2px_8px_rgba(0,0,0,0.03)] flex flex-col md:flex-row md:items-center justify-between gap-4 transition-colors duration-150">
+    <div className="p-6 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200/90 dark:border-zinc-800 shadow-[0_2px_8px_rgba(0,0,0,0.03)] flex flex-col md:flex-row md:items-center justify-between gap-4">
       {/* Title & Live Pipeline Status */}
       <div className="space-y-1.5">
         <div className="flex items-center gap-2.5">

@@ -95,7 +95,7 @@ export function JobKanban({
         return (
           <div
             key={statusKey}
-            className="bg-zinc-100/70 dark:bg-zinc-900/60 rounded-2xl p-3 border border-zinc-200/80 dark:border-zinc-800 flex flex-col min-h-[460px] shadow-2xs transition-colors duration-150"
+            className="bg-zinc-100/70 dark:bg-zinc-900/60 rounded-2xl p-3 border border-zinc-200/80 dark:border-zinc-800 flex flex-col min-h-[460px] shadow-2xs"
           >
             {/* Column Header */}
             <div className="flex items-center justify-between px-1.5 py-1.5 mb-2.5">
@@ -120,7 +120,7 @@ export function JobKanban({
                   <div
                     key={job.id}
                     onClick={() => onSelectJob(job)}
-                    className="bg-white dark:bg-zinc-900 p-3.5 rounded-2xl border border-zinc-200/90 dark:border-zinc-800 shadow-[0_1px_4px_rgba(0,0,0,0.03)] hover:shadow-md hover:border-zinc-300 dark:hover:border-zinc-700 transition-all duration-150 cursor-pointer space-y-2.5 group relative"
+                    className="bg-white dark:bg-zinc-900 p-3.5 rounded-2xl border border-zinc-200/90 dark:border-zinc-800 shadow-[0_1px_4px_rgba(0,0,0,0.03)] hover:shadow-md hover:border-zinc-300 dark:hover:border-zinc-700 cursor-pointer space-y-2.5 group relative"
                   >
                     {/* Header: Company & Match */}
                     <div className="flex items-center justify-between gap-1.5">

@@ -40,7 +40,7 @@ export function Navbar({ userEmail }: NavbarProps = {}) {
   const initial = userEmail ? userEmail.charAt(0).toUpperCase() : "U";
 
   return (
-    <header className="sticky top-0 z-30 w-full bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border-b border-zinc-200/80 dark:border-zinc-800 transition-colors duration-150">
+    <header className="sticky top-0 z-30 w-full bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border-b border-zinc-200/80 dark:border-zinc-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         {/* Left: Brand + Workspace Breadcrumb with Live Sync Dot */}
         <div className="flex items-center gap-3">

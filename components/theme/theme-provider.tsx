@@ -13,6 +13,37 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
+// Temporarily disable CSS transitions during theme switch to prevent slow/inconsistent color fades
+function disableTransitionsDuringThemeSwitch() {
+  const css = document.createElement("style");
+  css.appendChild(
+    document.createTextNode(
+      `*, *::before, *::after {
+        -webkit-transition: none !important;
+        -moz-transition: none !important;
+        -o-transition: none !important;
+        -ms-transition: none !important;
+        transition: none !important;
+      }`
+    )
+  );
+  document.head.appendChild(css);
+
+  return () => {
+    // Force a reflow so the theme changes immediately apply without animation
+    (() => window.getComputedStyle(document.body))();
+
+    // Re-enable transitions on the next animation frame
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (document.head.contains(css)) {
+          document.head.removeChild(css);
+        }
+      });
+    });
+  };
+}
+
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<Theme>("system");
   const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">("light");
@@ -43,11 +74,15 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
       setResolvedTheme(activeTheme);
 
+      const restoreTransitions = disableTransitionsDuringThemeSwitch();
+
       if (activeTheme === "dark") {
         root.classList.add("dark");
       } else {
         root.classList.remove("dark");
       }
+
+      restoreTransitions();
     };
 
     applyTheme();
