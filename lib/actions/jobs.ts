@@ -166,6 +166,7 @@ export async function updateJobAction(
     if (updates.salary !== undefined) rowUpdates.salary = updates.salary;
     if (updates.match !== undefined) rowUpdates.match = updates.match;
     if (updates.isPinned !== undefined) rowUpdates.is_pinned = updates.isPinned;
+    if (updates.aiMatchAnalysis !== undefined) rowUpdates.ai_match_analysis = updates.aiMatchAnalysis;
 
     const { data, error } = await supabase
       .from("job_applications")

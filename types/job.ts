@@ -1,3 +1,5 @@
+import { JobMatchAnalysis } from "./ai-match";
+
 export type JobStatus =
   | "applied"
   | "interviewing"
@@ -25,6 +27,7 @@ export interface JobApplication {
   salary?: string;
   match: JobMatch;
   isPinned?: boolean;
+  aiMatchAnalysis?: JobMatchAnalysis | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -44,6 +47,7 @@ export interface JobApplicationRow {
   salary: string | null;
   match: string;
   is_pinned: boolean;
+  ai_match_analysis?: JobMatchAnalysis | null;
   created_at: string;
   updated_at: string;
 }
@@ -64,6 +68,7 @@ export function mapRowToJob(row: JobApplicationRow): JobApplication {
     salary: row.salary || "",
     match: (row.match as JobMatch) || "good",
     isPinned: Boolean(row.is_pinned),
+    aiMatchAnalysis: row.ai_match_analysis || null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

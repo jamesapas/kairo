@@ -52,6 +52,7 @@ import {
 import { StatusDropdown } from "./status-dropdown";
 import { PlatformIcon, PlatformBadge } from "./platform-badge";
 import { JobModal } from "./job-modal";
+import { AIMatchPanel } from "./ai-match-panel";
 import {
   updateJobAction,
   deleteJobAction,
@@ -687,6 +688,16 @@ export function JobDetailPage({ jobId }: JobDetailPageProps) {
 
           {/* RIGHT COLUMN: Linear-Style Properties Inspector Rail (4 cols) */}
           <div className="lg:col-span-4 space-y-6">
+            {/* AI Job Match Analysis Card */}
+            <AIMatchPanel
+              jobId={job.id}
+              jobTitle={job.jobTitle}
+              company={job.company}
+              description={job.description}
+              initialAnalysis={job.aiMatchAnalysis}
+              onOpenEditModal={() => setIsModalOpen(true)}
+            />
+
             {/* Properties Card */}
             <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 border border-zinc-200/90 dark:border-zinc-800 shadow-[0_2px_8px_rgba(0,0,0,0.03)] space-y-5">
               <h3 className="text-xs uppercase font-bold tracking-wider text-zinc-400 dark:text-zinc-500 pb-2 border-b border-zinc-100 dark:border-zinc-800">

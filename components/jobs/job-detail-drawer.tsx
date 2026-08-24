@@ -33,6 +33,7 @@ import {
 } from "@/types/job";
 import { StatusDropdown } from "./status-dropdown";
 import { PlatformIcon, PlatformBadge } from "./platform-badge";
+import { AIMatchPanel } from "./ai-match-panel";
 
 interface JobDetailDrawerProps {
   job: JobApplication | null;
@@ -460,6 +461,19 @@ export function JobDetailDrawer({
               </div>
             </div>
           )}
+
+          {/* AI Match Panel */}
+          <AIMatchPanel
+            jobId={currentJob.id}
+            jobTitle={currentJob.jobTitle}
+            company={currentJob.company}
+            description={currentJob.description}
+            initialAnalysis={currentJob.aiMatchAnalysis}
+            onOpenEditModal={() => {
+              handleClose();
+              onEdit(currentJob);
+            }}
+          />
 
           {/* Job Description */}
           <div>
