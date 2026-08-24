@@ -394,7 +394,7 @@ export function JobDashboard({ userEmail, initialJobs = [] }: JobDashboardProps)
 
         {/* Command Bar / Filter System */}
         <div className="bg-white dark:bg-zinc-900 p-3 rounded-2xl border border-zinc-200/90 dark:border-zinc-800 shadow-[0_2px_8px_rgba(0,0,0,0.03)] flex flex-col md:flex-row md:items-center justify-between gap-3">
-          {/* Search Input with Shortcut Badge */}
+          {/* Search Input */}
           <div className="flex flex-1 items-center gap-2 min-w-[220px]">
             <div className="relative flex-1">
               <Search className="w-4 h-4 text-zinc-400 dark:text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -403,19 +403,15 @@ export function JobDashboard({ userEmail, initialJobs = [] }: JobDashboardProps)
                 placeholder="Search by role, company, platform..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-12 py-1.5 rounded-xl bg-zinc-50/80 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 text-xs font-medium text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:bg-white dark:focus:bg-zinc-800 focus:border-zinc-400 dark:focus:border-zinc-600 transition"
+                className="w-full pl-9 pr-8 py-1.5 rounded-xl bg-zinc-50/80 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 text-xs font-medium text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:bg-white dark:focus:bg-zinc-800 focus:border-zinc-400 dark:focus:border-zinc-600 transition"
               />
-              {searchQuery ? (
+              {searchQuery && (
                 <button
                   onClick={() => setSearchQuery("")}
                   className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 cursor-pointer"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
-              ) : (
-                <kbd className="absolute right-2.5 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded text-[10px] font-mono text-zinc-400 dark:text-zinc-500 bg-zinc-200/60 dark:bg-zinc-700/60 border border-zinc-300/60 dark:border-zinc-600 pointer-events-none hidden sm:inline">
-                  /
-                </kbd>
               )}
             </div>
 
