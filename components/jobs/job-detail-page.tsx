@@ -39,6 +39,7 @@ import {
   WorkplaceType,
   JOB_STATUS_CONFIG,
   formatRelativeDate,
+  formatDateWords,
   formatSalaryDisplay,
   mapRowToJob,
 } from "@/types/job";
@@ -70,30 +71,30 @@ function WorkplaceBadge({ type }: { type: WorkplaceType }) {
     Remote: {
       icon: Laptop,
       label: "Remote",
-      className: "text-zinc-600 dark:text-zinc-400",
+      iconColor: "text-emerald-500",
     },
     Hybrid: {
       icon: Building,
       label: "Hybrid",
-      className: "text-zinc-600 dark:text-zinc-400",
+      iconColor: "text-purple-500",
     },
     "On-site": {
       icon: Building2,
       label: "On-site",
-      className: "text-zinc-600 dark:text-zinc-400",
+      iconColor: "text-blue-500",
     },
   }[type] || {
     icon: Laptop,
     label: type,
-    className: "text-zinc-600 dark:text-zinc-400",
+    iconColor: "text-emerald-500",
   };
 
   const Icon = config.icon;
 
   return (
-    <div className={`flex items-center gap-1.5 ${config.className}`}>
-      <Icon className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
-      <span className="font-semibold text-zinc-800 dark:text-zinc-200">{config.label}</span>
+    <div className="inline-flex items-center gap-1.5">
+      <Icon className={`w-3.5 h-3.5 ${config.iconColor} shrink-0`} />
+      <span>{config.label}</span>
     </div>
   );
 }
@@ -444,68 +445,41 @@ export function JobDetailPage({ jobId }: JobDetailPageProps) {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* LEFT MAIN COLUMN: Hero & Tabbed Workspace (8 cols) */}
           <div className="lg:col-span-8 space-y-6">
-            {/* Header Hero Title Card */}
-            <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 sm:p-7 border border-zinc-200/90 dark:border-zinc-800 shadow-[0_2px_12px_rgba(0,0,0,0.03)] space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-                <div className="space-y-1.5 min-w-0 flex-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    {job.aiMatchAnalysis?.matchPercentage !== undefined && (
-                      <>
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg border text-xs font-bold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border-indigo-200/60 dark:border-indigo-800/40">
-                          <Sparkles className="w-3 h-3 text-indigo-500" />
-                          <span>{job.aiMatchAnalysis.matchPercentage}% Match</span>
-                        </span>
-                        <span className="text-[11px] font-semibold text-zinc-400 dark:text-zinc-500">•</span>
-                      </>
-                    )}
-                    <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">
-                      Applied on {job.dateApplied} ({formatRelativeDate(job.dateApplied)})
-                    </span>
-                  </div>
-
-                  <h1 className="text-2xl sm:text-3xl font-extrabold text-zinc-900 dark:text-zinc-100 tracking-tight leading-tight pt-1">
-                    {job.jobTitle}
-                  </h1>
-
-                  <div className="flex items-center gap-2 text-sm font-semibold text-zinc-600 dark:text-zinc-300 pt-0.5">
-                    <Building2 className="w-4 h-4 text-zinc-400 shrink-0" />
-                    <span>{job.company}</span>
-                  </div>
+            {/* Header Hero Title Card (Compact Hero) */}
+            <div className="bg-white dark:bg-zinc-900 rounded-3xl p-5 sm:p-6 border border-zinc-200/90 dark:border-zinc-800 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="space-y-1.5 min-w-0 flex-1">
+                <div className="flex items-center gap-2 text-xs font-semibold text-zinc-500 dark:text-zinc-400">
+                  <Building2 className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                  <span className="font-bold text-zinc-800 dark:text-zinc-200">{job.company}</span>
+                  <span>•</span>
+                  <span>Applied on {formatDateWords(job.dateApplied)} ({formatRelativeDate(job.dateApplied)})</span>
                 </div>
-
-                {/* Status Selector Dropdown */}
-                <div className="shrink-0 pt-0.5">
-                  <StatusDropdown
-                    value={job.status}
-                    onChange={handleStatusChange}
-                    size="md"
-                    className="w-full sm:w-auto min-w-[145px]"
-                  />
+                <h1 className="text-xl sm:text-2xl font-extrabold text-zinc-900 dark:text-zinc-100 tracking-tight truncate">
+                  {job.jobTitle}
+                </h1>
+                <div className="flex items-center gap-2 pt-0.5 flex-wrap text-xs text-zinc-600 dark:text-zinc-400 font-medium">
+                  <div className="inline-flex items-center gap-1.5 font-semibold text-zinc-800 dark:text-zinc-200">
+                    <PlatformIcon platform={job.appliedOn} className="w-3.5 h-3.5" />
+                    <span>{job.appliedOn}</span>
+                  </div>
+                  <span className="text-zinc-300 dark:text-zinc-700">•</span>
+                  <WorkplaceBadge type={job.workplaceType} />
+                  {job.salary && (
+                    <>
+                      <span className="text-zinc-300 dark:text-zinc-700">•</span>
+                      <span>{formatSalaryDisplay(job.salary)}</span>
+                    </>
+                  )}
                 </div>
               </div>
 
-              {/* High-Level Overview Tags in Main View */}
-              <div className="pt-3 border-t border-zinc-100 dark:border-zinc-800 flex flex-wrap items-center gap-4 text-xs">
-                <div className="flex items-center gap-1.5 text-zinc-600 dark:text-zinc-400">
-                  <PlatformIcon platform={job.appliedOn} className="w-4 h-4 text-zinc-400" />
-                  <span className="font-semibold text-zinc-800 dark:text-zinc-200">{job.appliedOn}</span>
-                </div>
-
-                <span className="text-zinc-300 dark:text-zinc-700">•</span>
-
-                <div className="flex items-center gap-1.5 text-zinc-600 dark:text-zinc-400">
-                  <WorkplaceBadge type={job.workplaceType} />
-                </div>
-
-                {job.salary && (
-                  <>
-                    <span className="text-zinc-300 dark:text-zinc-700">•</span>
-                    <div className="flex items-center gap-1.5 text-zinc-600 dark:text-zinc-400 font-semibold">
-                      <DollarSign className="w-3.5 h-3.5 text-amber-500" />
-                      <span className="text-zinc-800 dark:text-zinc-200">{formatSalaryDisplay(job.salary)}</span>
-                    </div>
-                  </>
-                )}
+              <div className="shrink-0 pt-0.5">
+                <StatusDropdown
+                  value={job.status}
+                  onChange={handleStatusChange}
+                  size="md"
+                  className="w-full sm:w-auto min-w-[145px]"
+                />
               </div>
             </div>
 
@@ -521,11 +495,6 @@ export function JobDetailPage({ jobId }: JobDetailPageProps) {
               >
                 <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
                 <span>AI Match Analysis</span>
-                {job.aiMatchAnalysis?.matchPercentage !== undefined && (
-                  <span className="px-1.5 py-0.2 rounded-md bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 text-[10px] font-extrabold border border-indigo-200/60 dark:border-indigo-800/40">
-                    {job.aiMatchAnalysis.matchPercentage}%
-                  </span>
-                )}
               </button>
 
               <button
@@ -587,7 +556,7 @@ export function JobDetailPage({ jobId }: JobDetailPageProps) {
                   </div>
 
                   {job.description ? (
-                    <div className="text-xs sm:text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed whitespace-pre-line font-normal selection:bg-zinc-200 dark:selection:bg-zinc-700 max-h-[600px] overflow-y-auto pr-2">
+                    <div className="text-xs sm:text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed whitespace-pre-line font-normal selection:bg-zinc-200 dark:selection:bg-zinc-700">
                       {job.description}
                     </div>
                   ) : (

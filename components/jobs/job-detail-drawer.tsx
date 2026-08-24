@@ -27,6 +27,7 @@ import {
   WorkplaceType,
   JOB_STATUS_CONFIG,
   formatRelativeDate,
+  formatDateWords,
   formatSalaryDisplay,
 } from "@/types/job";
 import { StatusDropdown } from "./status-dropdown";
@@ -284,7 +285,7 @@ export function JobDetailDrawer({
                     Date Applied
                   </span>
                   <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="font-bold text-zinc-800 dark:text-zinc-200 text-xs">{currentJob.dateApplied}</span>
+                    <span className="font-bold text-zinc-800 dark:text-zinc-200 text-xs">{formatDateWords(currentJob.dateApplied)}</span>
                     <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300">
                       {formatRelativeDate(currentJob.dateApplied)}
                     </span>
@@ -510,7 +511,7 @@ export function JobDetailDrawer({
           <div className="flex items-center gap-1.5 truncate">
             <Clock className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
             <span className="truncate">
-              Tracked on {currentJob.dateApplied} ({formatRelativeDate(currentJob.dateApplied)})
+              Tracked on {formatDateWords(currentJob.dateApplied)} ({formatRelativeDate(currentJob.dateApplied)})
             </span>
           </div>
 

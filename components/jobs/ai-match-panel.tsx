@@ -234,21 +234,21 @@ export function AIMatchPanel({
       case "apply":
         return {
           label: "Apply",
-          bg: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30",
+          bg: "bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border-emerald-200/80 dark:border-emerald-800/60",
           dot: "bg-emerald-500",
           icon: CheckCircle2,
         };
       case "maybe":
         return {
           label: "Maybe",
-          bg: "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/30",
+          bg: "bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border-amber-200/80 dark:border-amber-800/60",
           dot: "bg-amber-500",
           icon: AlertTriangle,
         };
       case "skip":
         return {
           label: "Skip",
-          bg: "bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/30",
+          bg: "bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 border-rose-200/80 dark:border-rose-800/60",
           dot: "bg-rose-500",
           icon: XCircle,
         };
@@ -797,16 +797,19 @@ export function AIMatchPanel({
               {/* =========================================================================
                   6. RECOMMENDATION BANNER
                   ========================================================================= */}
-              <div className="p-4 rounded-2xl bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 space-y-2 shadow-xs">
+              <div className="p-4 rounded-2xl bg-zinc-50/90 dark:bg-zinc-800/50 border border-zinc-200/80 dark:border-zinc-700/80 space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-zinc-400 dark:text-zinc-500">
-                    Recommendation
-                  </span>
+                  <div className="flex items-center gap-1.5 text-zinc-700 dark:text-zinc-300">
+                    <Sparkles className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                    <span className="text-[10px] uppercase font-bold tracking-wider text-zinc-500 dark:text-zinc-400">
+                      Recommendation
+                    </span>
+                  </div>
                   {(() => {
                     const badge = getRecommendationBadge(analysis.recommendation);
                     return (
                       <span
-                        className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider ${badge.bg}`}
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-[10px] font-bold uppercase tracking-wider border ${badge.bg}`}
                       >
                         <span className={`w-1.5 h-1.5 rounded-full ${badge.dot}`} />
                         <span>{badge.label}</span>
@@ -814,7 +817,7 @@ export function AIMatchPanel({
                     );
                   })()}
                 </div>
-                <p className="text-xs text-zinc-200 dark:text-zinc-800 leading-relaxed font-medium">
+                <p className="text-xs text-zinc-700 dark:text-zinc-300 leading-relaxed font-normal">
                   &ldquo;
                   {analysis.recommendationReason ||
                     analysis.summary ||
