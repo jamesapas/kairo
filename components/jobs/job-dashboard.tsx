@@ -43,6 +43,7 @@ import { StatusIcon } from "./status-dropdown";
 import { PlatformIcon } from "./platform-badge";
 import { JobStatsOverview } from "./job-stats-overview";
 import { StreakModal } from "./streak-modal";
+import { DashboardHeader } from "./dashboard-header";
 
 type SortOption = "date-desc" | "date-asc" | "company-asc" | "title-asc";
 
@@ -362,43 +363,20 @@ export function JobDashboard({ userEmail, initialJobs = [] }: JobDashboardProps)
       )}
 
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-        {/* Header */}
+        {/* Executive Workspace Header */}
         <div className="space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-zinc-900">
-                Job Applications
-              </h1>
-              <p className="text-xs text-zinc-500 mt-1 font-medium">
-                Manage your job pipeline, follow-ups, and interview stages
-              </p>
-            </div>
+          <DashboardHeader
+            jobs={jobs}
+            userEmail={userEmail}
+            onAddNew={() => {
+              setEditingJob(null);
+              setIsModalOpen(true);
+            }}
+            onExportCSV={handleExportCSV}
+            onOpenStreakModal={() => setIsStreakModalOpen(true)}
+          />
 
-            <div className="flex items-center gap-2.5">
-              {jobs.length > 0 && (
-                <button
-                  onClick={handleExportCSV}
-                  className="px-3.5 py-2 rounded-xl bg-white border border-zinc-200/90 hover:border-zinc-300 hover:bg-zinc-50 text-zinc-700 text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer shadow-2xs active:scale-[0.98]"
-                >
-                  <FileSpreadsheet className="w-3.5 h-3.5 text-zinc-500" />
-                  Export CSV
-                </button>
-              )}
-
-              <button
-                onClick={() => {
-                  setEditingJob(null);
-                  setIsModalOpen(true);
-                }}
-                className="px-4 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer shadow-sm hover:shadow active:scale-[0.98]"
-              >
-                <Plus className="w-4 h-4" />
-                Add Application
-              </button>
-            </div>
-          </div>
-
-          {/* Stats Overview */}
+          {/* Stats Overview Metric Cards */}
           <JobStatsOverview
             jobs={jobs}
             onOpenStreakModal={() => setIsStreakModalOpen(true)}
