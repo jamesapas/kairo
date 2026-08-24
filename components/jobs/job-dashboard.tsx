@@ -58,19 +58,30 @@ export function JobDashboard({ userEmail: initialUserEmail, initialJobs }: JobDa
   const router = useRouter();
   const [jobs, setJobs] = useState<JobApplication[]>(initialJobs || []);
   const [userEmail, setUserEmail] = useState<string | undefined>(initialUserEmail);
+  const [userName, setUserName] = useState<string | undefined>();
   const [isLoading, setIsLoading] = useState(!initialJobs || initialJobs.length === 0);
   const fetchedRef = useRef(false);
 
   useEffect(() => {
     const supabase = createClient();
 
-    if (!userEmail) {
-      supabase.auth.getUser().then(({ data: { user } }) => {
-        if (user?.email) {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) {
+        if (user.email && !userEmail) {
           setUserEmail(user.email);
         }
-      });
-    }
+        supabase
+          .from("users")
+          .select("name")
+          .eq("id", user.id)
+          .maybeSingle()
+          .then(({ data }) => {
+            if (data?.name) {
+              setUserName(data.name);
+            }
+          });
+      }
+    });
 
     if (initialJobs && initialJobs.length > 0) {
       setJobs(initialJobs);
@@ -393,6 +404,7 @@ export function JobDashboard({ userEmail: initialUserEmail, initialJobs }: JobDa
           <DashboardHeader
             jobs={jobs}
             userEmail={userEmail}
+            userName={userName}
             onAddNew={() => {
               setEditingJob(null);
               setIsModalOpen(true);

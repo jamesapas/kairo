@@ -2,12 +2,14 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { signOutAction } from "@/lib/actions/auth";
 import { createClient } from "@/lib/supabase/client";
 import {
   LogOut,
   Loader2,
   User,
+  Settings,
 } from "lucide-react";
 import { KairoLogo } from "@/components/ui/logo";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
@@ -19,6 +21,7 @@ interface NavbarProps {
 
 export function Navbar({ userEmail: initialEmail }: NavbarProps = {}) {
   const [userEmail, setUserEmail] = useState<string | undefined>(initialEmail);
+  const [avatarUrl, setAvatarUrl] = useState<string | undefined>();
   const [loggingOut, setLoggingOut] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -26,13 +29,24 @@ export function Navbar({ userEmail: initialEmail }: NavbarProps = {}) {
   useEffect(() => {
     if (initialEmail) {
       setUserEmail(initialEmail);
-      return;
     }
 
     const supabase = createClient();
     supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user?.email) {
-        setUserEmail(user.email);
+      if (user) {
+        if (user.email && !initialEmail) {
+          setUserEmail(user.email);
+        }
+        supabase
+          .from("users")
+          .select("avatar_url")
+          .eq("id", user.id)
+          .maybeSingle()
+          .then(({ data }) => {
+            if (data?.avatar_url) {
+              setAvatarUrl(data.avatar_url);
+            }
+          });
       }
     });
 
@@ -95,9 +109,20 @@ export function Navbar({ userEmail: initialEmail }: NavbarProps = {}) {
               onClick={() => setMenuOpen((prev) => !prev)}
               aria-label="User account menu"
               title={userEmail || "Account"}
-              className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200/70 dark:hover:bg-zinc-700/80 border border-zinc-200/90 dark:border-zinc-700/80 text-zinc-700 dark:text-zinc-200 flex items-center justify-center transition cursor-pointer select-none shadow-2xs"
+              className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200/70 dark:hover:bg-zinc-700/80 border border-zinc-200/90 dark:border-zinc-700/80 text-zinc-700 dark:text-zinc-200 flex items-center justify-center transition cursor-pointer select-none shadow-2xs overflow-hidden"
             >
-              <User className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
+              {avatarUrl ? (
+                <Image
+                  src={avatarUrl}
+                  alt="User Avatar"
+                  width={32}
+                  height={32}
+                  unoptimized
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <User className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
+              )}
             </button>
 
             {/* Account Popover Menu */}
@@ -110,6 +135,17 @@ export function Navbar({ userEmail: initialEmail }: NavbarProps = {}) {
                   <p className="text-xs font-medium text-zinc-800 dark:text-zinc-200 truncate mt-0.5" title={userEmail}>
                     {userEmail || "User"}
                   </p>
+                </div>
+
+                <div className="py-1 border-b border-zinc-100 dark:border-zinc-800">
+                  <Link
+                    href="/settings"
+                    onClick={() => setMenuOpen(false)}
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition cursor-pointer"
+                  >
+                    <Settings className="h-3.5 w-3.5 text-zinc-500 dark:text-zinc-400" />
+                    Profile Settings
+                  </Link>
                 </div>
 
                 <div className="pt-1">
