@@ -31,15 +31,22 @@ import {
   Pencil,
   MapPin,
   Calendar,
+  Award,
 } from "lucide-react";
 import { ProfileLink } from "@/types/profile";
 import { UserExperience, WorkplaceType } from "@/types/experience";
+import { UserEducation } from "@/types/education";
 import { uploadAvatarAction } from "@/lib/actions/profile";
 import {
   createExperienceAction,
   updateExperienceAction,
   deleteExperienceAction,
 } from "@/lib/actions/experience";
+import {
+  createEducationAction,
+  updateEducationAction,
+  deleteEducationAction,
+} from "@/lib/actions/education";
 import { CustomSelect, CustomSelectOption } from "@/components/jobs/custom-select";
 
 export interface ExperienceItem {
@@ -395,17 +402,6 @@ const DEFAULT_SKILLS: SkillItem[] = [
   { id: "sk-12", name: "Git" },
 ];
 
-const DEFAULT_EDUCATION: EducationItem[] = [
-  {
-    id: "edu-1",
-    institution: "Stanford University",
-    degree: "Bachelor of Science in Computer Science",
-    fieldOfStudy: "Software Systems & Artificial Intelligence",
-    period: "2017 — 2021",
-    location: "Stanford, CA",
-  },
-];
-
 interface ResumeCanvasViewProps {
   name: string;
   setName: (v: string) => void;
@@ -416,6 +412,8 @@ interface ResumeCanvasViewProps {
   setLinks: (links: ProfileLink[]) => void;
   experiences: UserExperience[];
   setExperiences: React.Dispatch<React.SetStateAction<UserExperience[]>>;
+  educations: UserEducation[];
+  setEducations: React.Dispatch<React.SetStateAction<UserEducation[]>>;
   saving: boolean;
   errorMsg: string;
   successMsg: string;
@@ -433,6 +431,8 @@ export function ResumeCanvasView({
   setLinks,
   experiences,
   setExperiences,
+  educations,
+  setEducations,
   saving,
   errorMsg,
   successMsg,
@@ -441,7 +441,6 @@ export function ResumeCanvasView({
 }: ResumeCanvasViewProps) {
   const [skills, setSkills] = useState<SkillItem[]>(DEFAULT_SKILLS);
   const [newSkillInput, setNewSkillInput] = useState("");
-  const [educations, setEducations] = useState<EducationItem[]>(DEFAULT_EDUCATION);
 
   // Link input state
   const [isAddingLink, setIsAddingLink] = useState(false);
@@ -592,12 +591,90 @@ export function ResumeCanvasView({
     await deleteExperienceAction(id);
   };
 
-  // Modal / Add state for Education
+  // Education Form State
   const [isAddingEdu, setIsAddingEdu] = useState(false);
-  const [eduInstitution, setEduInstitution] = useState("");
+  const [editingEduId, setEditingEduId] = useState<string | null>(null);
+  const [eduSchool, setEduSchool] = useState("");
   const [eduDegree, setEduDegree] = useState("");
-  const [eduPeriod, setEduPeriod] = useState("");
   const [eduLocation, setEduLocation] = useState("");
+  const [eduHonors, setEduHonors] = useState("");
+  const [eduStartMonth, setEduStartMonth] = useState("Aug");
+  const [eduStartYear, setEduStartYear] = useState("2020");
+  const [eduEndMonth, setEduEndMonth] = useState("Jun");
+  const [eduEndYear, setEduEndYear] = useState("2024");
+  const [eduIsCurrent, setEduIsCurrent] = useState(false);
+  const [savingEdu, setSavingEdu] = useState(false);
+
+  const handleStartAddEducation = () => {
+    setEditingEduId(null);
+    setEduSchool("");
+    setEduDegree("");
+    setEduLocation("");
+    setEduHonors("");
+    setEduStartMonth("Aug");
+    setEduStartYear("2020");
+    setEduEndMonth("Jun");
+    setEduEndYear("2024");
+    setEduIsCurrent(false);
+    setIsAddingEdu(true);
+  };
+
+  const handleStartEditEducation = (edu: UserEducation) => {
+    setEditingEduId(edu.id);
+    setEduSchool(edu.school);
+    setEduDegree(edu.degree);
+    setEduLocation(edu.location || "");
+    setEduHonors(edu.honors || "");
+    setEduStartMonth(edu.startMonth || "Aug");
+    setEduStartYear(edu.startYear || "2020");
+    setEduEndMonth(edu.endMonth || "Jun");
+    setEduEndYear(edu.endYear || "2024");
+    setEduIsCurrent(edu.isCurrent);
+    setIsAddingEdu(true);
+  };
+
+  const handleSaveEducation = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!eduSchool.trim() || !eduDegree.trim()) return;
+
+    setSavingEdu(true);
+
+    const payload = {
+      school: eduSchool.trim(),
+      degree: eduDegree.trim(),
+      location: eduLocation.trim() || undefined,
+      honors: eduHonors.trim() || undefined,
+      startMonth: eduStartMonth,
+      startYear: eduStartYear,
+      endMonth: eduIsCurrent ? undefined : eduEndMonth,
+      endYear: eduIsCurrent ? undefined : eduEndYear,
+      isCurrent: eduIsCurrent,
+    };
+
+    if (editingEduId) {
+      const res = await updateEducationAction(editingEduId, payload);
+      if (res.success && res.data) {
+        setEducations((prev) =>
+          prev.map((item) => (item.id === editingEduId ? res.data! : item))
+        );
+        setIsAddingEdu(false);
+        setEditingEduId(null);
+      }
+    } else {
+      const res = await createEducationAction(payload);
+      if (res.success && res.data) {
+        setEducations((prev) => [res.data!, ...prev]);
+        setIsAddingEdu(false);
+        setEditingEduId(null);
+      }
+    }
+    setSavingEdu(false);
+  };
+
+  const handleDeleteEducation = async (id: string) => {
+    setEducations((prev) => prev.filter((item) => item.id !== id));
+    await deleteEducationAction(id);
+  };
 
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
@@ -635,24 +712,6 @@ export function ResumeCanvasView({
     }
     setSkills((prev) => [...prev, { id: `sk-${Date.now()}`, name: trimmed }]);
     setNewSkillInput("");
-  };
-
-  const handleSaveNewEducation = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!eduInstitution.trim() || !eduDegree.trim()) return;
-    const item: EducationItem = {
-      id: `edu-${Date.now()}`,
-      institution: eduInstitution.trim(),
-      degree: eduDegree.trim(),
-      period: eduPeriod.trim() || "2024",
-      location: eduLocation.trim() || "Online",
-    };
-    setEducations((prev) => [item, ...prev]);
-    setEduInstitution("");
-    setEduDegree("");
-    setEduPeriod("");
-    setEduLocation("");
-    setIsAddingEdu(false);
   };
 
   return (
@@ -1500,7 +1559,7 @@ export function ResumeCanvasView({
       </div>
 
       {/* =========================================================================
-          SECTION 4: EDUCATION & CERTIFICATIONS CARD
+          SECTION 4: EDUCATION HISTORY CARD
           ========================================================================= */}
       <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200/90 dark:border-zinc-800 shadow-xs overflow-hidden">
         <div className="px-6 sm:px-8 py-4 border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-800/30 flex items-center justify-between">
@@ -1518,113 +1577,307 @@ export function ResumeCanvasView({
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={() => setIsAddingEdu(true)}
-            className="px-3.5 py-1.5 rounded-xl bg-zinc-100 hover:bg-zinc-200/80 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 border border-zinc-200/80 dark:border-zinc-700 text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer shadow-2xs active:scale-[0.98]"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>Add Education</span>
-          </button>
+          {!isAddingEdu && (
+            <button
+              type="button"
+              onClick={handleStartAddEducation}
+              className="px-3.5 py-1.5 rounded-xl bg-zinc-100 hover:bg-zinc-200/80 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 border border-zinc-200/80 dark:border-zinc-700 text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer shadow-2xs active:scale-[0.98]"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Add Education</span>
+            </button>
+          )}
         </div>
 
         <div className="p-6 sm:p-8 space-y-4">
-          {/* Add Education Inline Form */}
+          {/* Add / Edit Education Inline Form */}
           {isAddingEdu && (
-            <div className="p-5 rounded-2xl bg-zinc-50/80 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700 space-y-4 animate-in fade-in">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xs font-bold uppercase text-zinc-900 dark:text-zinc-100">
-                  New Education Entry
-                </h3>
+            <div className="p-5 sm:p-6 rounded-2xl bg-zinc-50/90 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700 space-y-4 animate-in fade-in shadow-xs">
+              <div className="flex items-center justify-between border-b border-zinc-200/60 dark:border-zinc-700/60 pb-3">
+                <div className="flex items-center gap-2">
+                  <GraduationCap className="w-4 h-4 text-zinc-700 dark:text-zinc-300" />
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-zinc-100">
+                    {editingEduId ? "Edit Education" : "Add Education"}
+                  </h3>
+                </div>
                 <button
                   type="button"
-                  onClick={() => setIsAddingEdu(false)}
-                  className="text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
+                  onClick={() => {
+                    setIsAddingEdu(false);
+                    setEditingEduId(null);
+                  }}
+                  className="p-1 rounded-lg text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-200/60 dark:hover:bg-zinc-700 transition cursor-pointer"
+                  title="Close"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                <input
-                  type="text"
-                  value={eduInstitution}
-                  onChange={(e) => setEduInstitution(e.target.value)}
-                  placeholder="Institution (e.g. UC Berkeley, Bootcamp)"
-                  className="px-3.5 py-2 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-xs font-medium"
-                />
-                <input
-                  type="text"
-                  value={eduDegree}
-                  onChange={(e) => setEduDegree(e.target.value)}
-                  placeholder="Degree / Certificate (e.g. B.S. in Computer Science)"
-                  className="px-3.5 py-2 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-xs font-medium"
-                />
-                <input
-                  type="text"
-                  value={eduPeriod}
-                  onChange={(e) => setEduPeriod(e.target.value)}
-                  placeholder="Graduation Year (e.g. 2021)"
-                  className="px-3.5 py-2 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-xs font-medium"
-                />
-                <input
-                  type="text"
-                  value={eduLocation}
-                  onChange={(e) => setEduLocation(e.target.value)}
-                  placeholder="Location (e.g. Cebu, Philippines)"
-                  className="px-3.5 py-2 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-xs font-medium"
-                />
+              <div className="space-y-4">
+                {/* Row 1: School & Degree */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-zinc-800 dark:text-zinc-200 flex items-center gap-1">
+                      School / University <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={eduSchool}
+                      onChange={(e) => setEduSchool(e.target.value)}
+                      placeholder="e.g. Cebu Technological University"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-xs font-semibold text-zinc-900 dark:text-zinc-100 focus:border-zinc-400 transition"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-zinc-800 dark:text-zinc-200 flex items-center gap-1">
+                      Degree / Major <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={eduDegree}
+                      onChange={(e) => setEduDegree(e.target.value)}
+                      placeholder="e.g. Bachelor of Science in Information Technology"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-xs font-semibold text-zinc-900 dark:text-zinc-100 focus:border-zinc-400 transition"
+                    />
+                  </div>
+                </div>
+
+                {/* Row 2: Location & Honors Received */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-zinc-800 dark:text-zinc-200">
+                      Location
+                    </label>
+                    <input
+                      type="text"
+                      value={eduLocation}
+                      onChange={(e) => setEduLocation(e.target.value)}
+                      placeholder="e.g. Cebu, Philippines"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-xs font-semibold text-zinc-900 dark:text-zinc-100 focus:border-zinc-400 transition"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-zinc-800 dark:text-zinc-200">
+                      Honors Received
+                    </label>
+                    <input
+                      type="text"
+                      value={eduHonors}
+                      onChange={(e) => setEduHonors(e.target.value)}
+                      placeholder="e.g. Magna Cum Laude"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-xs font-semibold text-zinc-900 dark:text-zinc-100 focus:border-zinc-400 transition"
+                    />
+                  </div>
+                </div>
+
+                {/* Row 3: Start Date & Graduation Date */}
+                <div className="space-y-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    {/* Start Date */}
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5">
+                        <Calendar className="w-3.5 h-3.5 text-zinc-400" />
+                        Start Date
+                      </label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <select
+                          value={eduStartMonth}
+                          onChange={(e) => setEduStartMonth(e.target.value)}
+                          className="w-full px-3 py-2 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-xs font-semibold text-zinc-900 dark:text-zinc-100 focus:border-zinc-400 cursor-pointer"
+                        >
+                          {MONTH_OPTIONS.map((m) => (
+                            <option key={m} value={m} className="bg-white dark:bg-zinc-900">
+                              {m}
+                            </option>
+                          ))}
+                        </select>
+                        <select
+                          value={eduStartYear}
+                          onChange={(e) => setEduStartYear(e.target.value)}
+                          className="w-full px-3 py-2 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-xs font-semibold text-zinc-900 dark:text-zinc-100 focus:border-zinc-400 cursor-pointer"
+                        >
+                          {YEAR_OPTIONS.map((y) => (
+                            <option key={y} value={y} className="bg-white dark:bg-zinc-900">
+                              {y}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Graduation / End Date */}
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-bold text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5">
+                          <Calendar className="w-3.5 h-3.5 text-zinc-400" />
+                          Graduation Date
+                        </label>
+                        <label className="inline-flex items-center gap-1.5 cursor-pointer text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 select-none">
+                          <input
+                            type="checkbox"
+                            checked={eduIsCurrent}
+                            onChange={(e) => setEduIsCurrent(e.target.checked)}
+                            className="rounded border-zinc-300 text-zinc-900 focus:ring-zinc-500 cursor-pointer w-3.5 h-3.5"
+                          />
+                          <span>I currently study here</span>
+                        </label>
+                      </div>
+
+                      {eduIsCurrent ? (
+                        <div className="px-3.5 py-2 rounded-xl bg-zinc-100/80 dark:bg-zinc-800/40 border border-zinc-200/70 dark:border-zinc-800 text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5 h-[38px]">
+                          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                          <span>Present</span>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-2 gap-2">
+                          <select
+                            value={eduEndMonth}
+                            onChange={(e) => setEduEndMonth(e.target.value)}
+                            className="w-full px-3 py-2 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-xs font-semibold text-zinc-900 dark:text-zinc-100 focus:border-zinc-400 cursor-pointer"
+                          >
+                            {MONTH_OPTIONS.map((m) => (
+                              <option key={m} value={m} className="bg-white dark:bg-zinc-900">
+                                {m}
+                              </option>
+                            ))}
+                          </select>
+                          <select
+                            value={eduEndYear}
+                            onChange={(e) => setEduEndYear(e.target.value)}
+                            className="w-full px-3 py-2 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-xs font-semibold text-zinc-900 dark:text-zinc-100 focus:border-zinc-400 cursor-pointer"
+                          >
+                            {YEAR_OPTIONS.map((y) => (
+                              <option key={y} value={y} className="bg-white dark:bg-zinc-900">
+                                {y}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              <div className="flex justify-end gap-2">
+              {/* Form Action Buttons */}
+              <div className="flex justify-end items-center gap-2 pt-2 border-t border-zinc-200/60 dark:border-zinc-700/60">
                 <button
                   type="button"
-                  onClick={() => setIsAddingEdu(false)}
-                  className="px-3 py-1.5 rounded-lg text-xs font-semibold text-zinc-500 hover:bg-zinc-200 dark:hover:bg-zinc-700"
+                  onClick={() => {
+                    setIsAddingEdu(false);
+                    setEditingEduId(null);
+                  }}
+                  className="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-zinc-500 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="button"
-                  onClick={handleSaveNewEducation}
-                  className="px-4 py-1.5 rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-xs font-bold shadow-xs"
+                  onClick={handleSaveEducation}
+                  disabled={savingEdu || !eduSchool.trim() || !eduDegree.trim()}
+                  className="px-5 py-2 rounded-xl bg-zinc-900 dark:bg-zinc-100 hover:bg-zinc-800 dark:hover:bg-white text-white dark:text-zinc-900 text-xs font-bold transition disabled:opacity-50 flex items-center gap-2 cursor-pointer shadow-2xs active:scale-[0.98]"
                 >
-                  Save Entry
+                  {savingEdu ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                  <span>{savingEdu ? "Saving..." : editingEduId ? "Update Education" : "Save Education"}</span>
                 </button>
               </div>
             </div>
           )}
 
-          {/* List of Education Cards */}
-          <div className="space-y-3.5">
-            {educations.map((edu) => (
-              <div
-                key={edu.id}
-                className="p-5 rounded-2xl border border-zinc-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-850/40 flex items-start justify-between gap-4 group shadow-2xs"
-              >
-                <div className="space-y-1">
-                  <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
-                    {edu.institution}
-                  </h3>
-                  <p className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
-                    {edu.degree} {edu.fieldOfStudy ? `· ${edu.fieldOfStudy}` : ""}
-                  </p>
-                  <p className="text-xs text-zinc-400 font-medium">
-                    {edu.period} · {edu.location}
-                  </p>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => setEducations((prev) => prev.filter((i) => i.id !== edu.id))}
-                  className="p-1.5 rounded-lg text-zinc-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition cursor-pointer"
-                  title="Delete Education"
+          {/* List of Education Timeline Cards */}
+          {educations.length > 0 ? (
+            <div className="space-y-3.5">
+              {educations.map((edu) => (
+                <div
+                  key={edu.id}
+                  className="p-5 rounded-2xl border border-zinc-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-850/40 hover:border-zinc-300 dark:hover:border-zinc-700 transition flex flex-col sm:flex-row sm:items-start justify-between gap-4 group shadow-2xs"
                 >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            ))}
-          </div>
+                  <div className="flex items-start gap-3.5 min-w-0 flex-1">
+                    <div className="w-10 h-10 rounded-2xl bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center text-zinc-700 dark:text-zinc-300 shrink-0 font-bold text-xs mt-0.5">
+                      <GraduationCap className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                    </div>
+
+                    <div className="space-y-1.5 min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
+                          {edu.school}
+                        </h3>
+                        {edu.isCurrent && (
+                          <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60">
+                            Current Student
+                          </span>
+                        )}
+                      </div>
+
+                      <p className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+                        {edu.degree}
+                      </p>
+
+                      <div className="flex flex-wrap items-center gap-3 text-xs text-zinc-400 font-medium">
+                        <div className="flex items-center gap-1">
+                          <Calendar className="w-3.5 h-3.5 text-zinc-400" />
+                          <span>
+                            {edu.startMonth} {edu.startYear} —{" "}
+                            {edu.isCurrent ? "Present" : `${edu.endMonth || ""} ${edu.endYear || ""}`}
+                          </span>
+                        </div>
+                        {edu.location && (
+                          <div className="flex items-center gap-1">
+                            <MapPin className="w-3.5 h-3.5 text-zinc-400" />
+                            <span>{edu.location}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Honors Badge */}
+                      {edu.honors && (
+                        <div className="pt-1.5 flex items-center">
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200/70 dark:border-amber-800/60 shadow-2xs">
+                            <Award className="w-3.5 h-3.5 text-amber-500" />
+                            <span>{edu.honors}</span>
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1 self-end sm:self-start opacity-80 group-hover:opacity-100 transition shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => handleStartEditEducation(edu)}
+                      className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition cursor-pointer"
+                      title="Edit Education"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteEducation(edu.id)}
+                      className="p-1.5 rounded-lg text-zinc-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition cursor-pointer"
+                      title="Delete Education"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            !isAddingEdu && (
+              <button
+                type="button"
+                onClick={handleStartAddEducation}
+                className="w-full py-6 rounded-2xl border border-dashed border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 bg-zinc-50/40 dark:bg-zinc-850/20 text-xs font-semibold text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 transition flex flex-col items-center justify-center gap-2 cursor-pointer shadow-2xs"
+              >
+                <div className="w-8 h-8 rounded-xl bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center text-zinc-400">
+                  <GraduationCap className="w-4 h-4" />
+                </div>
+                <span>+ Add your education history</span>
+              </button>
+            )
+          )}
         </div>
       </div>
 

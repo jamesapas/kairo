@@ -5,8 +5,10 @@ import Link from "next/link";
 import { ChevronRight, Loader2, UserCheck } from "lucide-react";
 import { getProfileAction, updateProfileAction } from "@/lib/actions/profile";
 import { getExperiencesAction } from "@/lib/actions/experience";
+import { getEducationsAction } from "@/lib/actions/education";
 import { ProfileLink } from "@/types/profile";
 import { UserExperience } from "@/types/experience";
+import { UserEducation } from "@/types/education";
 import { ResumeCanvasView } from "./resume-canvas-view";
 
 export function SettingsView() {
@@ -21,11 +23,16 @@ export function SettingsView() {
   const [avatarUrl, setAvatarUrl] = useState("");
   const [links, setLinks] = useState<ProfileLink[]>([]);
   const [experiences, setExperiences] = useState<UserExperience[]>([]);
+  const [educations, setEducations] = useState<UserEducation[]>([]);
 
   const [savedSnapshot, setSavedSnapshot] = useState<string>("");
 
   useEffect(() => {
-    Promise.all([getProfileAction(), getExperiencesAction()]).then(([profRes, expRes]) => {
+    Promise.all([
+      getProfileAction(),
+      getExperiencesAction(),
+      getEducationsAction(),
+    ]).then(([profRes, expRes, eduRes]) => {
       if (profRes.success && profRes.data) {
         const initName = profRes.data.name || "";
         const initEmail = profRes.data.email || "";
@@ -50,6 +57,10 @@ export function SettingsView() {
 
       if (expRes.success && expRes.data) {
         setExperiences(expRes.data);
+      }
+
+      if (eduRes.success && eduRes.data) {
+        setEducations(eduRes.data);
       }
 
       setLoading(false);
@@ -152,6 +163,8 @@ export function SettingsView() {
           setLinks={setLinks}
           experiences={experiences}
           setExperiences={setExperiences}
+          educations={educations}
+          setEducations={setEducations}
           saving={saving}
           errorMsg={errorMsg}
           successMsg={successMsg}
