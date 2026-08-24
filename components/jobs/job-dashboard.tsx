@@ -41,6 +41,8 @@ import { JobDetailDrawer } from "./job-detail-drawer";
 import { CustomSelect, CustomSelectOption } from "./custom-select";
 import { StatusIcon } from "./status-dropdown";
 import { PlatformIcon } from "./platform-badge";
+import { JobStatsOverview } from "./job-stats-overview";
+import { StreakModal } from "./streak-modal";
 
 type SortOption = "date-desc" | "date-asc" | "company-asc" | "title-asc";
 
@@ -63,9 +65,11 @@ export function JobDashboard({ userEmail, initialJobs = [] }: JobDashboardProps)
   const [workplaceFilter, setWorkplaceFilter] = useState<WorkplaceType | "all">("all");
   const [sortBy, setSortBy] = useState<SortOption>("date-desc");
   const [viewMode, setViewMode] = useState<"table" | "kanban">("table");
+  const [weekOnlyFilter, setWeekOnlyFilter] = useState(false);
 
   // Modal / Drawer state
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isStreakModalOpen, setIsStreakModalOpen] = useState(false);
   const [editingJob, setEditingJob] = useState<JobApplication | null>(null);
   const [selectedJob, setSelectedJob] = useState<JobApplication | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -226,8 +230,18 @@ export function JobDashboard({ userEmail, initialJobs = [] }: JobDashboardProps)
   };
 
   const filteredJobs = useMemo(() => {
+    // Current week boundary
+    const now = new Date();
+    const dayOfWeek = now.getDay();
+    const diffToMonday = (dayOfWeek + 6) % 7;
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - diffToMonday);
+    startOfWeek.setHours(0, 0, 0, 0);
+    const startOfWeekStr = startOfWeek.toISOString().split("T")[0];
+
     return jobs
       .filter((job) => {
+        if (weekOnlyFilter && job.dateApplied < startOfWeekStr) return false;
         if (statusFilter !== "all" && job.status !== statusFilter) return false;
         if (platformFilter !== "all" && job.appliedOn !== platformFilter) return false;
         if (workplaceFilter !== "all" && job.workplaceType !== workplaceFilter) return false;
@@ -334,11 +348,14 @@ export function JobDashboard({ userEmail, initialJobs = [] }: JobDashboardProps)
   ];
 
   return (
-    <div className="min-h-screen bg-zinc-50 text-zinc-900 flex flex-col">
+    <div className="min-h-screen bg-zinc-50/90 text-zinc-900 flex flex-col relative selection:bg-zinc-900 selection:text-white">
+      {/* Subtle Background Glow Accent */}
+      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-64 bg-gradient-to-b from-zinc-200/40 via-zinc-100/20 to-transparent pointer-events-none blur-3xl -z-10" />
+
       <Navbar userEmail={userEmail} />
 
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-zinc-900 text-white px-5 py-3 rounded-2xl shadow-xl border border-zinc-800 flex items-center gap-2.5 text-xs font-semibold animate-in slide-in-from-bottom-5">
+        <div className="fixed bottom-6 right-6 z-50 bg-zinc-900 text-white px-4 py-2.5 rounded-2xl shadow-xl border border-zinc-800 flex items-center gap-2.5 text-xs font-semibold animate-in slide-in-from-bottom-5 duration-200">
           <CheckCircle2 className="w-4 h-4 text-emerald-400" />
           <span>{toastMessage}</span>
         </div>
@@ -346,38 +363,25 @@ export function JobDashboard({ userEmail, initialJobs = [] }: JobDashboardProps)
 
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h1 className="text-2xl font-bold tracking-tight text-zinc-900">
-                Job Tracker
+              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-zinc-900">
+                Job Applications
               </h1>
-              <div className="flex items-center gap-3 text-xs text-zinc-500 mt-1">
-                <span>
-                  {jobs.length} {jobs.length === 1 ? "application" : "applications"}
-                </span>
-                <span className="text-zinc-300">•</span>
-                <div className="flex items-center gap-2.5 text-[11px]">
-                  <span className="flex items-center gap-1 font-medium text-zinc-600">
-                    <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" /> Good Match
-                  </span>
-                  <span className="flex items-center gap-1 font-medium text-zinc-600">
-                    <Star className="w-3.5 h-3.5 text-amber-400 stroke-[2]" /> Mid Match
-                  </span>
-                  <span className="flex items-center gap-1 font-medium text-zinc-600">
-                    <Star className="w-3.5 h-3.5 text-zinc-400 stroke-[2]" /> Far Match
-                  </span>
-                </div>
-              </div>
+              <p className="text-xs text-zinc-500 mt-1 font-medium">
+                Manage your job pipeline, follow-ups, and interview stages
+              </p>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2.5">
               {jobs.length > 0 && (
                 <button
                   onClick={handleExportCSV}
-                  className="px-3.5 py-2 rounded-xl bg-white border border-zinc-200 hover:border-zinc-300 hover:bg-zinc-50 text-zinc-700 text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                  className="px-3.5 py-2 rounded-xl bg-white border border-zinc-200/90 hover:border-zinc-300 hover:bg-zinc-50 text-zinc-700 text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer shadow-2xs active:scale-[0.98]"
                 >
                   <FileSpreadsheet className="w-3.5 h-3.5 text-zinc-500" />
-                  Export
+                  Export CSV
                 </button>
               )}
 
@@ -386,93 +390,126 @@ export function JobDashboard({ userEmail, initialJobs = [] }: JobDashboardProps)
                   setEditingJob(null);
                   setIsModalOpen(true);
                 }}
-                className="px-4 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer shadow-sm"
+                className="px-4 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer shadow-sm hover:shadow active:scale-[0.98]"
               >
                 <Plus className="w-4 h-4" />
-                Add Job
+                Add Application
               </button>
             </div>
           </div>
 
-          {/* Controls Bar */}
-          <div className="bg-white p-3 rounded-2xl border border-zinc-200/80 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-3">
-            {/* Search */}
-            <div className="relative flex-1 min-w-[200px]">
+          {/* Stats Overview */}
+          <JobStatsOverview
+            jobs={jobs}
+            onOpenStreakModal={() => setIsStreakModalOpen(true)}
+            onFilterThisWeek={() => setWeekOnlyFilter((prev) => !prev)}
+            onFilterInterviewing={() =>
+              setStatusFilter((curr) =>
+                curr === "interviewing" ? "all" : "interviewing"
+              )
+            }
+          />
+        </div>
+
+        {/* Controls & Filter Command Bar */}
+        <div className="bg-white p-3 rounded-2xl border border-zinc-200/90 shadow-[0_2px_8px_rgba(0,0,0,0.03)] flex flex-col md:flex-row md:items-center justify-between gap-3">
+          {/* Search Input with Shortcut Badge */}
+          <div className="flex flex-1 items-center gap-2 min-w-[220px]">
+            <div className="relative flex-1">
               <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
-                placeholder="Search by title, company..."
+                placeholder="Search by role, company, platform..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-8 py-1.5 rounded-xl bg-zinc-50 border border-zinc-200 text-xs font-medium text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-400 transition"
+                className="w-full pl-9 pr-12 py-1.5 rounded-xl bg-zinc-50/80 border border-zinc-200 text-xs font-medium text-zinc-900 placeholder:text-zinc-400 focus:bg-white focus:border-zinc-400 transition"
               />
-              {searchQuery && (
+              {searchQuery ? (
                 <button
                   onClick={() => setSearchQuery("")}
                   className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-700 cursor-pointer"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
+              ) : (
+                <kbd className="absolute right-2.5 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded text-[10px] font-mono text-zinc-400 bg-zinc-200/60 border border-zinc-300/60 pointer-events-none hidden sm:inline">
+                  /
+                </kbd>
               )}
             </div>
 
-            {/* Custom Filter Selectors with Icons */}
-            <div className="flex flex-wrap items-center gap-2">
-              <CustomSelect<JobStatus | "all">
-                value={statusFilter}
-                onChange={(val) => setStatusFilter(val)}
-                options={statusOptions}
-                width="170px"
-              />
-
-              <CustomSelect<string>
-                value={platformFilter}
-                onChange={(val) => setPlatformFilter(val)}
-                options={platformOptions}
-                width="170px"
-              />
-
-              <CustomSelect<WorkplaceType | "all">
-                value={workplaceFilter}
-                onChange={(val) => setWorkplaceFilter(val)}
-                options={workplaceOptions}
-                width="160px"
-              />
-
-              <CustomSelect<SortOption>
-                value={sortBy}
-                onChange={(val) => setSortBy(val)}
-                options={sortOptions}
-                width="160px"
-              />
-
-              {/* View Switcher */}
-              <div className="flex items-center p-0.5 rounded-xl bg-zinc-100 border border-zinc-200 ml-1">
+            {weekOnlyFilter && (
+              <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-blue-50 border border-blue-200 text-blue-800 text-xs font-semibold shrink-0">
+                <Calendar className="w-3.5 h-3.5 text-blue-600" />
+                <span>This Week</span>
                 <button
-                  onClick={() => setViewMode("table")}
-                  title="Table View"
-                  className={`p-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
-                    viewMode === "table"
-                      ? "bg-white text-zinc-900 shadow-xs"
-                      : "text-zinc-500 hover:text-zinc-900"
-                  }`}
+                  onClick={() => setWeekOnlyFilter(false)}
+                  className="hover:bg-blue-200/60 p-0.5 rounded-full text-blue-700 ml-0.5 cursor-pointer"
+                  title="Clear filter"
                 >
-                  <List className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  onClick={() => setViewMode("kanban")}
-                  title="Board View"
-                  className={`p-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
-                    viewMode === "kanban"
-                      ? "bg-white text-zinc-900 shadow-xs"
-                      : "text-zinc-500 hover:text-zinc-900"
-                  }`}
-                >
-                  <LayoutGrid className="w-3.5 h-3.5" />
+                  <X className="w-3 h-3" />
                 </button>
               </div>
+            )}
+          </div>
+
+          {/* Custom Filter Selectors with Icons */}
+          <div className="flex flex-wrap items-center gap-2">
+            <CustomSelect<JobStatus | "all">
+              value={statusFilter}
+              onChange={(val) => setStatusFilter(val)}
+              options={statusOptions}
+              width="170px"
+            />
+
+            <CustomSelect<string>
+              value={platformFilter}
+              onChange={(val) => setPlatformFilter(val)}
+              options={platformOptions}
+              width="170px"
+            />
+
+            <CustomSelect<WorkplaceType | "all">
+              value={workplaceFilter}
+              onChange={(val) => setWorkplaceFilter(val)}
+              options={workplaceOptions}
+              width="160px"
+            />
+
+            <CustomSelect<SortOption>
+              value={sortBy}
+              onChange={(val) => setSortBy(val)}
+              options={sortOptions}
+              width="160px"
+            />
+
+            {/* View Switcher: Table / Board */}
+            <div className="flex items-center p-0.5 rounded-xl bg-zinc-100 border border-zinc-200/80 ml-0.5">
+              <button
+                onClick={() => setViewMode("table")}
+                title="Table View"
+                className={`p-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
+                  viewMode === "table"
+                    ? "bg-white text-zinc-900 shadow-2xs"
+                    : "text-zinc-500 hover:text-zinc-900"
+                }`}
+              >
+                <List className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() => setViewMode("kanban")}
+                title="Board View"
+                className={`p-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
+                  viewMode === "kanban"
+                    ? "bg-white text-zinc-900 shadow-2xs"
+                    : "text-zinc-500 hover:text-zinc-900"
+                }`}
+              >
+                <LayoutGrid className="w-3.5 h-3.5" />
+              </button>
             </div>
           </div>
+        </div>
 
           {/* Main Content */}
           {viewMode === "table" ? (
@@ -531,6 +568,16 @@ export function JobDashboard({ userEmail, initialJobs = [] }: JobDashboardProps)
         }}
         onStatusChange={handleStatusChange}
         onTogglePin={handleTogglePin}
+      />
+
+      {/* Streak History & Activity Modal */}
+      <StreakModal
+        isOpen={isStreakModalOpen}
+        onClose={() => setIsStreakModalOpen(false)}
+        jobs={jobs}
+        onSelectJob={(job) => {
+          setSelectedJob(job);
+        }}
       />
     </div>
   );

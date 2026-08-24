@@ -65,7 +65,7 @@ export function StatusDropdown({
 
     if (buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
-      const dropdownHeight = 220;
+      const dropdownHeight = 230;
       const spaceBelow = window.innerHeight - rect.bottom;
       const openUpward = spaceBelow < dropdownHeight && rect.top > dropdownHeight;
 
@@ -119,10 +119,10 @@ export function StatusDropdown({
           e.stopPropagation();
           setIsOpen(!isOpen);
         }}
-        className={`transition cursor-pointer ${
+        className={`transition cursor-pointer select-none ${
           size === "sm"
-            ? "inline-flex items-center gap-1.5 rounded-full bg-white border border-zinc-200 text-zinc-800 shadow-2xs hover:border-zinc-300 px-2.5 py-1 text-xs font-semibold"
-            : "flex w-full items-center justify-between px-3 py-2 text-xs font-semibold rounded-xl bg-zinc-50 border border-zinc-200 text-zinc-800 shadow-2xs hover:border-zinc-300"
+            ? "inline-flex items-center gap-1.5 rounded-full bg-white border border-zinc-200/90 text-zinc-800 shadow-2xs hover:border-zinc-300 hover:bg-zinc-50 px-2.5 py-1 text-xs font-semibold"
+            : "flex w-full items-center justify-between px-3.5 py-2 text-xs font-semibold rounded-xl bg-zinc-50/80 border border-zinc-200 text-zinc-800 shadow-2xs hover:border-zinc-300 hover:bg-white"
         }`}
       >
         <div className="flex items-center gap-1.5 truncate">
@@ -130,13 +130,13 @@ export function StatusDropdown({
           <span className="truncate">{currentConfig.label}</span>
         </div>
         <ChevronDown
-          className={`w-3 h-3 text-zinc-400 transition-transform duration-150 shrink-0 ${
-            isOpen ? "rotate-180" : ""
+          className={`w-3 h-3 text-zinc-400 transition-transform duration-150 shrink-0 ml-0.5 ${
+            isOpen ? "rotate-180 text-zinc-700" : ""
           }`}
         />
       </button>
 
-      {/* Floating Portal Menu - rendered outside table rows to prevent overflow scrollbars */}
+      {/* Floating Portal Menu */}
       {isOpen &&
         typeof document !== "undefined" &&
         createPortal(
@@ -147,10 +147,10 @@ export function StatusDropdown({
               position: "fixed",
               top: `${coords.top}px`,
               left: `${coords.left}px`,
-              width: coords.width ? `${coords.width}px` : "176px",
+              width: coords.width ? `${coords.width}px` : "180px",
               zIndex: 9999,
             }}
-            className="rounded-2xl bg-white border border-zinc-200 shadow-2xl py-1.5 animate-fade-in"
+            className="rounded-2xl bg-white/95 backdrop-blur-md border border-zinc-200 shadow-2xl py-1.5 animate-fade-in"
           >
             {statuses.map((st) => {
               const config = JOB_STATUS_CONFIG[st];
@@ -166,7 +166,7 @@ export function StatusDropdown({
                   }}
                   className={`w-full flex items-center justify-between px-3 py-2 text-xs font-semibold transition cursor-pointer ${
                     isSelected
-                      ? "bg-zinc-100/80 text-zinc-900 font-bold"
+                      ? "bg-zinc-100/90 text-zinc-900 font-bold"
                       : "text-zinc-700 hover:bg-zinc-50 hover:text-zinc-900"
                   }`}
                 >

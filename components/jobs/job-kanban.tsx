@@ -15,6 +15,7 @@ import {
   JobMatch,
   JOB_STATUS_CONFIG,
   formatRelativeDate,
+  formatSalaryDisplay,
 } from "@/types/job";
 import { StatusIcon } from "./status-dropdown";
 import { PlatformIcon } from "./platform-badge";
@@ -94,15 +95,17 @@ export function JobKanban({
         return (
           <div
             key={statusKey}
-            className="bg-zinc-100/60 rounded-2xl p-3 border border-zinc-200/70 flex flex-col min-h-[420px]"
+            className="bg-zinc-100/70 rounded-2xl p-3 border border-zinc-200/80 flex flex-col min-h-[460px] shadow-2xs"
           >
-            {/* Column Header with StatusIcon */}
-            <div className="flex items-center justify-between px-1 py-1.5 mb-2">
-              <div className="flex items-center gap-1.5">
-                <StatusIcon status={statusKey} className="w-3.5 h-3.5" />
+            {/* Column Header */}
+            <div className="flex items-center justify-between px-1.5 py-1.5 mb-2.5">
+              <div className="flex items-center gap-2">
+                <div className="p-1 rounded-lg bg-white shadow-2xs">
+                  <StatusIcon status={statusKey} className="w-3.5 h-3.5" />
+                </div>
                 <h4 className="text-xs font-bold text-zinc-900">{config.label}</h4>
               </div>
-              <span className="px-2 py-0.2 rounded-full bg-white text-zinc-600 text-[10px] font-bold border border-zinc-200">
+              <span className="px-2 py-0.5 rounded-full bg-white text-zinc-700 text-[11px] font-bold border border-zinc-200 shadow-2xs">
                 {columnJobs.length}
               </span>
             </div>
@@ -117,28 +120,35 @@ export function JobKanban({
                   <div
                     key={job.id}
                     onClick={() => onSelectJob(job)}
-                    className="bg-white p-3.5 rounded-xl border border-zinc-200 shadow-2xs hover:shadow-xs hover:border-zinc-300 transition cursor-pointer space-y-2 group"
+                    className="bg-white p-3.5 rounded-2xl border border-zinc-200/90 shadow-[0_1px_4px_rgba(0,0,0,0.03)] hover:shadow-md hover:border-zinc-300 transition-all duration-150 cursor-pointer space-y-2.5 group relative"
                   >
-                    {/* Header: Match icon and Company */}
+                    {/* Header: Company & Match */}
                     <div className="flex items-center justify-between gap-1.5">
-                      <div className="flex items-center gap-1.5 min-w-0">
+                      <span className="text-xs font-bold text-zinc-700 truncate">
+                        {job.company}
+                      </span>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {job.isPinned && (
+                          <Pin className="w-3 h-3 text-rose-500 fill-rose-500" />
+                        )}
                         <MatchIcon match={job.match} />
-                        <span className="text-[11px] font-bold text-zinc-600 truncate">
-                          {job.company}
-                        </span>
                       </div>
-                      {job.isPinned && (
-                        <Pin className="w-3 h-3 text-rose-500 fill-rose-500 shrink-0" />
-                      )}
                     </div>
 
                     {/* Role Title */}
-                    <h5 className="text-xs font-bold text-zinc-900 leading-tight group-hover:text-blue-600 transition line-clamp-2">
+                    <h5 className="text-xs font-bold text-zinc-900 leading-snug group-hover:text-blue-600 transition-colors line-clamp-2">
                       {job.jobTitle}
                     </h5>
 
-                    {/* Meta with relative date indicator */}
-                    <div className="pt-1.5 border-t border-zinc-100 flex items-center justify-between text-[10px] text-zinc-500 font-medium">
+                    {/* Salary Tag (if available) */}
+                    {job.salary && (
+                      <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-zinc-50 border border-zinc-200/60 text-[10px] font-medium text-zinc-600">
+                        <span>{formatSalaryDisplay(job.salary)}</span>
+                      </div>
+                    )}
+
+                    {/* Meta Footer */}
+                    <div className="pt-2 border-t border-zinc-100 flex items-center justify-between text-[10px] text-zinc-500 font-medium">
                       <div className="flex items-center gap-1.5 truncate max-w-[110px]" title={job.appliedOn}>
                         <PlatformIcon platform={job.appliedOn} className="w-3 h-3 shrink-0" />
                         <span className="truncate">{job.appliedOn}</span>
@@ -146,7 +156,7 @@ export function JobKanban({
                       <span title={job.dateApplied}>{formatRelativeDate(job.dateApplied)}</span>
                     </div>
 
-                    {/* Actions */}
+                    {/* Card Actions Toolbar */}
                     <div
                       className="pt-1 flex items-center justify-between gap-1"
                       onClick={(e) => e.stopPropagation()}
@@ -154,7 +164,9 @@ export function JobKanban({
                       <div className="flex items-center gap-1">
                         {prev && (
                           <button
+                            type="button"
                             onClick={() => onStatusChange(job.id, prev)}
+                            title="Move to previous stage"
                             className="p-1 rounded-lg bg-zinc-50 hover:bg-zinc-200 text-zinc-500 transition cursor-pointer"
                           >
                             <ArrowLeft className="w-3 h-3" />
@@ -162,8 +174,10 @@ export function JobKanban({
                         )}
                         {next && (
                           <button
+                            type="button"
                             onClick={() => onStatusChange(job.id, next)}
-                            className="p-1 rounded-lg bg-zinc-900 text-white hover:bg-zinc-800 transition cursor-pointer"
+                            title="Advance to next stage"
+                            className="p-1 rounded-lg bg-zinc-900 text-white hover:bg-zinc-800 transition cursor-pointer shadow-2xs"
                           >
                             <ArrowRight className="w-3 h-3" />
                           </button>
@@ -172,13 +186,17 @@ export function JobKanban({
 
                       <div className="flex items-center gap-0.5">
                         <button
+                          type="button"
                           onClick={() => onEditJob(job)}
+                          title="Edit"
                           className="p-1 rounded-lg hover:bg-zinc-100 text-zinc-400 hover:text-zinc-800 transition cursor-pointer"
                         >
                           <Edit3 className="w-3 h-3" />
                         </button>
                         <button
+                          type="button"
                           onClick={() => onDeleteJob(job.id)}
+                          title="Delete"
                           className="p-1 rounded-lg hover:bg-rose-50 text-zinc-400 hover:text-rose-600 transition cursor-pointer"
                         >
                           <Trash2 className="w-3 h-3" />
@@ -190,8 +208,8 @@ export function JobKanban({
               })}
 
               {columnJobs.length === 0 && (
-                <div className="py-6 text-center border border-dashed border-zinc-200 rounded-xl text-[11px] text-zinc-400">
-                  Empty
+                <div className="py-10 text-center border-2 border-dashed border-zinc-200/80 rounded-2xl text-[11px] text-zinc-400 flex flex-col items-center justify-center gap-1">
+                  <span>No jobs</span>
                 </div>
               )}
             </div>

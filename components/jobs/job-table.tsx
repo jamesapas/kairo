@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Calendar,
   ExternalLink,
@@ -9,6 +9,10 @@ import {
   Briefcase,
   Star,
   Pin,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
 } from "lucide-react";
 import {
   JobApplication,
@@ -56,6 +60,19 @@ export function MatchIcon({ match }: { match?: JobMatch }) {
   );
 }
 
+function getPageNumbers(current: number, total: number): (number | "...")[] {
+  if (total <= 5) {
+    return Array.from({ length: total }, (_, i) => i + 1);
+  }
+  if (current <= 3) {
+    return [1, 2, 3, 4, "...", total];
+  }
+  if (current >= total - 2) {
+    return [1, "...", total - 3, total - 2, total - 1, total];
+  }
+  return [1, "...", current - 1, current, current + 1, "...", total];
+}
+
 export function JobTable({
   jobs,
   onSelectJob,
@@ -65,30 +82,60 @@ export function JobTable({
   onTogglePin,
   onAddNew,
 }: JobTableProps) {
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  // Group jobs into sections: Pinned, Active, Rejected
+  const pinnedJobs = useMemo(
+    () => jobs.filter((j) => j.isPinned && j.status !== "rejected"),
+    [jobs]
+  );
+  const activeJobs = useMemo(
+    () => jobs.filter((j) => !j.isPinned && j.status !== "rejected"),
+    [jobs]
+  );
+  const rejectedJobs = useMemo(
+    () => jobs.filter((j) => j.status === "rejected"),
+    [jobs]
+  );
+
+  const totalActive = activeJobs.length;
+  const totalPages = Math.max(1, Math.ceil(totalActive / pageSize));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+
+  // Reset or clamp page if list shrinks
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+
+  const startIndex = (safeCurrentPage - 1) * pageSize;
+  const paginatedActiveJobs = useMemo(() => {
+    return activeJobs.slice(startIndex, startIndex + pageSize);
+  }, [activeJobs, startIndex, pageSize]);
+
+  const endIndex = Math.min(startIndex + paginatedActiveJobs.length, totalActive);
+
   if (jobs.length === 0) {
     return (
-      <div className="bg-white rounded-2xl border border-zinc-200/80 p-10 text-center flex flex-col items-center justify-center space-y-2.5">
-        <div className="w-10 h-10 rounded-xl bg-zinc-100 flex items-center justify-center text-zinc-400">
-          <Briefcase className="w-5 h-5" />
+      <div className="bg-white rounded-3xl border border-zinc-200/90 p-12 text-center flex flex-col items-center justify-center space-y-3 shadow-sm">
+        <div className="w-12 h-12 rounded-2xl bg-zinc-100 border border-zinc-200/80 flex items-center justify-center text-zinc-400">
+          <Briefcase className="w-6 h-6" />
         </div>
-        <h3 className="text-sm font-bold text-zinc-800">No applications tracked yet</h3>
-        <p className="text-xs text-zinc-500">
-          Add your first job application to get started.
+        <h3 className="text-base font-bold text-zinc-900">No job applications tracked yet</h3>
+        <p className="text-xs text-zinc-500 max-w-sm">
+          Keep your applications organized. Add your first role to start tracking status, dates, and response streaks.
         </p>
         <button
           onClick={onAddNew}
-          className="mt-1 px-4 py-2 rounded-xl bg-zinc-900 text-white font-semibold text-xs hover:bg-zinc-800 transition cursor-pointer shadow-sm"
+          className="mt-2 px-5 py-2.5 rounded-xl bg-zinc-900 text-white font-semibold text-xs hover:bg-zinc-800 active:scale-[0.98] transition cursor-pointer shadow-sm"
         >
-          + Add Job
+          + Add Application
         </button>
       </div>
     );
   }
-
-  // Group jobs into sections: Pinned, Active, Rejected
-  const pinnedJobs = jobs.filter((j) => j.isPinned && j.status !== "rejected");
-  const activeJobs = jobs.filter((j) => !j.isPinned && j.status !== "rejected");
-  const rejectedJobs = jobs.filter((j) => j.status === "rejected");
 
   const renderJobRows = (list: JobApplication[], isMuted = false) => {
     return list.map((job) => {
@@ -96,11 +143,11 @@ export function JobTable({
         <tr
           key={job.id}
           onClick={() => onSelectJob(job)}
-          className={`hover:bg-zinc-50/80 transition-colors cursor-pointer group ${
-            isMuted ? "opacity-75 hover:opacity-100 bg-zinc-50/30" : ""
+          className={`hover:bg-zinc-50/90 transition-colors cursor-pointer group relative ${
+            isMuted ? "opacity-75 hover:opacity-100 bg-zinc-50/20" : ""
           }`}
         >
-          {/* First Side: Match Icon */}
+          {/* Match Icon - Direct without box */}
           <td className="py-3.5 pl-4 pr-1 text-center align-middle">
             <MatchIcon match={job.match} />
           </td>
@@ -109,18 +156,22 @@ export function JobTable({
           <td className="py-3.5 px-4">
             <div className="min-w-0">
               <div className="flex items-center gap-1.5">
-                <p className="font-bold text-zinc-900 truncate">{job.jobTitle}</p>
+                <p className="font-bold text-zinc-900 group-hover:text-blue-600 transition-colors truncate">
+                  {job.jobTitle}
+                </p>
                 {job.isPinned && (
-                  <Pin className="w-3 h-3 text-rose-500 fill-rose-500 shrink-0" />
+                  <span title="Pinned">
+                    <Pin className="w-3 h-3 fill-rose-500 text-rose-500 shrink-0" />
+                  </span>
                 )}
               </div>
-              <p className="text-zinc-500 text-[11px] font-medium truncate">
+              <p className="text-zinc-500 text-[11px] font-medium truncate mt-0.5">
                 {job.company}
               </p>
             </div>
           </td>
 
-          {/* Custom Status Dropdown with icons on all options */}
+          {/* Status Dropdown */}
           <td className="py-3.5 px-3" onClick={(e) => e.stopPropagation()}>
             <StatusDropdown
               value={job.status}
@@ -131,42 +182,43 @@ export function JobTable({
 
           {/* Platform */}
           <td className="py-3.5 px-3 text-zinc-600 font-medium">
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 text-xs">
               <PlatformIcon platform={job.appliedOn} className="w-3.5 h-3.5 shrink-0" />
-              <span>{job.appliedOn}</span>
+              <span className="truncate">{job.appliedOn}</span>
             </div>
           </td>
 
           {/* Workplace */}
-          <td className="py-3.5 px-3 text-zinc-600 font-medium">
-            <span>{job.workplaceType}</span>
+          <td className="py-3.5 px-3 text-zinc-600 font-medium text-xs">
+            <span className="px-2 py-0.5 rounded-md bg-zinc-100/70 border border-zinc-200/50 text-[11px]">
+              {job.workplaceType}
+            </span>
           </td>
 
           {/* Compensation */}
-          <td className="py-3.5 px-3 text-zinc-600 font-medium">
-            <span className="truncate block max-w-[120px]">
+          <td className="py-3.5 px-3 text-zinc-700 font-medium text-xs">
+            <span className="truncate block max-w-[125px] font-mono text-[11px]">
               {formatSalaryDisplay(job.salary) || "—"}
             </span>
           </td>
 
           {/* Date Applied */}
-          <td className="py-3.5 px-3 text-zinc-500 font-medium">
-            <div className="flex items-center gap-1" title={job.dateApplied}>
-              <Calendar className="w-3 h-3 text-zinc-400" />
+          <td className="py-3.5 px-3 text-zinc-500 font-medium text-xs">
+            <div className="flex items-center gap-1.5" title={job.dateApplied}>
+              <Calendar className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
               <span>{formatRelativeDate(job.dateApplied)}</span>
             </div>
           </td>
 
           {/* Actions */}
           <td className="py-3.5 px-4 text-right" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-end gap-1">
-              {/* Red Pin Toggle */}
+            <div className="flex items-center justify-end gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
               <button
                 onClick={() => onTogglePin(job.id)}
                 title={job.isPinned ? "Unpin job" : "Pin job to top"}
                 className={`p-1.5 rounded-lg transition cursor-pointer ${
                   job.isPinned
-                    ? "text-rose-600 bg-rose-50 hover:bg-rose-100"
+                    ? "bg-rose-50 text-rose-600 hover:bg-rose-100"
                     : "text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100"
                 }`}
               >
@@ -182,7 +234,7 @@ export function JobTable({
                   href={job.jobUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  title="Open Link"
+                  title="Open Job Link"
                   className="p-1.5 rounded-lg hover:bg-zinc-100 text-zinc-400 hover:text-zinc-900 transition cursor-pointer"
                 >
                   <ExternalLink className="w-3.5 h-3.5" />
@@ -210,29 +262,31 @@ export function JobTable({
   };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       {/* Pinned Section (if any) */}
       {pinnedJobs.length > 0 && (
         <div className="space-y-2">
-          <div className="flex items-center gap-1.5 px-1">
-            <Pin className="w-3.5 h-3.5 text-rose-500 fill-rose-500" />
-            <h3 className="text-xs font-bold uppercase tracking-wider text-rose-800">
-              Pinned ({pinnedJobs.length})
+          <div className="flex items-center gap-2 px-1">
+            <div className="p-1 rounded-md bg-rose-100 text-rose-600">
+              <Pin className="w-3 h-3 fill-rose-600 text-rose-600" />
+            </div>
+            <h3 className="text-xs font-bold uppercase tracking-wider text-rose-900">
+              Pinned Priorities ({pinnedJobs.length})
             </h3>
           </div>
-          <div className="bg-white rounded-2xl border border-rose-200/80 shadow-xs overflow-hidden">
+          <div className="bg-white rounded-2xl border border-rose-200/90 shadow-[0_2px_8px_rgba(244,63,94,0.06)] overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="border-b border-zinc-100 bg-rose-50/40 text-[10px] uppercase font-bold tracking-wider text-zinc-500">
-                    <th className="py-2.5 pl-4 pr-1 w-8"></th>
-                    <th className="py-2.5 px-4">Role & Company</th>
-                    <th className="py-2.5 px-3">Status</th>
-                    <th className="py-2.5 px-3">Platform</th>
-                    <th className="py-2.5 px-3">Workplace</th>
-                    <th className="py-2.5 px-3">Salary</th>
-                    <th className="py-2.5 px-3">Date</th>
-                    <th className="py-2.5 px-4 text-right">Actions</th>
+                  <tr className="border-b border-rose-100 bg-rose-50/40 text-[10px] uppercase font-bold tracking-wider text-zinc-500">
+                    <th className="py-3 pl-4 pr-1 w-8 text-center">Match</th>
+                    <th className="py-3 px-4">Role & Company</th>
+                    <th className="py-3 px-3">Status</th>
+                    <th className="py-3 px-3">Platform</th>
+                    <th className="py-3 px-3">Workplace</th>
+                    <th className="py-3 px-3">Salary</th>
+                    <th className="py-3 px-3">Applied</th>
+                    <th className="py-3 px-4 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-100 text-xs">
@@ -244,47 +298,172 @@ export function JobTable({
         </div>
       )}
 
-      {/* Active Section */}
-      {activeJobs.length > 0 && (
-        <div className="space-y-2">
-          {pinnedJobs.length > 0 && (
-            <div className="flex items-center gap-1.5 px-1">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-600">
-                Applications ({activeJobs.length})
-              </h3>
-            </div>
-          )}
-          <div className="bg-white rounded-2xl border border-zinc-200/80 shadow-xs overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="border-b border-zinc-100 bg-zinc-50/70 text-[10px] uppercase font-bold tracking-wider text-zinc-500">
-                    <th className="py-3 pl-4 pr-1 w-8"></th>
-                    <th className="py-3 px-4">Role & Company</th>
-                    <th className="py-3 px-3">Status</th>
-                    <th className="py-3 px-3">Platform</th>
-                    <th className="py-3 px-3">Workplace</th>
-                    <th className="py-3 px-3">Salary</th>
-                    <th className="py-3 px-3">Date</th>
-                    <th className="py-3 px-4 text-right">Actions</th>
+      {/* Main Applications Section with Clean Table Footer */}
+      <div className="space-y-2">
+        {pinnedJobs.length > 0 && activeJobs.length > 0 && (
+          <div className="flex items-center gap-2 px-1">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-600">
+              Applications ({activeJobs.length})
+            </h3>
+          </div>
+        )}
+        <div className="bg-white rounded-2xl border border-zinc-200/90 shadow-xs overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-zinc-100 bg-zinc-50/80 text-[10px] uppercase font-bold tracking-wider text-zinc-400">
+                  <th className="py-3 pl-4 pr-1 w-8 text-center">Match</th>
+                  <th className="py-3 px-4">Role & Company</th>
+                  <th className="py-3 px-3">Status</th>
+                  <th className="py-3 px-3">Platform</th>
+                  <th className="py-3 px-3">Workplace</th>
+                  <th className="py-3 px-3">Salary</th>
+                  <th className="py-3 px-3">Applied</th>
+                  <th className="py-3 px-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-100 text-xs">
+                {activeJobs.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="py-10 text-center text-zinc-400 text-xs">
+                      No matching applications found.
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-zinc-100 text-xs">
-                  {renderJobRows(activeJobs)}
-                </tbody>
-              </table>
+                ) : (
+                  renderJobRows(paginatedActiveJobs)
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Lowkey Minimalist Table Footer */}
+          <div className="bg-white px-4 py-2.5 border-t border-zinc-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+            {/* Left: Summary & Rows Selector */}
+            <div className="flex items-center gap-3 text-zinc-500 font-medium">
+              <span>
+                Showing <span className="text-zinc-900 font-semibold">{totalActive === 0 ? 0 : startIndex + 1}–{endIndex}</span> of{" "}
+                <span className="text-zinc-900 font-semibold">{totalActive}</span>
+              </span>
+
+              <div className="flex items-center gap-1.5 pl-3 border-l border-zinc-200">
+                <span className="text-[11px] text-zinc-400">Show:</span>
+                <select
+                  value={pageSize}
+                  onChange={(e) => {
+                    setPageSize(Number(e.target.value));
+                    setCurrentPage(1);
+                  }}
+                  className="h-8 bg-zinc-50 hover:bg-zinc-100/80 border border-zinc-200 text-zinc-800 rounded-lg px-2 text-xs font-semibold focus:outline-none transition cursor-pointer"
+                >
+                  <option value={5}>5 / page</option>
+                  <option value={10}>10 / page</option>
+                  <option value={25}>25 / page</option>
+                  <option value={50}>50 / page</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Right: Lowkey Consistent Navigation Controls */}
+            <div className="flex items-center gap-2 self-end sm:self-auto">
+              {/* Page Info Badge with Matching h-8 Height */}
+              <div className="h-8 px-2.5 rounded-lg bg-zinc-50 border border-zinc-200/80 text-xs font-medium text-zinc-500 flex items-center gap-1 shrink-0">
+                <span>Page</span>
+                <span className="font-bold text-zinc-900">{safeCurrentPage}</span>
+                <span className="text-zinc-400">/</span>
+                <span className="font-semibold text-zinc-700">{totalPages}</span>
+              </div>
+
+              {/* Navigation Capsule with Matching h-8 Height */}
+              <div className="h-8 px-1 rounded-lg bg-zinc-50 border border-zinc-200/80 flex items-center gap-0.5 shrink-0">
+                {/* Jump to First Page */}
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage(1)}
+                  disabled={safeCurrentPage === 1}
+                  className="h-6 w-6 rounded-md flex items-center justify-center hover:bg-white hover:text-zinc-900 disabled:opacity-25 disabled:cursor-not-allowed disabled:hover:bg-transparent text-zinc-500 transition cursor-pointer"
+                  title="First page"
+                >
+                  <ChevronsLeft className="w-3.5 h-3.5" />
+                </button>
+
+                {/* Previous Page */}
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={safeCurrentPage === 1}
+                  className="h-6 px-1.5 rounded-md flex items-center gap-0.5 text-xs font-medium hover:bg-white hover:text-zinc-900 disabled:opacity-25 disabled:cursor-not-allowed disabled:hover:bg-transparent text-zinc-600 transition cursor-pointer"
+                  title="Previous page"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline text-[11px]">Prev</span>
+                </button>
+
+                {/* Page Numbers */}
+                <div className="flex items-center gap-0.5 px-0.5">
+                  {getPageNumbers(safeCurrentPage, totalPages).map((p, idx) => {
+                    if (p === "...") {
+                      return (
+                        <span
+                          key={`ellipsis-${idx}`}
+                          className="px-1 text-zinc-400 font-mono text-xs select-none"
+                        >
+                          ...
+                        </span>
+                      );
+                    }
+                    const isCurrent = p === safeCurrentPage;
+                    return (
+                      <button
+                        type="button"
+                        key={p}
+                        onClick={() => setCurrentPage(p as number)}
+                        className={`min-w-[24px] h-6 px-1.5 rounded-md text-xs font-semibold transition cursor-pointer flex items-center justify-center select-none ${
+                          isCurrent
+                            ? "bg-zinc-900 text-white font-bold"
+                            : "text-zinc-600 hover:bg-white hover:text-zinc-900"
+                        }`}
+                      >
+                        {p}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Next Page */}
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={safeCurrentPage === totalPages}
+                  className="h-6 px-1.5 rounded-md flex items-center gap-0.5 text-xs font-medium hover:bg-white hover:text-zinc-900 disabled:opacity-25 disabled:cursor-not-allowed disabled:hover:bg-transparent text-zinc-600 transition cursor-pointer"
+                  title="Next page"
+                >
+                  <span className="hidden sm:inline text-[11px]">Next</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+
+                {/* Jump to Last Page */}
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage(totalPages)}
+                  disabled={safeCurrentPage === totalPages}
+                  className="h-6 w-6 rounded-md flex items-center justify-center hover:bg-white hover:text-zinc-900 disabled:opacity-25 disabled:cursor-not-allowed disabled:hover:bg-transparent text-zinc-500 transition cursor-pointer"
+                  title="Last page"
+                >
+                  <ChevronsRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      )}
+      </div>
 
       {/* Rejected Section at the bottom */}
       {rejectedJobs.length > 0 && (
         <div className="space-y-2 pt-2">
-          <div className="flex items-center gap-1.5 px-1">
+          <div className="flex items-center gap-2 px-1">
             <span className="w-2 h-2 rounded-full bg-rose-400" />
             <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-500">
-              Rejected ({rejectedJobs.length})
+              Archived / Rejected ({rejectedJobs.length})
             </h3>
           </div>
           <div className="bg-zinc-50/60 rounded-2xl border border-zinc-200/80 shadow-xs overflow-hidden">
@@ -292,13 +471,13 @@ export function JobTable({
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b border-zinc-200/70 bg-zinc-100/60 text-[10px] uppercase font-bold tracking-wider text-zinc-400">
-                    <th className="py-2.5 pl-4 pr-1 w-8"></th>
+                    <th className="py-2.5 pl-4 pr-1 w-8 text-center">Match</th>
                     <th className="py-2.5 px-4">Role & Company</th>
                     <th className="py-2.5 px-3">Status</th>
                     <th className="py-2.5 px-3">Platform</th>
                     <th className="py-2.5 px-3">Workplace</th>
                     <th className="py-2.5 px-3">Salary</th>
-                    <th className="py-2.5 px-3">Date</th>
+                    <th className="py-2.5 px-3">Applied</th>
                     <th className="py-2.5 px-4 text-right">Actions</th>
                   </tr>
                 </thead>
