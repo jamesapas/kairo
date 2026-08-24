@@ -42,6 +42,7 @@ export async function getProfileAction(): Promise<{
         id: user.id,
         email: user.email || "",
         name: user.email ? user.email.split("@")[0] : "User",
+        career_summary: null,
         links: [],
       };
 
@@ -67,7 +68,7 @@ export async function getProfileAction(): Promise<{
 }
 
 export async function updateProfileAction(
-  payload: Partial<Pick<UserProfile, "name" | "avatarUrl" | "links">>
+  payload: Partial<Pick<UserProfile, "name" | "avatarUrl" | "careerSummary" | "links">>
 ): Promise<{
   success: boolean;
   data?: UserProfile;
@@ -90,6 +91,7 @@ export async function updateProfileAction(
 
     if (payload.name !== undefined) updateFields.name = payload.name.trim();
     if (payload.avatarUrl !== undefined) updateFields.avatar_url = payload.avatarUrl.trim();
+    if (payload.careerSummary !== undefined) updateFields.career_summary = payload.careerSummary.trim();
     if (payload.links !== undefined) updateFields.links = payload.links;
 
     const { data, error } = await supabase

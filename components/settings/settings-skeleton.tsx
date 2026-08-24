@@ -34,6 +34,12 @@ export function ProfileSectionSkeleton() {
               </div>
             </div>
 
+            {/* Career Summary Skeleton */}
+            <div className="space-y-2">
+              <div className="w-32 h-3.5 rounded bg-zinc-200 dark:bg-zinc-800" />
+              <div className="w-full h-20 rounded-xl bg-zinc-100 dark:bg-zinc-800/80" />
+            </div>
+
             {/* Links Skeleton */}
             <div className="space-y-2.5 pt-1">
               <div className="flex items-center justify-between">

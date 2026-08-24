@@ -32,6 +32,7 @@ import {
   MapPin,
   Calendar,
   Award,
+  FileText,
 } from "lucide-react";
 import { ProfileLink } from "@/types/profile";
 import { UserExperience, WorkplaceType } from "@/types/experience";
@@ -347,6 +348,8 @@ interface ResumeCanvasViewProps {
   email: string;
   avatarUrl: string;
   setAvatarUrl: (v: string) => void;
+  careerSummary: string;
+  setCareerSummary: (v: string) => void;
   links: ProfileLink[];
   setLinks: (links: ProfileLink[]) => void;
   experiences: UserExperience[];
@@ -372,6 +375,8 @@ export function ResumeCanvasView({
   email,
   avatarUrl,
   setAvatarUrl,
+  careerSummary,
+  setCareerSummary,
   links,
   setLinks,
   experiences,
@@ -844,6 +849,21 @@ export function ResumeCanvasView({
                       className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-100/70 dark:bg-zinc-800/40 border border-zinc-200/70 dark:border-zinc-800 text-xs font-medium text-zinc-500 select-all cursor-not-allowed"
                     />
                   </div>
+                </div>
+
+                {/* Row 2: Career Summary */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5">
+                    <FileText className="w-3.5 h-3.5 text-zinc-400" />
+                    Career Summary
+                  </label>
+                  <textarea
+                    value={careerSummary}
+                    onChange={(e) => setCareerSummary(e.target.value)}
+                    rows={3}
+                    placeholder="e.g. Senior Software Engineer with 6+ years building distributed cloud applications and high-impact web products. Specialized in React, TypeScript, Next.js, and system architecture..."
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 text-xs font-semibold text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:bg-white dark:focus:bg-zinc-800 focus:border-zinc-400 dark:focus:border-zinc-500 transition shadow-2xs resize-y min-h-[84px] leading-relaxed"
+                  />
                 </div>
 
                 {/* Links Section */}

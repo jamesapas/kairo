@@ -27,6 +27,7 @@ export function SettingsView() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
+  const [careerSummary, setCareerSummary] = useState("");
   const [links, setLinks] = useState<ProfileLink[]>([]);
   const [experiences, setExperiences] = useState<UserExperience[]>([]);
   const [educations, setEducations] = useState<UserEducation[]>([]);
@@ -41,17 +42,20 @@ export function SettingsView() {
         const initName = profRes.data.name || "";
         const initEmail = profRes.data.email || "";
         const initAvatarUrl = profRes.data.avatarUrl || "";
+        const initCareerSummary = profRes.data.careerSummary || "";
         const initLinks = profRes.data.links || [];
 
         setName(initName);
         setEmail(initEmail);
         setAvatarUrl(initAvatarUrl);
+        setCareerSummary(initCareerSummary);
         setLinks(initLinks);
 
         setSavedSnapshot(
           JSON.stringify({
             name: initName,
             avatarUrl: initAvatarUrl,
+            careerSummary: initCareerSummary,
             links: initLinks,
           })
         );
@@ -90,7 +94,7 @@ export function SettingsView() {
   const isDirty =
     !loadingProfile &&
     savedSnapshot !== "" &&
-    savedSnapshot !== JSON.stringify({ name, avatarUrl, links });
+    savedSnapshot !== JSON.stringify({ name, avatarUrl, careerSummary, links });
 
   // Native browser prompt when refreshing or closing tab with unsaved changes
   useEffect(() => {
@@ -116,6 +120,7 @@ export function SettingsView() {
     const res = await updateProfileAction({
       name,
       avatarUrl,
+      careerSummary,
       links,
     });
 
@@ -127,7 +132,7 @@ export function SettingsView() {
     }
 
     // Update baseline saved snapshot
-    setSavedSnapshot(JSON.stringify({ name, avatarUrl, links }));
+    setSavedSnapshot(JSON.stringify({ name, avatarUrl, careerSummary, links }));
     setSuccessMsg("Profile and career canvas saved successfully");
     setTimeout(() => {
       setSuccessMsg("");
@@ -172,6 +177,8 @@ export function SettingsView() {
         email={email}
         avatarUrl={avatarUrl}
         setAvatarUrl={setAvatarUrl}
+        careerSummary={careerSummary}
+        setCareerSummary={setCareerSummary}
         links={links}
         setLinks={setLinks}
         experiences={experiences}
