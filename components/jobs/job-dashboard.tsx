@@ -353,7 +353,10 @@ export function JobDashboard({ userEmail, initialJobs = [] }: JobDashboardProps)
       {/* Subtle Background Glow Accent */}
       <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-64 bg-gradient-to-b from-zinc-200/40 via-zinc-100/20 to-transparent pointer-events-none blur-3xl -z-10" />
 
-      <Navbar userEmail={userEmail} />
+      <Navbar
+        userEmail={userEmail}
+        onOpenStreakModal={() => setIsStreakModalOpen(true)}
+      />
 
       {toastMessage && (
         <div className="fixed bottom-6 right-6 z-50 bg-zinc-900 text-white px-4 py-2.5 rounded-2xl shadow-xl border border-zinc-800 flex items-center gap-2.5 text-xs font-semibold animate-in slide-in-from-bottom-5 duration-200">

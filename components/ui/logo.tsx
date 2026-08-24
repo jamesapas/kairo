@@ -1,31 +1,29 @@
 import React from "react";
+import Image from "next/image";
 
 interface LogoProps {
   className?: string;
-  iconClassName?: string;
+  size?: number;
+  priority?: boolean;
 }
 
 export function KairoLogo({
-  className = "w-8 h-8",
-  iconClassName = "w-4 h-4",
+  className = "w-7 h-7",
+  size = 40,
+  priority = true,
 }: LogoProps) {
   return (
     <div
-      className={`rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-white shadow-sm shrink-0 select-none ${className}`}
+      className={`relative overflow-hidden rounded-xl shrink-0 select-none flex items-center justify-center ${className}`}
     >
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2.4"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className={iconClassName}
-      >
-        <path d="M5 4v16" />
-        <path d="M5 12l11-8" />
-        <path d="M9.5 9l8.5 11" />
-      </svg>
+      <Image
+        src="/kairo.png"
+        alt="Kairo Logo"
+        width={size}
+        height={size}
+        priority={priority}
+        className="w-full h-full object-contain"
+      />
     </div>
   );
 }
