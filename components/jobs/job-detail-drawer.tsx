@@ -102,44 +102,79 @@ export function JobDetailDrawer({
   onStatusChange,
   onTogglePin,
 }: JobDetailDrawerProps) {
+  const [isRendered, setIsRendered] = useState(isOpen);
+  const [isClosing, setIsClosing] = useState(false);
+  const [displayJob, setDisplayJob] = useState<JobApplication | null>(job);
+
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedContactLink, setCopiedContactLink] = useState(false);
   const [copiedDesc, setCopiedDesc] = useState(false);
 
   useEffect(() => {
+    if (job) {
+      setDisplayJob(job);
+    }
+  }, [job]);
+
+  useEffect(() => {
+    if (isOpen) {
+      setIsRendered(true);
+      setIsClosing(false);
+    } else if (isRendered) {
+      setIsClosing(true);
+      const timer = setTimeout(() => {
+        setIsRendered(false);
+        setIsClosing(false);
+      }, 250);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, isRendered]);
+
+  const handleClose = () => {
+    if (isClosing) return;
+    setIsClosing(true);
+    setTimeout(() => {
+      onClose();
+      setIsRendered(false);
+      setIsClosing(false);
+    }, 250);
+  };
+
+  useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isOpen) {
-        onClose();
+      if (e.key === "Escape" && isRendered && !isClosing) {
+        handleClose();
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
+  }, [isRendered, isClosing]);
 
-  if (!isOpen || !job) return null;
+  if (!isRendered || !displayJob) return null;
 
-  const currentStatusConfig = JOB_STATUS_CONFIG[job.status] || JOB_STATUS_CONFIG.applied;
-  const companyInitial = job.company ? job.company.trim().charAt(0).toUpperCase() : "J";
+  const currentJob = displayJob;
+  const currentStatusConfig = JOB_STATUS_CONFIG[currentJob.status] || JOB_STATUS_CONFIG.applied;
+  const companyInitial = currentJob.company ? currentJob.company.trim().charAt(0).toUpperCase() : "J";
 
   const handleCopyLink = () => {
-    if (job.jobUrl) {
-      navigator.clipboard.writeText(job.jobUrl);
+    if (currentJob.jobUrl) {
+      navigator.clipboard.writeText(currentJob.jobUrl);
       setCopiedLink(true);
       setTimeout(() => setCopiedLink(false), 2000);
     }
   };
 
   const handleCopyContactLink = () => {
-    if (job.contactUrl) {
-      navigator.clipboard.writeText(job.contactUrl);
+    if (currentJob.contactUrl) {
+      navigator.clipboard.writeText(currentJob.contactUrl);
       setCopiedContactLink(true);
       setTimeout(() => setCopiedContactLink(false), 2000);
     }
   };
 
   const handleCopyDescription = () => {
-    if (job.description) {
-      navigator.clipboard.writeText(job.description);
+    if (currentJob.description) {
+      navigator.clipboard.writeText(currentJob.description);
       setCopiedDesc(true);
       setTimeout(() => setCopiedDesc(false), 2000);
     }
@@ -147,37 +182,41 @@ export function JobDetailDrawer({
 
   return (
     <div
-      onClick={onClose}
-      className="fixed inset-0 z-50 overflow-hidden bg-zinc-950/60 backdrop-blur-xs flex justify-end animate-fade-in"
+      onClick={handleClose}
+      className={`fixed inset-0 z-50 overflow-hidden bg-zinc-950/60 backdrop-blur-xs flex justify-end ${
+        isClosing ? "animate-fade-out" : "animate-fade-in"
+      }`}
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-xl bg-white dark:bg-zinc-900 h-full shadow-2xl flex flex-col justify-between border-l border-zinc-200/90 dark:border-zinc-800 animate-slide-in overflow-hidden"
+        className={`w-full max-w-xl bg-white dark:bg-zinc-900 h-full shadow-2xl flex flex-col justify-between border-l border-zinc-200/90 dark:border-zinc-800 overflow-hidden ${
+          isClosing ? "animate-slide-out" : "animate-slide-in"
+        }`}
       >
         {/* Header Bar */}
         <div className="px-6 py-5 border-b border-zinc-200/80 dark:border-zinc-800/80 bg-zinc-50/80 dark:bg-zinc-900/90 backdrop-blur-md flex flex-col gap-4">
           {/* Top Row: Badges & Controls */}
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
-              <MatchBadge match={job.match} />
+              <MatchBadge match={currentJob.match} />
             </div>
 
             {/* Quick Actions */}
             <div className="flex items-center gap-1 shrink-0">
               <button
-                onClick={() => onTogglePin(job.id)}
-                title={job.isPinned ? "Unpin application" : "Pin to top"}
+                onClick={() => onTogglePin(currentJob.id)}
+                title={currentJob.isPinned ? "Unpin application" : "Pin to top"}
                 className={`p-2 rounded-xl transition cursor-pointer border ${
-                  job.isPinned
+                  currentJob.isPinned
                     ? "bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-900/50 hover:bg-rose-100 dark:hover:bg-rose-950/70"
                     : "bg-white dark:bg-zinc-800 border-zinc-200/80 dark:border-zinc-700/80 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-700"
                 }`}
               >
-                <Pin className={`w-3.5 h-3.5 ${job.isPinned ? "fill-rose-500 text-rose-500" : ""}`} />
+                <Pin className={`w-3.5 h-3.5 ${currentJob.isPinned ? "fill-rose-500 text-rose-500" : ""}`} />
               </button>
 
               <button
-                onClick={() => onEdit(job)}
+                onClick={() => onEdit(currentJob)}
                 title="Edit Application"
                 className="p-2 rounded-xl bg-white dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700/80 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition cursor-pointer"
               >
@@ -185,7 +224,7 @@ export function JobDetailDrawer({
               </button>
 
               <button
-                onClick={() => onDelete(job.id)}
+                onClick={() => onDelete(currentJob.id)}
                 title="Delete Application"
                 className="p-2 rounded-xl bg-white dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700/80 text-zinc-500 dark:text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:border-rose-200 dark:border-rose-900/50 transition cursor-pointer"
               >
@@ -193,7 +232,7 @@ export function JobDetailDrawer({
               </button>
 
               <button
-                onClick={onClose}
+                onClick={handleClose}
                 title="Close drawer"
                 className="p-2 rounded-xl bg-white dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700/80 text-zinc-400 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition cursor-pointer ml-0.5"
               >
@@ -209,11 +248,11 @@ export function JobDetailDrawer({
             </div>
             <div className="min-w-0 flex-1">
               <h2 className="text-lg sm:text-xl font-extrabold text-zinc-900 dark:text-zinc-100 tracking-tight leading-tight">
-                {job.jobTitle}
+                {currentJob.jobTitle}
               </h2>
               <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 flex items-center gap-1.5 mt-0.5">
                 <Building2 className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-500 shrink-0" />
-                <span className="truncate">{job.company}</span>
+                <span className="truncate">{currentJob.company}</span>
               </p>
             </div>
           </div>
@@ -237,8 +276,8 @@ export function JobDetailDrawer({
 
             <div className="shrink-0 min-w-[180px]">
               <StatusDropdown
-                value={job.status}
-                onChange={(newStatus) => onStatusChange(job.id, newStatus)}
+                value={currentJob.status}
+                onChange={(newStatus) => onStatusChange(currentJob.id, newStatus)}
                 size="md"
                 className="w-full"
               />
@@ -261,9 +300,9 @@ export function JobDetailDrawer({
                     Date Applied
                   </span>
                   <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="font-bold text-zinc-800 dark:text-zinc-200 text-xs">{job.dateApplied}</span>
+                    <span className="font-bold text-zinc-800 dark:text-zinc-200 text-xs">{currentJob.dateApplied}</span>
                     <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300">
-                      {formatRelativeDate(job.dateApplied)}
+                      {formatRelativeDate(currentJob.dateApplied)}
                     </span>
                   </div>
                 </div>
@@ -272,14 +311,14 @@ export function JobDetailDrawer({
               {/* Platform */}
               <div className="p-3.5 rounded-2xl bg-white dark:bg-zinc-800/60 border border-zinc-200/80 dark:border-zinc-700/80 flex items-start gap-3 shadow-2xs">
                 <div className="p-2 rounded-xl bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400 shrink-0">
-                  <PlatformIcon platform={job.appliedOn} className="w-4 h-4" />
+                  <PlatformIcon platform={currentJob.appliedOn} className="w-4 h-4" />
                 </div>
                 <div className="min-w-0 flex-1">
                   <span className="text-[10px] uppercase font-bold tracking-wider text-zinc-400 dark:text-zinc-500 block mb-0.5">
                     Platform
                   </span>
                   <div className="pt-0.5">
-                    <PlatformBadge platform={job.appliedOn} />
+                    <PlatformBadge platform={currentJob.appliedOn} />
                   </div>
                 </div>
               </div>
@@ -294,7 +333,7 @@ export function JobDetailDrawer({
                     Workplace Type
                   </span>
                   <div className="pt-0.5">
-                    <WorkplaceBadge type={job.workplaceType} />
+                    <WorkplaceBadge type={currentJob.workplaceType} />
                   </div>
                 </div>
               </div>
@@ -309,7 +348,7 @@ export function JobDetailDrawer({
                     Compensation
                   </span>
                   <p className="font-bold text-zinc-800 dark:text-zinc-200 text-xs truncate">
-                    {formatSalaryDisplay(job.salary) || (
+                    {formatSalaryDisplay(currentJob.salary) || (
                       <span className="text-zinc-400 dark:text-zinc-500 font-normal italic">Not specified</span>
                     )}
                   </p>
@@ -319,14 +358,14 @@ export function JobDetailDrawer({
           </div>
 
           {/* External Links & Resources */}
-          {(job.jobUrl || job.contactUrl) && (
+          {(currentJob.jobUrl || currentJob.contactUrl) && (
             <div>
               <h3 className="text-[11px] uppercase font-bold tracking-wider text-zinc-400 dark:text-zinc-500 mb-2.5">
                 Links & Resources
               </h3>
               <div className="space-y-2.5">
                 {/* Job Posting URL */}
-                {job.jobUrl && (
+                {currentJob.jobUrl && (
                   <div className="p-3.5 rounded-2xl bg-white dark:bg-zinc-800/60 border border-zinc-200/80 dark:border-zinc-700/80 flex items-center justify-between gap-3 shadow-2xs">
                     <div className="flex items-center gap-3 min-w-0 flex-1">
                       <div className="p-2 rounded-xl bg-zinc-100 dark:bg-zinc-700/60 text-zinc-600 dark:text-zinc-300 shrink-0">
@@ -336,8 +375,8 @@ export function JobDetailDrawer({
                         <span className="text-[10px] uppercase font-bold tracking-wider text-zinc-400 dark:text-zinc-500 block">
                           Job Posting Link
                         </span>
-                        <p className="text-xs font-semibold text-zinc-800 dark:text-zinc-200 truncate" title={job.jobUrl}>
-                          {getDomain(job.jobUrl)}
+                        <p className="text-xs font-semibold text-zinc-800 dark:text-zinc-200 truncate" title={currentJob.jobUrl}>
+                          {getDomain(currentJob.jobUrl)}
                         </p>
                       </div>
                     </div>
@@ -362,7 +401,7 @@ export function JobDetailDrawer({
                       </button>
 
                       <a
-                        href={job.jobUrl}
+                        href={currentJob.jobUrl}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="px-3 py-1.5 rounded-xl bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-white font-semibold text-xs flex items-center gap-1 cursor-pointer transition shadow-2xs"
@@ -375,7 +414,7 @@ export function JobDetailDrawer({
                 )}
 
                 {/* Contact / Outreach URL */}
-                {job.contactUrl && (
+                {currentJob.contactUrl && (
                   <div className="p-3.5 rounded-2xl bg-white dark:bg-zinc-800/60 border border-zinc-200/80 dark:border-zinc-700/80 flex items-center justify-between gap-3 shadow-2xs">
                     <div className="flex items-center gap-3 min-w-0 flex-1">
                       <div className="p-2 rounded-xl bg-zinc-100 dark:bg-zinc-700/60 text-zinc-600 dark:text-zinc-300 shrink-0">
@@ -385,8 +424,8 @@ export function JobDetailDrawer({
                         <span className="text-[10px] uppercase font-bold tracking-wider text-zinc-400 dark:text-zinc-500 block">
                           Contact / Outreach
                         </span>
-                        <p className="text-xs font-semibold text-zinc-800 dark:text-zinc-200 truncate" title={job.contactUrl}>
-                          {getDomain(job.contactUrl)}
+                        <p className="text-xs font-semibold text-zinc-800 dark:text-zinc-200 truncate" title={currentJob.contactUrl}>
+                          {getDomain(currentJob.contactUrl)}
                         </p>
                       </div>
                     </div>
@@ -411,7 +450,7 @@ export function JobDetailDrawer({
                       </button>
 
                       <a
-                        href={job.contactUrl}
+                        href={currentJob.contactUrl}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="px-3 py-1.5 rounded-xl bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-white font-semibold text-xs flex items-center gap-1 cursor-pointer transition shadow-2xs"
@@ -433,7 +472,7 @@ export function JobDetailDrawer({
                 <FileText className="w-3.5 h-3.5" />
                 <span>Job Description</span>
               </h3>
-              {job.description && (
+              {currentJob.description && (
                 <button
                   onClick={handleCopyDescription}
                   className="inline-flex items-center gap-1 text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 cursor-pointer transition"
@@ -453,9 +492,9 @@ export function JobDetailDrawer({
               )}
             </div>
 
-            {job.description ? (
+            {currentJob.description ? (
               <div className="p-4 rounded-2xl bg-zinc-50/90 dark:bg-zinc-800/40 border border-zinc-200/80 dark:border-zinc-800/90 text-xs text-zinc-700 dark:text-zinc-300 leading-relaxed whitespace-pre-line font-normal selection:bg-zinc-200 dark:selection:bg-zinc-700">
-                {job.description}
+                {currentJob.description}
               </div>
             ) : (
               <div className="p-6 rounded-2xl bg-zinc-50/50 dark:bg-zinc-800/20 border border-dashed border-zinc-200 dark:border-zinc-800 text-center space-y-1.5">
@@ -474,13 +513,16 @@ export function JobDetailDrawer({
           <div className="flex items-center gap-1.5 truncate">
             <Clock className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
             <span className="truncate">
-              Tracked on {job.dateApplied} ({formatRelativeDate(job.dateApplied)})
+              Tracked on {currentJob.dateApplied} ({formatRelativeDate(currentJob.dateApplied)})
             </span>
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
             <button
-              onClick={() => onEdit(job)}
+              onClick={() => {
+                handleClose();
+                onEdit(currentJob);
+              }}
               className="px-4 py-2 rounded-xl bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-700 font-semibold transition cursor-pointer text-xs shadow-2xs flex items-center gap-1.5"
             >
               <Edit3 className="w-3.5 h-3.5 text-zinc-400" />
@@ -488,7 +530,7 @@ export function JobDetailDrawer({
             </button>
 
             <button
-              onClick={onClose}
+              onClick={handleClose}
               className="px-5 py-2 rounded-xl bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-semibold hover:bg-zinc-800 dark:hover:bg-white transition cursor-pointer text-xs shadow-sm"
             >
               Close
