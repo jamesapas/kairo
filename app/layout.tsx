@@ -9,8 +9,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Kairo | Personal Career Assistant",
-  description: "Manage professional information, work experience, skills, and projects.",
+  title: "Kairo | AI Job Tracker & Career Copilot",
+  description: "AI-powered job application tracker and career copilot. Track applications, analyze match scores, bridge skill gaps, and manage your career profile.",
   icons: {
     icon: [
       { url: "/favicon.ico" },
