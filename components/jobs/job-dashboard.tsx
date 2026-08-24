@@ -349,9 +349,9 @@ export function JobDashboard({ userEmail, initialJobs = [] }: JobDashboardProps)
   ];
 
   return (
-    <div className="min-h-screen bg-zinc-50/90 text-zinc-900 flex flex-col relative selection:bg-zinc-900 selection:text-white">
+    <div className="min-h-screen bg-zinc-50/90 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 flex flex-col relative selection:bg-zinc-900 dark:selection:bg-zinc-100 selection:text-white dark:selection:text-zinc-900 transition-colors duration-150">
       {/* Subtle Background Glow Accent */}
-      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-64 bg-gradient-to-b from-zinc-200/40 via-zinc-100/20 to-transparent pointer-events-none blur-3xl -z-10" />
+      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-64 bg-gradient-to-b from-zinc-200/40 dark:from-zinc-800/20 via-zinc-100/20 dark:via-zinc-900/10 to-transparent pointer-events-none blur-3xl -z-10" />
 
       <Navbar
         userEmail={userEmail}
@@ -359,8 +359,8 @@ export function JobDashboard({ userEmail, initialJobs = [] }: JobDashboardProps)
       />
 
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-zinc-900 text-white px-4 py-2.5 rounded-2xl shadow-xl border border-zinc-800 flex items-center gap-2.5 text-xs font-semibold animate-in slide-in-from-bottom-5 duration-200">
-          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+        <div className="fixed bottom-6 right-6 z-50 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 px-4 py-2.5 rounded-2xl shadow-xl border border-zinc-800 dark:border-zinc-200 flex items-center gap-2.5 text-xs font-semibold animate-in slide-in-from-bottom-5 duration-200">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400 dark:text-emerald-600" />
           <span>{toastMessage}</span>
         </div>
       )}
@@ -393,39 +393,39 @@ export function JobDashboard({ userEmail, initialJobs = [] }: JobDashboardProps)
         </div>
 
         {/* Controls & Filter Command Bar */}
-        <div className="bg-white p-3 rounded-2xl border border-zinc-200/90 shadow-[0_2px_8px_rgba(0,0,0,0.03)] flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <div className="bg-white dark:bg-zinc-900 p-3 rounded-2xl border border-zinc-200/90 dark:border-zinc-800 shadow-[0_2px_8px_rgba(0,0,0,0.03)] flex flex-col md:flex-row md:items-center justify-between gap-3 transition-colors duration-150">
           {/* Search Input with Shortcut Badge */}
           <div className="flex flex-1 items-center gap-2 min-w-[220px]">
             <div className="relative flex-1">
-              <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <Search className="w-4 h-4 text-zinc-400 dark:text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 placeholder="Search by role, company, platform..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-12 py-1.5 rounded-xl bg-zinc-50/80 border border-zinc-200 text-xs font-medium text-zinc-900 placeholder:text-zinc-400 focus:bg-white focus:border-zinc-400 transition"
+                className="w-full pl-9 pr-12 py-1.5 rounded-xl bg-zinc-50/80 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 text-xs font-medium text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:bg-white dark:focus:bg-zinc-800 focus:border-zinc-400 dark:focus:border-zinc-600 transition"
               />
               {searchQuery ? (
                 <button
                   onClick={() => setSearchQuery("")}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-700 cursor-pointer"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 cursor-pointer"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
               ) : (
-                <kbd className="absolute right-2.5 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded text-[10px] font-mono text-zinc-400 bg-zinc-200/60 border border-zinc-300/60 pointer-events-none hidden sm:inline">
+                <kbd className="absolute right-2.5 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded text-[10px] font-mono text-zinc-400 dark:text-zinc-500 bg-zinc-200/60 dark:bg-zinc-700/60 border border-zinc-300/60 dark:border-zinc-600 pointer-events-none hidden sm:inline">
                   /
                 </kbd>
               )}
             </div>
 
             {weekOnlyFilter && (
-              <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-blue-50 border border-blue-200 text-blue-800 text-xs font-semibold shrink-0">
-                <Calendar className="w-3.5 h-3.5 text-blue-600" />
+              <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800/70 text-blue-800 dark:text-blue-300 text-xs font-semibold shrink-0">
+                <Calendar className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                 <span>This Week</span>
                 <button
                   onClick={() => setWeekOnlyFilter(false)}
-                  className="hover:bg-blue-200/60 p-0.5 rounded-full text-blue-700 ml-0.5 cursor-pointer"
+                  className="hover:bg-blue-200/60 dark:hover:bg-blue-900/60 p-0.5 rounded-full text-blue-700 dark:text-blue-300 ml-0.5 cursor-pointer"
                   title="Clear filter"
                 >
                   <X className="w-3 h-3" />
@@ -465,14 +465,14 @@ export function JobDashboard({ userEmail, initialJobs = [] }: JobDashboardProps)
             />
 
             {/* View Switcher: Table / Board */}
-            <div className="flex items-center p-0.5 rounded-xl bg-zinc-100 border border-zinc-200/80 ml-0.5">
+            <div className="flex items-center p-0.5 rounded-xl bg-zinc-100 dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700 ml-0.5">
               <button
                 onClick={() => setViewMode("table")}
                 title="Table View"
                 className={`p-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
                   viewMode === "table"
-                    ? "bg-white text-zinc-900 shadow-2xs"
-                    : "text-zinc-500 hover:text-zinc-900"
+                    ? "bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-2xs"
+                    : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white"
                 }`}
               >
                 <List className="w-3.5 h-3.5" />
@@ -482,8 +482,8 @@ export function JobDashboard({ userEmail, initialJobs = [] }: JobDashboardProps)
                 title="Board View"
                 className={`p-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
                   viewMode === "kanban"
-                    ? "bg-white text-zinc-900 shadow-2xs"
-                    : "text-zinc-500 hover:text-zinc-900"
+                    ? "bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-2xs"
+                    : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white"
                 }`}
               >
                 <LayoutGrid className="w-3.5 h-3.5" />

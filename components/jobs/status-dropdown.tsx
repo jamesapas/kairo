@@ -121,8 +121,8 @@ export function StatusDropdown({
         }}
         className={`transition cursor-pointer select-none ${
           size === "sm"
-            ? "inline-flex items-center gap-1.5 rounded-full bg-white border border-zinc-200/90 text-zinc-800 shadow-2xs hover:border-zinc-300 hover:bg-zinc-50 px-2.5 py-1 text-xs font-semibold"
-            : "flex w-full items-center justify-between px-3.5 py-2 text-xs font-semibold rounded-xl bg-zinc-50/80 border border-zinc-200 text-zinc-800 shadow-2xs hover:border-zinc-300 hover:bg-white"
+            ? "inline-flex items-center gap-1.5 rounded-full bg-white dark:bg-zinc-800 border border-zinc-200/90 dark:border-zinc-700 text-zinc-800 dark:text-zinc-200 shadow-2xs hover:border-zinc-300 dark:hover:border-zinc-600 hover:bg-zinc-50 dark:hover:bg-zinc-750 px-2.5 py-1 text-xs font-semibold"
+            : "flex w-full items-center justify-between px-3.5 py-2 text-xs font-semibold rounded-xl bg-zinc-50/80 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 text-zinc-800 dark:text-zinc-200 shadow-2xs hover:border-zinc-300 dark:hover:border-zinc-600 hover:bg-white dark:hover:bg-zinc-800"
         }`}
       >
         <div className="flex items-center gap-1.5 truncate">
@@ -130,8 +130,8 @@ export function StatusDropdown({
           <span className="truncate">{currentConfig.label}</span>
         </div>
         <ChevronDown
-          className={`w-3 h-3 text-zinc-400 transition-transform duration-150 shrink-0 ml-0.5 ${
-            isOpen ? "rotate-180 text-zinc-700" : ""
+          className={`w-3 h-3 text-zinc-400 dark:text-zinc-500 transition-transform duration-150 shrink-0 ml-0.5 ${
+            isOpen ? "rotate-180 text-zinc-700 dark:text-zinc-300" : ""
           }`}
         />
       </button>
@@ -150,7 +150,7 @@ export function StatusDropdown({
               width: coords.width ? `${coords.width}px` : "180px",
               zIndex: 9999,
             }}
-            className="rounded-2xl bg-white/95 backdrop-blur-md border border-zinc-200 shadow-2xl py-1.5 animate-fade-in"
+            className="rounded-2xl bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md border border-zinc-200 dark:border-zinc-800 shadow-2xl py-1.5 animate-fade-in"
           >
             {statuses.map((st) => {
               const config = JOB_STATUS_CONFIG[st];
@@ -166,15 +166,15 @@ export function StatusDropdown({
                   }}
                   className={`w-full flex items-center justify-between px-3 py-2 text-xs font-semibold transition cursor-pointer ${
                     isSelected
-                      ? "bg-zinc-100/90 text-zinc-900 font-bold"
-                      : "text-zinc-700 hover:bg-zinc-50 hover:text-zinc-900"
+                      ? "bg-zinc-100/90 dark:bg-zinc-800 text-zinc-900 dark:text-white font-bold"
+                      : "text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/60 hover:text-zinc-900 dark:hover:text-white"
                   }`}
                 >
                   <div className="flex items-center gap-2">
                     <StatusIcon status={st} className="w-3.5 h-3.5" />
                     <span>{config.label}</span>
                   </div>
-                  {isSelected && <Check className="w-3.5 h-3.5 text-zinc-900 stroke-[2.5]" />}
+                  {isSelected && <Check className="w-3.5 h-3.5 text-zinc-900 dark:text-white stroke-[2.5]" />}
                 </button>
               );
             })}

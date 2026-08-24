@@ -97,7 +97,7 @@ export function CustomSelect<T extends string = string>({
           e.stopPropagation();
           setIsOpen(!isOpen);
         }}
-        className={`rounded-xl bg-white border border-zinc-200/90 text-xs font-semibold text-zinc-700 hover:border-zinc-300 hover:bg-zinc-50 transition-all cursor-pointer shadow-2xs select-none ${
+        className={`rounded-xl bg-white dark:bg-zinc-800 border border-zinc-200/90 dark:border-zinc-700 text-xs font-semibold text-zinc-700 dark:text-zinc-200 hover:border-zinc-300 dark:hover:border-zinc-600 hover:bg-zinc-50 dark:hover:bg-zinc-750 transition-all cursor-pointer shadow-2xs select-none ${
           isFullWidth
             ? "flex w-full items-center justify-between px-3.5 py-2"
             : "inline-flex items-center gap-1.5 px-3 py-1.5"
@@ -108,8 +108,8 @@ export function CustomSelect<T extends string = string>({
           <span className="truncate">{selectedOption ? selectedOption.label : placeholder}</span>
         </div>
         <ChevronDown
-          className={`w-3 h-3 text-zinc-400 transition-transform duration-150 shrink-0 ml-1 ${
-            isOpen ? "rotate-180 text-zinc-600" : ""
+          className={`w-3 h-3 text-zinc-400 dark:text-zinc-500 transition-transform duration-150 shrink-0 ml-1 ${
+            isOpen ? "rotate-180 text-zinc-600 dark:text-zinc-300" : ""
           }`}
         />
       </button>
@@ -129,7 +129,7 @@ export function CustomSelect<T extends string = string>({
               zIndex: 9999,
               maxHeight: "260px",
             }}
-            className="rounded-2xl bg-white/95 backdrop-blur-md border border-zinc-200 shadow-2xl py-1.5 overflow-y-auto animate-fade-in"
+            className="rounded-2xl bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md border border-zinc-200 dark:border-zinc-800 shadow-2xl py-1.5 overflow-y-auto animate-fade-in"
           >
             {options.map((option) => {
               const isSelected = option.value === value;
@@ -144,15 +144,15 @@ export function CustomSelect<T extends string = string>({
                   }}
                   className={`w-full flex items-center justify-between px-3 py-2 text-xs font-semibold transition cursor-pointer ${
                     isSelected
-                      ? "bg-zinc-100/90 text-zinc-900 font-bold"
-                      : "text-zinc-700 hover:bg-zinc-50 hover:text-zinc-900"
+                      ? "bg-zinc-100/90 dark:bg-zinc-800 text-zinc-900 dark:text-white font-bold"
+                      : "text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/60 hover:text-zinc-900 dark:hover:text-white"
                   }`}
                 >
                   <div className="flex items-center gap-2 truncate">
                     {option.icon}
                     <span className="truncate">{option.label}</span>
                   </div>
-                  {isSelected && <Check className="w-3.5 h-3.5 text-zinc-900 stroke-[2.5] shrink-0 ml-1.5" />}
+                  {isSelected && <Check className="w-3.5 h-3.5 text-zinc-900 dark:text-white stroke-[2.5] shrink-0 ml-1.5" />}
                 </button>
               );
             })}

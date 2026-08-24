@@ -95,17 +95,17 @@ export function JobKanban({
         return (
           <div
             key={statusKey}
-            className="bg-zinc-100/70 rounded-2xl p-3 border border-zinc-200/80 flex flex-col min-h-[460px] shadow-2xs"
+            className="bg-zinc-100/70 dark:bg-zinc-900/60 rounded-2xl p-3 border border-zinc-200/80 dark:border-zinc-800 flex flex-col min-h-[460px] shadow-2xs transition-colors duration-150"
           >
             {/* Column Header */}
             <div className="flex items-center justify-between px-1.5 py-1.5 mb-2.5">
               <div className="flex items-center gap-2">
-                <div className="p-1 rounded-lg bg-white shadow-2xs">
+                <div className="p-1 rounded-lg bg-white dark:bg-zinc-800 shadow-2xs">
                   <StatusIcon status={statusKey} className="w-3.5 h-3.5" />
                 </div>
-                <h4 className="text-xs font-bold text-zinc-900">{config.label}</h4>
+                <h4 className="text-xs font-bold text-zinc-900 dark:text-zinc-100">{config.label}</h4>
               </div>
-              <span className="px-2 py-0.5 rounded-full bg-white text-zinc-700 text-[11px] font-bold border border-zinc-200 shadow-2xs">
+              <span className="px-2 py-0.5 rounded-full bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-[11px] font-bold border border-zinc-200 dark:border-zinc-700 shadow-2xs">
                 {columnJobs.length}
               </span>
             </div>
@@ -120,11 +120,11 @@ export function JobKanban({
                   <div
                     key={job.id}
                     onClick={() => onSelectJob(job)}
-                    className="bg-white p-3.5 rounded-2xl border border-zinc-200/90 shadow-[0_1px_4px_rgba(0,0,0,0.03)] hover:shadow-md hover:border-zinc-300 transition-all duration-150 cursor-pointer space-y-2.5 group relative"
+                    className="bg-white dark:bg-zinc-900 p-3.5 rounded-2xl border border-zinc-200/90 dark:border-zinc-800 shadow-[0_1px_4px_rgba(0,0,0,0.03)] hover:shadow-md hover:border-zinc-300 dark:hover:border-zinc-700 transition-all duration-150 cursor-pointer space-y-2.5 group relative"
                   >
                     {/* Header: Company & Match */}
                     <div className="flex items-center justify-between gap-1.5">
-                      <span className="text-xs font-bold text-zinc-700 truncate">
+                      <span className="text-xs font-bold text-zinc-700 dark:text-zinc-300 truncate">
                         {job.company}
                       </span>
                       <div className="flex items-center gap-1.5 shrink-0">
@@ -136,19 +136,19 @@ export function JobKanban({
                     </div>
 
                     {/* Role Title */}
-                    <h5 className="text-xs font-bold text-zinc-900 leading-snug group-hover:text-blue-600 transition-colors line-clamp-2">
+                    <h5 className="text-xs font-bold text-zinc-900 dark:text-zinc-100 leading-snug group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-2">
                       {job.jobTitle}
                     </h5>
 
                     {/* Salary Tag (if available) */}
                     {job.salary && (
-                      <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-zinc-50 border border-zinc-200/60 text-[10px] font-medium text-zinc-600">
+                      <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-zinc-50 dark:bg-zinc-800 border border-zinc-200/60 dark:border-zinc-700 text-[10px] font-medium text-zinc-600 dark:text-zinc-300">
                         <span>{formatSalaryDisplay(job.salary)}</span>
                       </div>
                     )}
 
                     {/* Meta Footer */}
-                    <div className="pt-2 border-t border-zinc-100 flex items-center justify-between text-[10px] text-zinc-500 font-medium">
+                    <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between text-[10px] text-zinc-500 dark:text-zinc-400 font-medium">
                       <div className="flex items-center gap-1.5 truncate max-w-[110px]" title={job.appliedOn}>
                         <PlatformIcon platform={job.appliedOn} className="w-3 h-3 shrink-0" />
                         <span className="truncate">{job.appliedOn}</span>
@@ -167,7 +167,7 @@ export function JobKanban({
                             type="button"
                             onClick={() => onStatusChange(job.id, prev)}
                             title="Move to previous stage"
-                            className="p-1 rounded-lg bg-zinc-50 hover:bg-zinc-200 text-zinc-500 transition cursor-pointer"
+                            className="p-1 rounded-lg bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-500 dark:text-zinc-400 transition cursor-pointer"
                           >
                             <ArrowLeft className="w-3 h-3" />
                           </button>
@@ -177,7 +177,7 @@ export function JobKanban({
                             type="button"
                             onClick={() => onStatusChange(job.id, next)}
                             title="Advance to next stage"
-                            className="p-1 rounded-lg bg-zinc-900 text-white hover:bg-zinc-800 transition cursor-pointer shadow-2xs"
+                            className="p-1 rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-white transition cursor-pointer shadow-2xs"
                           >
                             <ArrowRight className="w-3 h-3" />
                           </button>
@@ -189,7 +189,7 @@ export function JobKanban({
                           type="button"
                           onClick={() => onEditJob(job)}
                           title="Edit"
-                          className="p-1 rounded-lg hover:bg-zinc-100 text-zinc-400 hover:text-zinc-800 transition cursor-pointer"
+                          className="p-1 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 dark:text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 transition cursor-pointer"
                         >
                           <Edit3 className="w-3 h-3" />
                         </button>
@@ -197,7 +197,7 @@ export function JobKanban({
                           type="button"
                           onClick={() => onDeleteJob(job.id)}
                           title="Delete"
-                          className="p-1 rounded-lg hover:bg-rose-50 text-zinc-400 hover:text-rose-600 transition cursor-pointer"
+                          className="p-1 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 text-zinc-400 dark:text-zinc-500 hover:text-rose-600 dark:hover:text-rose-400 transition cursor-pointer"
                         >
                           <Trash2 className="w-3 h-3" />
                         </button>
@@ -208,7 +208,7 @@ export function JobKanban({
               })}
 
               {columnJobs.length === 0 && (
-                <div className="py-10 text-center border-2 border-dashed border-zinc-200/80 rounded-2xl text-[11px] text-zinc-400 flex flex-col items-center justify-center gap-1">
+                <div className="py-10 text-center border-2 border-dashed border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-[11px] text-zinc-400 dark:text-zinc-500 flex flex-col items-center justify-center gap-1">
                   <span>No jobs</span>
                 </div>
               )}

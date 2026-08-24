@@ -227,15 +227,15 @@ function JobModalForm({
   };
 
   return (
-    <div className="bg-white rounded-3xl border border-zinc-200 shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden my-auto">
+    <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden my-auto transition-colors duration-150">
       {/* Header */}
-      <div className="px-6 py-4 border-b border-zinc-100 flex items-center justify-between">
-        <h2 className="text-base font-bold text-zinc-900">
+      <div className="px-6 py-4 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
+        <h2 className="text-base font-bold text-zinc-900 dark:text-zinc-100">
           {initialJob ? "Edit Application" : "Add Job Application"}
         </h2>
         <button
           onClick={onClose}
-          className="w-8 h-8 rounded-xl bg-zinc-100 hover:bg-zinc-200 flex items-center justify-center text-zinc-500 hover:text-zinc-800 transition cursor-pointer"
+          className="w-8 h-8 rounded-xl bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 flex items-center justify-center text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 transition cursor-pointer"
         >
           <X className="w-4 h-4" />
         </button>
@@ -246,7 +246,7 @@ function JobModalForm({
         {/* Title & Company */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
           <div>
-            <label className="block text-xs font-semibold text-zinc-700 mb-1">
+            <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
               Job Title <span className="text-rose-500">*</span>
             </label>
             <input
@@ -257,9 +257,9 @@ function JobModalForm({
                 setJobTitle(e.target.value);
                 if (errors.jobTitle) setErrors({ ...errors, jobTitle: undefined });
               }}
-              className={`w-full px-3 py-2 rounded-xl bg-zinc-50 border ${
-                errors.jobTitle ? "border-rose-400" : "border-zinc-200"
-              } text-xs font-medium text-zinc-900 focus:border-zinc-400 transition`}
+              className={`w-full px-3 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-800/80 border ${
+                errors.jobTitle ? "border-rose-400" : "border-zinc-200 dark:border-zinc-700"
+              } text-xs font-medium text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:border-zinc-400 dark:focus:border-zinc-500 transition`}
             />
             {errors.jobTitle && (
               <p className="text-[11px] text-rose-500 mt-1 flex items-center gap-1">
@@ -269,7 +269,7 @@ function JobModalForm({
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-zinc-700 mb-1">
+            <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
               Company <span className="text-rose-500">*</span>
             </label>
             <input
@@ -280,9 +280,9 @@ function JobModalForm({
                 setCompany(e.target.value);
                 if (errors.company) setErrors({ ...errors, company: undefined });
               }}
-              className={`w-full px-3 py-2 rounded-xl bg-zinc-50 border ${
-                errors.company ? "border-rose-400" : "border-zinc-200"
-              } text-xs font-medium text-zinc-900 focus:border-zinc-400 transition`}
+              className={`w-full px-3 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-800/80 border ${
+                errors.company ? "border-rose-400" : "border-zinc-200 dark:border-zinc-700"
+              } text-xs font-medium text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:border-zinc-400 dark:focus:border-zinc-500 transition`}
             />
             {errors.company && (
               <p className="text-[11px] text-rose-500 mt-1 flex items-center gap-1">
@@ -295,7 +295,7 @@ function JobModalForm({
         {/* Status, Date, Match */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
           <div>
-            <label className="block text-xs font-semibold text-zinc-700 mb-1">
+            <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
               Status
             </label>
             <StatusDropdown
@@ -307,7 +307,7 @@ function JobModalForm({
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-zinc-700 mb-1">
+            <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
               Date Applied <span className="text-rose-500">*</span>
             </label>
             <input
@@ -317,12 +317,12 @@ function JobModalForm({
                 setDateApplied(e.target.value);
                 if (errors.dateApplied) setErrors({ ...errors, dateApplied: undefined });
               }}
-              className="w-full px-3 py-2 rounded-xl bg-zinc-50 border border-zinc-200 text-xs font-medium text-zinc-900 focus:border-zinc-400 cursor-pointer"
+              className="w-full px-3 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 text-xs font-medium text-zinc-900 dark:text-zinc-100 focus:border-zinc-400 dark:focus:border-zinc-500 cursor-pointer"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-zinc-700 mb-1">
+            <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
               Match
             </label>
             <CustomSelect<JobMatch>
@@ -337,7 +337,7 @@ function JobModalForm({
         {/* Platform & Workplace */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
           <div>
-            <label className="block text-xs font-semibold text-zinc-700 mb-1">
+            <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
               Applied On
             </label>
             <CustomSelect<string>
@@ -349,7 +349,7 @@ function JobModalForm({
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-zinc-700 mb-1">
+            <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
               Workplace
             </label>
             <CustomSelect<WorkplaceType>
@@ -363,14 +363,14 @@ function JobModalForm({
 
         {/* Salary */}
         <div>
-          <label className="block text-xs font-semibold text-zinc-700 mb-1">
+          <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
             Salary / Range
           </label>
-          <div className="flex items-center rounded-xl bg-zinc-50 border border-zinc-200 focus-within:border-zinc-400 transition overflow-hidden">
+          <div className="flex items-center rounded-xl bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 focus-within:border-zinc-400 dark:focus-within:border-zinc-500 transition overflow-hidden">
             <select
               value={salaryCurrency}
               onChange={(e) => setSalaryCurrency(e.target.value)}
-              className="bg-zinc-100/80 text-xs font-bold text-zinc-800 py-2 pl-2.5 pr-1 border-r border-zinc-200 cursor-pointer focus:outline-none shrink-0 hover:bg-zinc-200/50 transition"
+              className="bg-zinc-100/80 dark:bg-zinc-800 text-xs font-bold text-zinc-800 dark:text-zinc-200 py-2 pl-2.5 pr-1 border-r border-zinc-200 dark:border-zinc-700 cursor-pointer focus:outline-none shrink-0 hover:bg-zinc-200/50 dark:hover:bg-zinc-700 transition"
             >
               {CURRENCY_OPTIONS.map((c) => (
                 <option key={c.value} value={c.value}>
@@ -383,12 +383,12 @@ function JobModalForm({
               placeholder="e.g. 50,000 - 80,000"
               value={salaryAmount}
               onChange={(e) => setSalaryAmount(formatSalaryInput(e.target.value))}
-              className="flex-1 min-w-0 bg-transparent px-2.5 py-2 text-xs font-medium text-zinc-900 focus:outline-none placeholder:text-zinc-400"
+              className="flex-1 min-w-0 bg-transparent px-2.5 py-2 text-xs font-medium text-zinc-900 dark:text-zinc-100 focus:outline-none placeholder:text-zinc-400 dark:placeholder:text-zinc-500"
             />
             <select
               value={salaryPeriod}
               onChange={(e) => setSalaryPeriod(e.target.value)}
-              className="bg-zinc-100/80 text-xs font-semibold text-zinc-600 py-2 pl-1.5 pr-2 border-l border-zinc-200 cursor-pointer focus:outline-none shrink-0 hover:bg-zinc-200/50 transition"
+              className="bg-zinc-100/80 dark:bg-zinc-800 text-xs font-semibold text-zinc-600 dark:text-zinc-300 py-2 pl-1.5 pr-2 border-l border-zinc-200 dark:border-zinc-700 cursor-pointer focus:outline-none shrink-0 hover:bg-zinc-200/50 dark:hover:bg-zinc-700 transition"
             >
               {PERIOD_OPTIONS.map((p) => (
                 <option key={p.value} value={p.value}>
@@ -402,7 +402,7 @@ function JobModalForm({
         {/* Job URL & Contact URL */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
           <div>
-            <label className="block text-xs font-semibold text-zinc-700 mb-1">
+            <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
               Job URL
             </label>
             <input
@@ -410,12 +410,12 @@ function JobModalForm({
               placeholder="https://company.com/careers/..."
               value={jobUrl}
               onChange={(e) => setJobUrl(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl bg-zinc-50 border border-zinc-200 text-xs font-medium text-zinc-900 focus:border-zinc-400"
+              className="w-full px-3 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 text-xs font-medium text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:border-zinc-400 dark:focus:border-zinc-500"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-zinc-700 mb-1">
+            <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
               Contact URL / Link
             </label>
             <input
@@ -423,14 +423,14 @@ function JobModalForm({
               placeholder="e.g. LinkedIn message, recruiter profile..."
               value={contactUrl}
               onChange={(e) => setContactUrl(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl bg-zinc-50 border border-zinc-200 text-xs font-medium text-zinc-900 focus:border-zinc-400"
+              className="w-full px-3 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 text-xs font-medium text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:border-zinc-400 dark:focus:border-zinc-500"
             />
           </div>
         </div>
 
         {/* Description */}
         <div>
-          <label className="block text-xs font-semibold text-zinc-700 mb-1">
+          <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
             Description
           </label>
           <textarea
@@ -438,7 +438,7 @@ function JobModalForm({
             placeholder="Job description or notes..."
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="w-full px-3 py-2 rounded-xl bg-zinc-50 border border-zinc-200 text-xs text-zinc-900 focus:border-zinc-400 resize-y"
+            className="w-full px-3 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 text-xs text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:border-zinc-400 dark:focus:border-zinc-500 resize-y"
           />
         </div>
 
@@ -449,9 +449,9 @@ function JobModalForm({
               type="checkbox"
               checked={isPinned}
               onChange={(e) => setIsPinned(e.target.checked)}
-              className="w-4 h-4 rounded-md border-zinc-300 text-zinc-900 cursor-pointer accent-zinc-900"
+              className="w-4 h-4 rounded-md border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 cursor-pointer accent-zinc-900 dark:accent-zinc-100"
             />
-            <span className="text-xs font-medium text-zinc-700 flex items-center gap-1.5">
+            <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5">
               <Pin className="w-3.5 h-3.5 text-rose-500 fill-rose-500" />
               Pin this application to top
             </span>
@@ -460,18 +460,18 @@ function JobModalForm({
       </form>
 
       {/* Footer */}
-      <div className="px-6 py-4 border-t border-zinc-100 bg-zinc-50/50 flex items-center justify-end gap-2.5">
+      <div className="px-6 py-4 border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/80 flex items-center justify-end gap-2.5">
         <button
           type="button"
           onClick={onClose}
-          className="px-4 py-2 rounded-xl border border-zinc-200 hover:border-zinc-300 hover:bg-zinc-100/70 text-zinc-700 font-semibold text-xs transition cursor-pointer shadow-2xs"
+          className="px-4 py-2 rounded-xl border border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 hover:bg-zinc-100/70 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-semibold text-xs transition cursor-pointer shadow-2xs"
         >
           Cancel
         </button>
         <button
           type="button"
           onClick={handleSubmit}
-          className="px-5 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white font-semibold text-xs transition cursor-pointer shadow-sm"
+          className="px-5 py-2 rounded-xl bg-zinc-900 dark:bg-zinc-100 hover:bg-zinc-800 dark:hover:bg-white text-white dark:text-zinc-900 font-semibold text-xs transition cursor-pointer shadow-sm"
         >
           {initialJob ? "Save Changes" : "Create Application"}
         </button>
