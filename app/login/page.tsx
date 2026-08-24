@@ -148,7 +148,7 @@ export default function LoginPage() {
         {/* Logo and App Title */}
         <div className="flex flex-col items-center justify-center space-y-2">
           <div className="flex justify-center">
-            <KairoLogo className="w-14 h-14 rounded-2xl shadow-sm" size={56} />
+            <KairoLogo className="w-14 h-14 rounded-2xl shadow-none border-0" size={56} />
           </div>
           <h1 className="text-xl font-bold tracking-tight text-zinc-900">Kairo</h1>
           <p className="text-xs text-zinc-500">

@@ -23,6 +23,7 @@ export function KairoLogo({
         height={size}
         priority={priority}
         className="w-full h-full object-contain"
+        draggable={false}
       />
     </div>
   );
