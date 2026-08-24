@@ -54,13 +54,24 @@ interface JobDashboardProps {
   initialJobs?: JobApplication[];
 }
 
-export function JobDashboard({ userEmail, initialJobs }: JobDashboardProps = {}) {
+export function JobDashboard({ userEmail: initialUserEmail, initialJobs }: JobDashboardProps = {}) {
   const router = useRouter();
   const [jobs, setJobs] = useState<JobApplication[]>(initialJobs || []);
+  const [userEmail, setUserEmail] = useState<string | undefined>(initialUserEmail);
   const [isLoading, setIsLoading] = useState(!initialJobs || initialJobs.length === 0);
   const fetchedRef = useRef(false);
 
   useEffect(() => {
+    const supabase = createClient();
+
+    if (!userEmail) {
+      supabase.auth.getUser().then(({ data: { user } }) => {
+        if (user?.email) {
+          setUserEmail(user.email);
+        }
+      });
+    }
+
     if (initialJobs && initialJobs.length > 0) {
       setJobs(initialJobs);
       setIsLoading(false);
@@ -70,7 +81,6 @@ export function JobDashboard({ userEmail, initialJobs }: JobDashboardProps = {})
     if (fetchedRef.current) return;
     fetchedRef.current = true;
 
-    const supabase = createClient();
     async function fetchJobs() {
       const { data, error } = await supabase
         .from("job_applications")
@@ -86,7 +96,7 @@ export function JobDashboard({ userEmail, initialJobs }: JobDashboardProps = {})
     }
 
     fetchJobs();
-  }, [initialJobs]);
+  }, [initialJobs, userEmail]);
 
   // Search & Filter state
   const [searchQuery, setSearchQuery] = useState("");

@@ -35,9 +35,10 @@ export async function updateSession(request: NextRequest) {
 
   const isLoginPage = request.nextUrl.pathname.startsWith("/login");
   const isAuthCallback = request.nextUrl.pathname.startsWith("/auth");
+  const isPublicStatic = request.nextUrl.pathname.match(/\.(?:svg|png|jpg|jpeg|gif|webp|ico|webmanifest|json|woff|woff2|ttf|eot)$/);
 
   // Allow static assets, images, and auth callback through without redirecting
-  if (isAuthCallback) {
+  if (isAuthCallback || isPublicStatic) {
     return supabaseResponse;
   }
 

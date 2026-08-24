@@ -35,6 +35,8 @@ export function DashboardHeader({
     else setGreeting("Good evening");
   }, []);
 
+  const displayName = userEmail ? userEmail.split("@")[0] : "there";
+
   return (
     <div className="p-6 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200/90 dark:border-zinc-800 shadow-[0_2px_8px_rgba(0,0,0,0.03)] flex flex-col md:flex-row md:items-center justify-between gap-4">
       {/* Title & Live Pipeline Status */}
@@ -55,7 +57,7 @@ export function DashboardHeader({
 
         {/* Personalized Subtitle */}
         <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium flex flex-wrap items-center gap-2">
-          <span>{greeting}, {userEmail || "there"}</span>
+          <span title={userEmail}>{greeting}, <span className="font-semibold text-zinc-800 dark:text-zinc-200">{displayName}</span></span>
           {stats.streak > 0 && (
             <>
               <span className="text-zinc-300 dark:text-zinc-700">•</span>
