@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import {
   UserProfile,
   UserProfileRow,
+  ProfileLink,
   mapRowToProfile,
 } from "@/types/profile";
 
@@ -41,6 +42,7 @@ export async function getProfileAction(): Promise<{
         id: user.id,
         email: user.email || "",
         name: user.email ? user.email.split("@")[0] : "User",
+        links: [],
       };
 
       const { data: newRow, error: insertError } = await supabase
@@ -65,7 +67,7 @@ export async function getProfileAction(): Promise<{
 }
 
 export async function updateProfileAction(
-  payload: Partial<Pick<UserProfile, "name" | "location" | "avatarUrl" | "linkedinUrl" | "githubUrl" | "portfolioUrl">>
+  payload: Partial<Pick<UserProfile, "name" | "avatarUrl" | "links">>
 ): Promise<{
   success: boolean;
   data?: UserProfile;
@@ -87,11 +89,8 @@ export async function updateProfileAction(
     };
 
     if (payload.name !== undefined) updateFields.name = payload.name.trim();
-    if (payload.location !== undefined) updateFields.location = payload.location.trim();
     if (payload.avatarUrl !== undefined) updateFields.avatar_url = payload.avatarUrl.trim();
-    if (payload.linkedinUrl !== undefined) updateFields.linkedin_url = payload.linkedinUrl.trim();
-    if (payload.githubUrl !== undefined) updateFields.github_url = payload.githubUrl.trim();
-    if (payload.portfolioUrl !== undefined) updateFields.portfolio_url = payload.portfolioUrl.trim();
+    if (payload.links !== undefined) updateFields.links = payload.links;
 
     const { data, error } = await supabase
       .from("users")
@@ -111,5 +110,59 @@ export async function updateProfileAction(
   } catch (err: unknown) {
     console.error("Unexpected error updating profile:", err);
     return { success: false, error: (err as Error)?.message || "Failed to update profile" };
+  }
+}
+
+export async function uploadAvatarAction(formData: FormData): Promise<{
+  success: boolean;
+  publicUrl?: string;
+  error?: string;
+}> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return { success: false, error: "Not authenticated" };
+    }
+
+    const file = formData.get("file") as File;
+    if (!file || file.size === 0) {
+      return { success: false, error: "No file provided" };
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      return { success: false, error: "Image size must be less than 5MB" };
+    }
+
+    const fileExt = file.name.split(".").pop() || "png";
+    const filePath = `${user.id}/avatar-${Date.now()}.${fileExt}`;
+
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+
+    const { error: uploadError } = await supabase.storage
+      .from("avatars")
+      .upload(filePath, buffer, {
+        contentType: file.type,
+        upsert: true,
+      });
+
+    if (uploadError) {
+      console.error("Error uploading avatar to storage:", uploadError);
+      return { success: false, error: uploadError.message };
+    }
+
+    const { data: publicUrlData } = supabase.storage
+      .from("avatars")
+      .getPublicUrl(filePath);
+
+    return { success: true, publicUrl: publicUrlData.publicUrl };
+  } catch (err: unknown) {
+    console.error("Unexpected error uploading avatar:", err);
+    return { success: false, error: (err as Error)?.message || "Failed to upload avatar" };
   }
 }
