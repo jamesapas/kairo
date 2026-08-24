@@ -65,17 +65,15 @@ export function MatchCircularProgress({
   const strokeDashoffset = circumference - (clamped / 100) * circumference;
 
   const getScoreColor = (score: number) => {
-    if (score >= 80) return "#10b981"; // emerald-500
-    if (score >= 60) return "#3b82f6"; // blue-500
-    if (score >= 40) return "#f59e0b"; // amber-500
+    if (score >= 75) return "#10b981"; // emerald-500
+    if (score >= 50) return "#f59e0b"; // amber-500 (Yellow/Amber)
     return "#f43f5e"; // rose-500
   };
 
   const getTextColorClass = (score: number) => {
-    if (score >= 80) return "text-emerald-700 dark:text-emerald-400";
-    if (score >= 60) return "text-blue-700 dark:text-blue-400";
-    if (score >= 40) return "text-amber-700 dark:text-amber-400";
-    return "text-rose-700 dark:text-rose-400";
+    if (score >= 75) return "text-emerald-600 dark:text-emerald-400";
+    if (score >= 50) return "text-amber-500 dark:text-amber-400";
+    return "text-rose-600 dark:text-rose-400";
   };
 
   return (
