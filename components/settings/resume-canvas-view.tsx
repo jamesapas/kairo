@@ -734,102 +734,99 @@ export function ResumeCanvasView({
 
         <div className="p-6 sm:p-8">
           <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
-            {/* Left: Bigger Avatar with Hover-Only Controls */}
-            <div className="shrink-0">
-              <div className="relative group w-48 h-48 sm:w-52 sm:h-52 rounded-3xl bg-zinc-50 dark:bg-zinc-800/80 border-2 border-zinc-200 dark:border-zinc-700 shadow-xs overflow-hidden">
+            {/* Left: Circular Avatar with Action Buttons Below */}
+            <div className="flex flex-col items-center gap-3.5 shrink-0 self-center md:self-start">
+              <div className="relative w-36 h-36 sm:w-40 sm:h-40 rounded-full bg-zinc-100 dark:bg-zinc-800 border-2 border-zinc-200/90 dark:border-zinc-700 shadow-xs overflow-hidden flex items-center justify-center group">
                 {avatarUrl ? (
                   <Image
                     src={avatarUrl}
                     alt="Avatar"
-                    width={208}
-                    height={208}
+                    width={160}
+                    height={160}
                     unoptimized
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-zinc-300 dark:text-zinc-600">
-                    <User className="w-20 h-20" />
+                  <div className="w-full h-full flex items-center justify-center text-zinc-300 dark:text-zinc-600 bg-zinc-50 dark:bg-zinc-850">
+                    <User className="w-16 h-16" />
                   </div>
                 )}
 
-                {/* Hover-Only Action Overlay */}
-                <div
-                  className={`absolute inset-0 bg-black/60 ${
-                    uploadingAvatar ? "opacity-100" : "opacity-0 group-hover:opacity-100"
-                  } transition-opacity flex flex-col items-center justify-center gap-2 p-2 backdrop-blur-2xs`}
+                {uploadingAvatar && (
+                  <div className="absolute inset-0 bg-black/60 backdrop-blur-2xs flex flex-col items-center justify-center gap-1 text-white">
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  </div>
+                )}
+              </div>
+
+              {/* Action Buttons Below Avatar */}
+              <div className="flex flex-col items-center gap-1.5 w-full">
+                <label
+                  htmlFor="canvas-avatar-input"
+                  className="w-full px-3 py-1.5 rounded-xl bg-zinc-100 hover:bg-zinc-200/80 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 border border-zinc-200/80 dark:border-zinc-700 text-xs font-semibold cursor-pointer transition flex items-center justify-center gap-1.5 shadow-2xs active:scale-[0.98]"
                 >
-                  {uploadingAvatar ? (
-                    <div className="flex flex-col items-center gap-1.5 text-white">
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      <span className="text-[11px] font-semibold">Uploading...</span>
-                    </div>
-                  ) : (
-                    <>
-                      <label
-                        htmlFor="canvas-avatar-input"
-                        className="px-3 py-1.5 rounded-xl bg-white/90 text-zinc-900 hover:bg-white text-xs font-bold cursor-pointer transition flex items-center gap-1.5 shadow-xs active:scale-[0.98]"
-                      >
-                        <Camera className="w-4 h-4" />
-                        <span>Change Photo</span>
-                        <input
-                          id="canvas-avatar-input"
-                          type="file"
-                          accept="image/*"
-                          onChange={handleAvatarFile}
-                          className="hidden"
-                        />
-                      </label>
-                      {avatarUrl && (
-                        <button
-                          type="button"
-                          onClick={() => setAvatarUrl("")}
-                          className="text-xs font-medium text-rose-300 hover:text-rose-100 transition cursor-pointer hover:underline"
-                        >
-                          Remove Photo
-                        </button>
-                      )}
-                    </>
-                  )}
-                </div>
+                  <Camera className="w-3.5 h-3.5" />
+                  <span>{avatarUrl ? "Change Photo" : "Upload Photo"}</span>
+                  <input
+                    id="canvas-avatar-input"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarFile}
+                    className="hidden"
+                  />
+                </label>
+
+                {avatarUrl && (
+                  <button
+                    type="button"
+                    onClick={() => setAvatarUrl("")}
+                    className="text-[11px] font-semibold text-rose-500 hover:text-rose-600 dark:text-rose-400 dark:hover:text-rose-300 transition cursor-pointer py-0.5 hover:underline"
+                  >
+                    Remove Photo
+                  </button>
+                )}
               </div>
             </div>
 
-            {/* Right Column: Cols-1 Full Name, Email, and Links */}
-            <div className="flex-1 w-full space-y-4">
-              {/* Full Name */}
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5">
-                  <User className="w-3.5 h-3.5 text-zinc-400" />
-                  Full Name <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. Alex Rivera"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 text-xs font-semibold text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:bg-white dark:focus:bg-zinc-800 focus:border-zinc-400 dark:focus:border-zinc-500 transition shadow-2xs"
-                />
-              </div>
-
-              {/* Email Address */}
-              <div className="space-y-1">
-                <div className="flex items-center justify-between">
+            {/* Right Column: Full Name, Email, and Links */}
+            <div className="flex-1 w-full space-y-5">
+              {/* Row 1: Full Name & Account Email in 2 columns */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Full Name */}
+                <div className="space-y-1.5">
                   <label className="text-xs font-bold text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5">
-                    <Mail className="w-3.5 h-3.5 text-zinc-400" />
-                    Account Email
+                    <User className="w-3.5 h-3.5 text-zinc-400" />
+                    Full Name <span className="text-rose-500">*</span>
                   </label>
-                  <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md border border-emerald-200/60">
-                    <ShieldCheck className="w-3 h-3" />
-                    Synced
-                  </span>
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="e.g. Alex Rivera"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 text-xs font-semibold text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:bg-white dark:focus:bg-zinc-800 focus:border-zinc-400 dark:focus:border-zinc-500 transition shadow-2xs"
+                  />
                 </div>
-                <input
-                  type="email"
-                  value={email}
-                  disabled
-                  readOnly
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-100/70 dark:bg-zinc-800/40 border border-zinc-200/70 dark:border-zinc-800 text-xs font-medium text-zinc-500 select-all cursor-not-allowed"
-                />
+
+                {/* Email Address */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5">
+                      <Mail className="w-3.5 h-3.5 text-zinc-400" />
+                      Account Email
+                    </label>
+                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md border border-emerald-200/60">
+                      <ShieldCheck className="w-3 h-3" />
+                      Synced
+                    </span>
+                  </div>
+                  <input
+                    type="email"
+                    value={email}
+                    disabled
+                    readOnly
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-100/70 dark:bg-zinc-800/40 border border-zinc-200/70 dark:border-zinc-800 text-xs font-medium text-zinc-500 select-all cursor-not-allowed"
+                  />
+                </div>
               </div>
 
               {/* Links Section */}
