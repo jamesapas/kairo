@@ -32,6 +32,7 @@ const KANBAN_COLUMNS: JobStatus[] = [
   "applied",
   "interviewing",
   "offer",
+  "declined",
   "no_response",
   "rejected",
   "withdrawn",
@@ -87,7 +88,7 @@ export function JobKanban({
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3.5 items-start">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-7 gap-3.5 items-start">
       {KANBAN_COLUMNS.map((statusKey) => {
         const config = JOB_STATUS_CONFIG[statusKey];
         const columnJobs = jobs.filter((j) => j.status === statusKey);

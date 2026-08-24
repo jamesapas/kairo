@@ -33,6 +33,7 @@ export function calculateJobStats(jobs: JobApplication[]): JobStats {
     (j) =>
       j.status === "interviewing" ||
       j.status === "offer" ||
+      j.status === "declined" ||
       j.status === "rejected"
   ).length;
 

@@ -165,7 +165,7 @@ export function JobDetailDrawer({
             <p className="text-[10px] uppercase font-bold tracking-wider text-zinc-500 dark:text-zinc-400">
               Update Status
             </p>
-            <div className="grid grid-cols-3 gap-1.5">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1.5">
               {(Object.keys(JOB_STATUS_CONFIG) as JobStatus[]).map((st) => {
                 const config = JOB_STATUS_CONFIG[st];
                 const isCurrent = job.status === st;

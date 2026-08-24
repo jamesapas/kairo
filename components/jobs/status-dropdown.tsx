@@ -6,6 +6,7 @@ import {
   Send,
   CalendarCheck,
   BadgeCheck,
+  CircleSlash,
   Hourglass,
   XCircle,
   Undo2,
@@ -35,6 +36,8 @@ export function StatusIcon({
       return <CalendarCheck className={`${className} text-purple-600 shrink-0`} />;
     case "offer":
       return <BadgeCheck className={`${className} text-emerald-600 shrink-0`} />;
+    case "declined":
+      return <CircleSlash className={`${className} text-stone-500 shrink-0`} />;
     case "no_response":
       return <Hourglass className={`${className} text-amber-500 shrink-0`} />;
     case "rejected":
@@ -65,7 +68,7 @@ export function StatusDropdown({
 
     if (buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
-      const dropdownHeight = 230;
+      const dropdownHeight = 265;
       const spaceBelow = window.innerHeight - rect.bottom;
       const openUpward = spaceBelow < dropdownHeight && rect.top > dropdownHeight;
 

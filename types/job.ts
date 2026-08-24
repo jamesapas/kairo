@@ -2,6 +2,7 @@ export type JobStatus =
   | "applied"
   | "interviewing"
   | "offer"
+  | "declined"
   | "no_response"
   | "rejected"
   | "withdrawn";
@@ -86,6 +87,11 @@ export const JOB_STATUS_CONFIG: Record<
     label: "Offer",
     iconColor: "text-emerald-500",
     dot: "bg-emerald-500",
+  },
+  declined: {
+    label: "Declined",
+    iconColor: "text-stone-500",
+    dot: "bg-stone-500",
   },
   no_response: {
     label: "No Response",
