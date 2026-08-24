@@ -398,7 +398,7 @@ export function JobDashboard({ userEmail: initialUserEmail, initialJobs }: JobDa
         </div>
       )}
 
-      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+      <main className="flex-1 max-w-[1536px] mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         {/* Executive Workspace Header */}
         <div className="space-y-4">
           <DashboardHeader

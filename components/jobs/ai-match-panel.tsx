@@ -9,17 +9,26 @@ import {
   AlertCircle,
   Briefcase,
   Award,
-  TrendingUp,
   AlertTriangle,
   ChevronDown,
   ChevronUp,
   Check,
   X,
+  Plus,
+  Loader2,
   FileText,
   Clock,
-  ExternalLink,
+  Star,
+  ShieldCheck,
+  CheckCheck,
+  Zap,
 } from "lucide-react";
-import { JobMatchAnalysis, MatchRecommendation } from "@/types/ai-match";
+import {
+  JobMatchAnalysis,
+  MatchRecommendation,
+  SeniorityMatchLevel,
+} from "@/types/ai-match";
+import { createSkillAction } from "@/lib/actions/skill";
 
 interface AIMatchPanelProps {
   jobId: string;
@@ -38,11 +47,17 @@ export function AIMatchPanel({
   initialAnalysis,
   onOpenEditModal,
 }: AIMatchPanelProps) {
-  const [analysis, setAnalysis] = useState<JobMatchAnalysis | null>(initialAnalysis || null);
+  const [analysis, setAnalysis] = useState<JobMatchAnalysis | null>(
+    initialAnalysis || null
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isExpanded, setIsExpanded] = useState(true);
   const [loadingStep, setLoadingStep] = useState(0);
+  const [addingSkill, setAddingSkill] = useState<string | null>(null);
+  const [addedSkillNotification, setAddedSkillNotification] = useState<string | null>(
+    null
+  );
 
   const storageKey = `kairo-ai-match-${jobId}`;
 
@@ -69,14 +84,14 @@ export function AIMatchPanel({
       return;
     }
     const steps = [
-      "Reading candidate profile & skills...",
-      "Parsing job requirements & role scope...",
-      "Benchmarking seniority & experience fit...",
-      "Generating match assessment...",
+      "Reading candidate profile & verified skills...",
+      "Extracting required vs nice-to-have technologies...",
+      "Evaluating experience, seniority & requirements...",
+      "Finalizing structured match assessment...",
     ];
     const interval = setInterval(() => {
       setLoadingStep((prev) => (prev + 1) % steps.length);
-    }, 1600);
+    }, 1500);
     return () => clearInterval(interval);
   }, [isLoading]);
 
@@ -121,6 +136,87 @@ export function AIMatchPanel({
     }
   };
 
+  const handleAddSkill = async (skillName: string) => {
+    if (addingSkill) return;
+    setAddingSkill(skillName);
+    setError(null);
+    try {
+      const res = await createSkillAction(skillName);
+      if (!res.success) {
+        throw new Error(res.error || "Failed to add skill");
+      }
+
+      setAddedSkillNotification(`Added "${skillName}"! Updating match score...`);
+
+      // Optimistically update analysis state
+      if (analysis) {
+        const updatedMissing = (analysis.missingSkills || []).filter(
+          (s) => s.toLowerCase() !== skillName.toLowerCase()
+        );
+        const updatedMatched = [...(analysis.matchedSkills || []), skillName];
+        const updatedNiceToHave = (analysis.niceToHave || []).map((item) =>
+          item.name.toLowerCase() === skillName.toLowerCase()
+            ? { ...item, hasSkill: true }
+            : item
+        );
+
+        const total = updatedMatched.length + updatedMissing.length;
+        const ratio = total > 0 ? updatedMatched.length / total : 1;
+        const optimisticPct = Math.min(
+          98,
+          Math.max(analysis.matchPercentage + 4, Math.round(ratio * 90))
+        );
+
+        let optRec = analysis.recommendation;
+        if (optimisticPct >= 75) optRec = "apply";
+        else if (optimisticPct >= 50) optRec = "maybe";
+
+        const optimisticAnalysis: JobMatchAnalysis = {
+          ...analysis,
+          matchPercentage: optimisticPct,
+          recommendation: optRec,
+          missingSkills: updatedMissing,
+          matchedSkills: updatedMatched,
+          niceToHave: updatedNiceToHave,
+        };
+
+        setAnalysis(optimisticAnalysis);
+        try {
+          localStorage.setItem(storageKey, JSON.stringify(optimisticAnalysis));
+        } catch {}
+      }
+
+      // Fetch fresh official analysis from server with the newly added skill
+      const response = await fetch("/api/ai/match", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          jobId,
+          jobTitle,
+          company,
+          description,
+        }),
+      });
+
+      const result = await response.json();
+      if (response.ok && result.success && result.data) {
+        setAnalysis(result.data);
+        try {
+          localStorage.setItem(storageKey, JSON.stringify(result.data));
+        } catch {}
+        setAddedSkillNotification(
+          `Added "${skillName}"! Match updated to ${result.data.matchPercentage}%.`
+        );
+        setTimeout(() => setAddedSkillNotification(null), 3500);
+      }
+    } catch (err: unknown) {
+      console.error("Error adding skill:", err);
+      setError((err as Error)?.message || "Failed to add skill");
+    } finally {
+      setAddingSkill(null);
+    }
+  };
+
   const getScoreColor = (score: number) => {
     if (score >= 75) return "text-emerald-600 dark:text-emerald-400";
     if (score >= 50) return "text-amber-500 dark:text-amber-400";
@@ -133,34 +229,57 @@ export function AIMatchPanel({
     return "#f43f5e"; // rose-500
   };
 
-  const getRecommendationConfig = (rec: MatchRecommendation) => {
+  const getRecommendationBadge = (rec: MatchRecommendation) => {
     switch (rec) {
       case "apply":
         return {
-          label: "Strong Fit — Recommended to Apply",
-          shortLabel: "Apply",
-          bg: "bg-emerald-50 dark:bg-emerald-950/40",
-          text: "text-emerald-700 dark:text-emerald-300",
-          border: "border-emerald-200 dark:border-emerald-800/60",
+          label: "Apply",
+          bg: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30",
+          dot: "bg-emerald-500",
           icon: CheckCircle2,
         };
       case "maybe":
         return {
-          label: "Moderate Fit — Stretch Opportunity",
-          shortLabel: "Maybe",
-          bg: "bg-amber-50 dark:bg-amber-950/40",
-          text: "text-amber-700 dark:text-amber-300",
-          border: "border-amber-200 dark:border-amber-800/60",
+          label: "Maybe",
+          bg: "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/30",
+          dot: "bg-amber-500",
           icon: AlertTriangle,
         };
       case "skip":
         return {
-          label: "Low Fit — Significant Gaps",
-          shortLabel: "Skip",
-          bg: "bg-rose-50 dark:bg-rose-950/40",
-          text: "text-rose-700 dark:text-rose-300",
-          border: "border-rose-200 dark:border-rose-800/60",
+          label: "Skip",
+          bg: "bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/30",
+          dot: "bg-rose-500",
           icon: XCircle,
+        };
+    }
+  };
+
+  const getSeniorityBadge = (level?: SeniorityMatchLevel) => {
+    switch (level) {
+      case "Good Match":
+        return {
+          label: "Good Match",
+          bg: "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60",
+          icon: Check,
+        };
+      case "Slight Gap":
+        return {
+          label: "Slight Gap",
+          bg: "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/60",
+          icon: AlertTriangle,
+        };
+      case "Significant Gap":
+        return {
+          label: "Significant Gap",
+          bg: "bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800/60",
+          icon: X,
+        };
+      default:
+        return {
+          label: "Good Match",
+          bg: "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60",
+          icon: Check,
         };
     }
   };
@@ -175,10 +294,10 @@ export function AIMatchPanel({
     : circumference;
 
   const loadingStepsText = [
-    "Reading candidate profile & skills...",
-    "Parsing job requirements & role scope...",
-    "Benchmarking seniority & experience fit...",
-    "Generating match assessment...",
+    "Reading candidate profile & verified skills...",
+    "Extracting required vs nice-to-have technologies...",
+    "Evaluating experience, seniority & requirements...",
+    "Finalizing structured match assessment...",
   ];
 
   return (
@@ -263,13 +382,13 @@ export function AIMatchPanel({
               <span>Evaluate Match Signal</span>
             </div>
             <p className="text-[11px] text-zinc-600 dark:text-zinc-400 leading-relaxed">
-              Kairo will benchmark your career summary, technical skills, past experience, and education against this posting to calculate an objective match score.
+              Kairo will benchmark your technical skills, matching experience, requirements, and seniority against this posting to calculate an objective match assessment.
             </p>
           </div>
 
           <button
             onClick={handleAnalyze}
-            className="w-full py-2.5 px-4 rounded-2xl bg-gradient-to-r from-zinc-900 via-indigo-950 to-zinc-900 hover:from-zinc-800 hover:to-zinc-800 dark:from-zinc-100 dark:via-indigo-100 dark:dark:to-zinc-100 text-white dark:text-zinc-900 text-xs font-bold tracking-wide shadow-sm hover:shadow transition flex items-center justify-center gap-2 cursor-pointer group"
+            className="w-full py-2.5 px-4 rounded-2xl bg-gradient-to-r from-zinc-900 via-indigo-950 to-zinc-900 hover:from-zinc-800 hover:to-zinc-800 dark:from-zinc-100 dark:via-indigo-100 dark:to-zinc-100 text-white dark:text-zinc-900 text-xs font-bold tracking-wide shadow-sm hover:shadow transition flex items-center justify-center gap-2 cursor-pointer group"
           >
             <Sparkles className="w-3.5 h-3.5 text-indigo-300 dark:text-indigo-600 group-hover:rotate-12 transition-transform" />
             <span>Analyze Job Match</span>
@@ -281,7 +400,6 @@ export function AIMatchPanel({
       {isLoading && (
         <div className="space-y-4 py-2">
           <div className="flex items-center justify-center gap-4">
-            {/* Spinning pulse ring */}
             <div className="relative w-20 h-20 flex items-center justify-center">
               <div className="w-16 h-16 rounded-full border-4 border-zinc-100 dark:border-zinc-800 border-t-indigo-500 dark:border-t-indigo-400 animate-spin" />
               <Sparkles className="w-5 h-5 text-indigo-500 absolute animate-pulse" />
@@ -313,178 +431,397 @@ export function AIMatchPanel({
       {/* State 4: Analysis Results */}
       {analysis && !isLoading && (
         <div className="space-y-5">
-          {/* Main Score & Recommendation Card */}
-          <div className="flex items-center justify-between gap-4 p-4 rounded-2xl bg-zinc-50/80 dark:bg-zinc-800/40 border border-zinc-200/80 dark:border-zinc-800">
-            {/* Circular Gauge */}
-            <div className="relative w-18 h-18 flex items-center justify-center shrink-0">
-              <svg className="w-18 h-18 -rotate-90" viewBox="0 0 76 76">
-                <circle
-                  cx="38"
-                  cy="38"
-                  r={radius}
-                  stroke="currentColor"
-                  strokeWidth="6"
-                  className="text-zinc-200 dark:text-zinc-700"
-                  fill="transparent"
-                />
-                <circle
-                  cx="38"
-                  cy="38"
-                  r={radius}
-                  stroke={getScoreRingColor(analysis.matchPercentage)}
-                  strokeWidth="6"
-                  strokeDasharray={circumference}
-                  strokeDashoffset={strokeDashoffset}
-                  strokeLinecap="round"
-                  fill="transparent"
-                  className="transition-all duration-1000 ease-out"
-                />
-              </svg>
-              <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                <span className={`text-base font-extrabold tracking-tight ${getScoreColor(analysis.matchPercentage)}`}>
-                  {analysis.matchPercentage}%
-                </span>
-                <span className="text-[9px] font-bold uppercase tracking-wider text-zinc-400">
-                  Match
-                </span>
+          {/* Main Score & Status Ribbon */}
+          <div className="p-4 rounded-2xl bg-zinc-50/80 dark:bg-zinc-800/40 border border-zinc-200/80 dark:border-zinc-800 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3.5">
+              {/* Circular Gauge */}
+              <div className="relative w-16 h-16 flex items-center justify-center shrink-0">
+                <svg className="w-16 h-16 -rotate-90" viewBox="0 0 76 76">
+                  <circle
+                    cx="38"
+                    cy="38"
+                    r={radius}
+                    stroke="currentColor"
+                    strokeWidth="6"
+                    className="text-zinc-200 dark:text-zinc-700"
+                    fill="transparent"
+                  />
+                  <circle
+                    cx="38"
+                    cy="38"
+                    r={radius}
+                    stroke={getScoreRingColor(analysis.matchPercentage)}
+                    strokeWidth="6"
+                    strokeDasharray={circumference}
+                    strokeDashoffset={strokeDashoffset}
+                    strokeLinecap="round"
+                    fill="transparent"
+                    className="transition-all duration-1000 ease-out"
+                  />
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+                  <span
+                    className={`text-sm font-extrabold tracking-tight ${getScoreColor(
+                      analysis.matchPercentage
+                    )}`}
+                  >
+                    {analysis.matchPercentage}%
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <div className="flex items-center gap-1.5">
+                  <h4 className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
+                    {analysis.matchPercentage}% MATCH
+                  </h4>
+                </div>
+                <p className="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400">
+                  {analysis.matchLabel || "Match Assessment"}
+                </p>
               </div>
             </div>
 
-            {/* Recommendation summary tag */}
+            {/* Recommendation badge */}
             {(() => {
-              const recConfig = getRecommendationConfig(analysis.recommendation);
-              const RecIcon = recConfig.icon;
+              const badge = getRecommendationBadge(analysis.recommendation);
+              const IconComp = badge.icon;
               return (
-                <div className="flex-1 min-w-0 space-y-1.5">
-                  <div
-                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-bold ${recConfig.bg} ${recConfig.text} ${recConfig.border}`}
-                  >
-                    <RecIcon className="w-3.5 h-3.5 shrink-0" />
-                    <span>{recConfig.shortLabel}</span>
-                  </div>
-                  <p className="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium leading-snug">
-                    {recConfig.label}
-                  </p>
+                <div
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold ${badge.bg}`}
+                >
+                  <IconComp className="w-3.5 h-3.5" />
+                  <span>{badge.label}</span>
                 </div>
               );
             })()}
           </div>
 
-          {/* Collapsible Details */}
+          {/* Added Skill Notification Toast */}
+          {addedSkillNotification && (
+            <div className="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200/80 dark:border-emerald-800/60 flex items-center gap-2 text-xs text-emerald-800 dark:text-emerald-200 animate-fade-in shadow-2xs">
+              <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0 stroke-[2.5]" />
+              <span className="font-semibold text-[11px]">
+                {addedSkillNotification}
+              </span>
+            </div>
+          )}
+
+          {/* Collapsible Structured Details */}
           {isExpanded && (
-            <div className="space-y-4 pt-1 text-xs">
-              {/* Executive Summary */}
-              {analysis.summary && (
-                <div className="space-y-1.5">
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-zinc-400 dark:text-zinc-500">
-                    Summary Assessment
-                  </span>
-                  <p className="text-zinc-700 dark:text-zinc-300 leading-relaxed font-normal bg-zinc-50/50 dark:bg-zinc-800/20 p-3 rounded-xl border border-zinc-100 dark:border-zinc-800/80">
-                    {analysis.summary}
-                  </p>
+            <div className="space-y-5 pt-1 text-xs">
+              {/* =========================================================================
+                  1. SKILLS GROUP
+                  ========================================================================= */}
+              <div className="space-y-3 p-3.5 rounded-2xl bg-zinc-50/50 dark:bg-zinc-800/20 border border-zinc-100 dark:border-zinc-800/80">
+                <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-zinc-900 dark:text-zinc-100">
+                  <Zap className="w-3.5 h-3.5 text-amber-500" />
+                  <span>Skills</span>
                 </div>
-              )}
 
-              {/* Seniority Alignment */}
-              {analysis.seniorityAssessment && (
-                <div className="space-y-1.5">
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-zinc-400 dark:text-zinc-500">
-                    Seniority Fit
-                  </span>
-                  <div className="flex items-start gap-2 p-2.5 rounded-xl bg-zinc-50/50 dark:bg-zinc-800/20 border border-zinc-100 dark:border-zinc-800/80">
-                    <Briefcase className="w-3.5 h-3.5 text-indigo-500 shrink-0 mt-0.5" />
-                    <p className="text-[11px] text-zinc-700 dark:text-zinc-300 leading-normal font-medium">
-                      {analysis.seniorityAssessment}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {/* Matched Skills */}
-              {analysis.matchedSkills && analysis.matchedSkills.length > 0 && (
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
+                {/* Skills You Have */}
+                {analysis.matchedSkills && analysis.matchedSkills.length > 0 && (
+                  <div className="space-y-1.5">
                     <span className="text-[10px] uppercase font-bold tracking-wider text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
                       <Check className="w-3 h-3 stroke-[2.5]" />
                       Skills You Have ({analysis.matchedSkills.length})
                     </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {analysis.matchedSkills.map((skill, idx) => (
+                        <span
+                          key={idx}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 border border-emerald-200/70 dark:border-emerald-800/50 text-[11px] font-medium"
+                        >
+                          <Check className="w-2.5 h-2.5 text-emerald-600 dark:text-emerald-400" />
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
                   </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {analysis.matchedSkills.map((skill, idx) => (
-                      <span
-                        key={idx}
-                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 border border-emerald-200/70 dark:border-emerald-800/50 text-[11px] font-medium"
-                      >
-                        <Check className="w-2.5 h-2.5 text-emerald-600 dark:text-emerald-400" />
-                        {skill}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
+                )}
 
-              {/* Missing Skills */}
-              {analysis.missingSkills && analysis.missingSkills.length > 0 && (
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
+                {/* Skills You're Missing */}
+                {analysis.missingSkills && analysis.missingSkills.length > 0 && (
+                  <div className="space-y-1.5 pt-1">
                     <span className="text-[10px] uppercase font-bold tracking-wider text-amber-600 dark:text-amber-400 flex items-center gap-1">
                       <X className="w-3 h-3 stroke-[2.5]" />
                       Skills You&apos;re Missing ({analysis.missingSkills.length})
                     </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {analysis.missingSkills.map((skill, idx) => {
+                        const isCurrentlyAdding = addingSkill === skill;
+                        return (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => handleAddSkill(skill)}
+                            disabled={!!addingSkill}
+                            title={`Click to add "${skill}" to your skills`}
+                            className="group/skill inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 border border-amber-200/70 dark:border-amber-800/50 text-[11px] font-medium hover:bg-amber-100/90 dark:hover:bg-amber-900/50 hover:border-amber-300 dark:hover:border-amber-700 hover:text-amber-950 dark:hover:text-amber-100 transition-all cursor-pointer disabled:opacity-50"
+                          >
+                            {isCurrentlyAdding ? (
+                              <Loader2 className="w-2.5 h-2.5 text-amber-600 dark:text-amber-400 animate-spin" />
+                            ) : (
+                              <>
+                                <X className="w-2.5 h-2.5 text-amber-600 dark:text-amber-400 group-hover/skill:hidden" />
+                                <Plus className="w-2.5 h-2.5 text-amber-700 dark:text-amber-300 hidden group-hover/skill:inline-block stroke-[2.5]" />
+                              </>
+                            )}
+                            <span>{skill}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {analysis.missingSkills.map((skill, idx) => (
-                      <span
-                        key={idx}
-                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 border border-amber-200/70 dark:border-amber-800/50 text-[11px] font-medium"
-                      >
-                        <X className="w-2.5 h-2.5 text-amber-600 dark:text-amber-400" />
-                        {skill}
+                )}
+              </div>
+
+              {/* =========================================================================
+                  2. EXPERIENCE GROUP
+                  ========================================================================= */}
+              {(analysis.matchingExperience?.length > 0 ||
+                analysis.experienceGaps?.length > 0) && (
+                <div className="space-y-3 p-3.5 rounded-2xl bg-zinc-50/50 dark:bg-zinc-800/20 border border-zinc-100 dark:border-zinc-800/80">
+                  <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-zinc-900 dark:text-zinc-100">
+                    <Briefcase className="w-3.5 h-3.5 text-indigo-500" />
+                    <span>Experience</span>
+                  </div>
+
+                  {/* Matching Experience */}
+                  {analysis.matchingExperience &&
+                    analysis.matchingExperience.length > 0 && (
+                      <div className="space-y-1.5">
+                        <span className="text-[10px] uppercase font-bold tracking-wider text-zinc-500 dark:text-zinc-400 flex items-center gap-1">
+                          <Check className="w-3 h-3 text-emerald-500" />
+                          Matching Experience
+                        </span>
+                        <ul className="space-y-1.5">
+                          {analysis.matchingExperience.map((exp, idx) => (
+                            <li
+                              key={idx}
+                              className="flex items-start gap-2 text-[11px] text-zinc-700 dark:text-zinc-300 leading-relaxed"
+                            >
+                              <Award className="w-3.5 h-3.5 text-indigo-500 shrink-0 mt-0.5" />
+                              <span>{exp}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                  {/* Experience Gaps */}
+                  {analysis.experienceGaps && analysis.experienceGaps.length > 0 && (
+                    <div className="space-y-1.5 pt-1">
+                      <span className="text-[10px] uppercase font-bold tracking-wider text-zinc-500 dark:text-zinc-400 flex items-center gap-1">
+                        <AlertTriangle className="w-3 h-3 text-amber-500" />
+                        Experience Gaps
                       </span>
-                    ))}
+                      <ul className="space-y-1.5">
+                        {analysis.experienceGaps.map((gap, idx) => (
+                          <li
+                            key={idx}
+                            className="flex items-start gap-2 text-[11px] text-zinc-600 dark:text-zinc-400 leading-relaxed"
+                          >
+                            <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" />
+                            <span>{gap}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* =========================================================================
+                  3. REQUIREMENTS & NICE TO HAVE GROUP
+                  ========================================================================= */}
+              {(analysis.unmetRequirements?.length > 0 ||
+                analysis.niceToHave?.length > 0) && (
+                <div className="space-y-3 p-3.5 rounded-2xl bg-zinc-50/50 dark:bg-zinc-800/20 border border-zinc-100 dark:border-zinc-800/80">
+                  <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-zinc-900 dark:text-zinc-100">
+                    <ShieldCheck className="w-3.5 h-3.5 text-purple-500" />
+                    <span>Requirements</span>
                   </div>
+
+                  {/* Requirements You Don't Meet */}
+                  {analysis.unmetRequirements &&
+                    analysis.unmetRequirements.length > 0 && (
+                      <div className="space-y-1.5">
+                        <span className="text-[10px] uppercase font-bold tracking-wider text-rose-600 dark:text-rose-400 flex items-center gap-1">
+                          <AlertTriangle className="w-3 h-3" />
+                          Requirements You Don&apos;t Meet
+                        </span>
+                        <ul className="space-y-1.5">
+                          {analysis.unmetRequirements.map((unmet, idx) => (
+                            <li
+                              key={idx}
+                              className="flex items-start gap-2 text-[11px] text-zinc-600 dark:text-zinc-400 leading-relaxed"
+                            >
+                              <AlertTriangle className="w-3.5 h-3.5 text-rose-500 shrink-0 mt-0.5" />
+                              <span>{unmet}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                  {/* Nice To Have */}
+                  {analysis.niceToHave && analysis.niceToHave.length > 0 && (
+                    <div className="space-y-1.5 pt-1">
+                      <span className="text-[10px] uppercase font-bold tracking-wider text-zinc-500 dark:text-zinc-400 flex items-center gap-1">
+                        <Star className="w-3 h-3 text-amber-500" />
+                        Nice to Have
+                      </span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {analysis.niceToHave.map((item, idx) => {
+                          if (item.hasSkill) {
+                            return (
+                              <span
+                                key={idx}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50/70 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/40 text-[11px] font-medium"
+                              >
+                                <Check className="w-2.5 h-2.5 text-emerald-600" />
+                                <span>{item.name}</span>
+                              </span>
+                            );
+                          }
+                          const isCurrentlyAdding = addingSkill === item.name;
+                          return (
+                            <button
+                              key={idx}
+                              type="button"
+                              onClick={() => handleAddSkill(item.name)}
+                              disabled={!!addingSkill}
+                              title={`Click to add "${item.name}" to your skills`}
+                              className="group/nice inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200/70 dark:border-zinc-700 text-[11px] font-medium hover:bg-zinc-200/80 dark:hover:bg-zinc-700 transition cursor-pointer disabled:opacity-50"
+                            >
+                              {isCurrentlyAdding ? (
+                                <Loader2 className="w-2.5 h-2.5 text-zinc-500 animate-spin" />
+                              ) : (
+                                <Plus className="w-2.5 h-2.5 text-zinc-400 group-hover/nice:text-zinc-900 dark:group-hover/nice:text-zinc-100" />
+                              )}
+                              <span>{item.name}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
-              {/* Relevant Experience Points */}
-              {analysis.relevantExperience && analysis.relevantExperience.length > 0 && (
-                <div className="space-y-1.5">
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-zinc-400 dark:text-zinc-500">
-                    Relevant Experience
-                  </span>
-                  <ul className="space-y-1.5">
-                    {analysis.relevantExperience.map((exp, idx) => (
-                      <li
-                        key={idx}
-                        className="flex items-start gap-2 text-[11px] text-zinc-700 dark:text-zinc-300 leading-snug"
-                      >
-                        <Award className="w-3.5 h-3.5 text-indigo-500 shrink-0 mt-0.5" />
-                        <span>{exp}</span>
-                      </li>
-                    ))}
-                  </ul>
+              {/* =========================================================================
+                  4. SENIORITY GROUP
+                  ========================================================================= */}
+              {analysis.seniorityAssessment && (
+                <div className="space-y-2 p-3.5 rounded-2xl bg-zinc-50/50 dark:bg-zinc-800/20 border border-zinc-100 dark:border-zinc-800/80">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
+                      <Award className="w-3.5 h-3.5 text-indigo-500" />
+                      Seniority
+                    </span>
+                    {(() => {
+                      const senBadge = getSeniorityBadge(analysis.seniorityLevel);
+                      const SenIcon = senBadge.icon;
+                      return (
+                        <span
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md border text-[10px] font-bold ${senBadge.bg}`}
+                        >
+                          <SenIcon className="w-3 h-3" />
+                          <span>{senBadge.label}</span>
+                        </span>
+                      );
+                    })()}
+                  </div>
+                  <p className="text-[11px] text-zinc-700 dark:text-zinc-300 leading-relaxed font-normal">
+                    {analysis.seniorityAssessment}
+                  </p>
                 </div>
               )}
 
-              {/* Requirements You Don't Meet */}
-              {analysis.unmetRequirements && analysis.unmetRequirements.length > 0 && (
-                <div className="space-y-1.5">
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-zinc-400 dark:text-zinc-500">
-                    Requirements You Don&apos;t Meet
-                  </span>
-                  <ul className="space-y-1.5">
-                    {analysis.unmetRequirements.map((unmet, idx) => (
-                      <li
-                        key={idx}
-                        className="flex items-start gap-2 text-[11px] text-zinc-600 dark:text-zinc-400 leading-snug"
-                      >
-                        <AlertTriangle className="w-3.5 h-3.5 text-rose-500 shrink-0 mt-0.5" />
-                        <span>{unmet}</span>
-                      </li>
-                    ))}
-                  </ul>
+              {/* =========================================================================
+                  5. KAIRO'S ASSESSMENT (KEY STRENGTHS & POTENTIAL GAPS)
+                  ========================================================================= */}
+              {(analysis.keyStrengths?.length > 0 ||
+                analysis.potentialGaps?.length > 0) && (
+                <div className="space-y-3 p-3.5 rounded-2xl bg-zinc-50/50 dark:bg-zinc-800/20 border border-zinc-100 dark:border-zinc-800/80">
+                  <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-zinc-900 dark:text-zinc-100">
+                    <Sparkles className="w-3.5 h-3.5 text-purple-500" />
+                    <span>Kairo&apos;s Assessment</span>
+                  </div>
+
+                  {/* Key Strengths */}
+                  {analysis.keyStrengths && analysis.keyStrengths.length > 0 && (
+                    <div className="space-y-1.5">
+                      <span className="text-[10px] uppercase font-bold tracking-wider text-zinc-500 dark:text-zinc-400 flex items-center gap-1">
+                        <CheckCheck className="w-3 h-3 text-emerald-500" />
+                        Key Strengths
+                      </span>
+                      <ul className="space-y-1.5">
+                        {analysis.keyStrengths.map((str, idx) => (
+                          <li
+                            key={idx}
+                            className="flex items-start gap-2 text-[11px] text-zinc-700 dark:text-zinc-300 leading-relaxed"
+                          >
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1.5 shrink-0" />
+                            <span>{str}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Potential Gaps */}
+                  {analysis.potentialGaps && analysis.potentialGaps.length > 0 && (
+                    <div className="space-y-1.5 pt-1">
+                      <span className="text-[10px] uppercase font-bold tracking-wider text-zinc-500 dark:text-zinc-400 flex items-center gap-1">
+                        <AlertTriangle className="w-3 h-3 text-amber-500" />
+                        Potential Gaps
+                      </span>
+                      <ul className="space-y-1.5">
+                        {analysis.potentialGaps.map((gap, idx) => (
+                          <li
+                            key={idx}
+                            className="flex items-start gap-2 text-[11px] text-zinc-600 dark:text-zinc-400 leading-relaxed"
+                          >
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5 shrink-0" />
+                            <span>{gap}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </div>
               )}
+
+              {/* =========================================================================
+                  6. RECOMMENDATION BANNER
+                  ========================================================================= */}
+              <div className="p-4 rounded-2xl bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 space-y-2 shadow-xs">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] uppercase font-bold tracking-wider text-zinc-400 dark:text-zinc-500">
+                    Recommendation
+                  </span>
+                  {(() => {
+                    const badge = getRecommendationBadge(analysis.recommendation);
+                    return (
+                      <span
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider ${badge.bg}`}
+                      >
+                        <span className={`w-1.5 h-1.5 rounded-full ${badge.dot}`} />
+                        <span>{badge.label}</span>
+                      </span>
+                    );
+                  })()}
+                </div>
+                <p className="text-xs text-zinc-200 dark:text-zinc-800 leading-relaxed font-medium">
+                  &ldquo;
+                  {analysis.recommendationReason ||
+                    analysis.summary ||
+                    "Review the alignment breakdown above to guide your application decision."}
+                  &rdquo;
+                </p>
+              </div>
 
               {/* Footer Timestamp */}
               {analysis.analyzedAt && (

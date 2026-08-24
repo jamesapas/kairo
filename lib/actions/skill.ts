@@ -24,7 +24,6 @@ export async function getSkillsAction(): Promise<{
       .from("user_skills")
       .select("*")
       .eq("user_id", user.id)
-      .order("sort_order", { ascending: true })
       .order("created_at", { ascending: true });
 
     if (error) {
@@ -43,8 +42,7 @@ export async function getSkillsAction(): Promise<{
 }
 
 export async function createSkillAction(
-  name: string,
-  category: string = "Frameworks & Libraries"
+  name: string
 ): Promise<{
   success: boolean;
   data?: UserSkill;
@@ -66,12 +64,23 @@ export async function createSkillAction(
       return { success: false, error: "Skill name cannot be empty" };
     }
 
+    // Check if skill already exists (case-insensitive)
+    const { data: existing } = await supabase
+      .from("user_skills")
+      .select("*")
+      .eq("user_id", user.id)
+      .ilike("name", trimmedName)
+      .maybeSingle();
+
+    if (existing) {
+      return { success: true, data: mapRowToSkill(existing as UserSkillRow) };
+    }
+
     const { data, error } = await supabase
       .from("user_skills")
       .insert({
         user_id: user.id,
         name: trimmedName,
-        category: category.trim() || "Other",
       })
       .select()
       .single();
@@ -124,7 +133,7 @@ export async function deleteSkillAction(id: string): Promise<{
 }
 
 export async function seedSkillsAction(
-  skills: { name: string; category: string }[]
+  skills: { name: string }[]
 ): Promise<{
   success: boolean;
   data?: UserSkill[];
@@ -141,11 +150,9 @@ export async function seedSkillsAction(
       return { success: false, error: "Not authenticated" };
     }
 
-    const rows = skills.map((s, idx) => ({
+    const rows = skills.map((s) => ({
       user_id: user.id,
       name: s.name.trim(),
-      category: s.category.trim(),
-      sort_order: idx,
     }));
 
     const { data, error } = await supabase

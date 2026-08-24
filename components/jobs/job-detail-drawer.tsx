@@ -462,19 +462,6 @@ export function JobDetailDrawer({
             </div>
           )}
 
-          {/* AI Match Panel */}
-          <AIMatchPanel
-            jobId={currentJob.id}
-            jobTitle={currentJob.jobTitle}
-            company={currentJob.company}
-            description={currentJob.description}
-            initialAnalysis={currentJob.aiMatchAnalysis}
-            onOpenEditModal={() => {
-              handleClose();
-              onEdit(currentJob);
-            }}
-          />
-
           {/* Job Description */}
           <div>
             <div className="flex items-center justify-between mb-2.5">
@@ -516,6 +503,19 @@ export function JobDetailDrawer({
               </div>
             )}
           </div>
+
+          {/* AI Match Panel */}
+          <AIMatchPanel
+            jobId={currentJob.id}
+            jobTitle={currentJob.jobTitle}
+            company={currentJob.company}
+            description={currentJob.description}
+            initialAnalysis={currentJob.aiMatchAnalysis}
+            onOpenEditModal={() => {
+              handleClose();
+              onEdit(currentJob);
+            }}
+          />
         </div>
 
         {/* Drawer Footer */}

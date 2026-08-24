@@ -1,6 +1,6 @@
 export default function Loading() {
   return (
-    <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+    <main className="flex-1 max-w-[1536px] mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 space-y-6">
       {/* Breadcrumb skeleton */}
       <div className="flex items-center justify-between gap-3 pb-2 border-b border-zinc-200/60 dark:border-zinc-800/60">
         <div className="flex items-center gap-2">

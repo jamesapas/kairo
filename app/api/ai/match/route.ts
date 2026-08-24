@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import OpenAI from "openai";
 import { createClient } from "@/lib/supabase/server";
 import { JobMatchAnalysis } from "@/types/ai-match";
+import { reconcileJobMatch } from "@/lib/utils/skill-matcher";
 
 export async function POST(request: Request) {
   try {
@@ -61,7 +62,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // Fetch user profile data in parallel
+    // Fetch user profile data in parallel from Supabase (Source of Truth)
     const [profileRes, skillsRes, experienceRes, educationRes] =
       await Promise.all([
         supabase
@@ -71,9 +72,9 @@ export async function POST(request: Request) {
           .maybeSingle(),
         supabase
           .from("user_skills")
-          .select("name, category")
+          .select("name")
           .eq("user_id", user.id)
-          .order("sort_order", { ascending: true }),
+          .order("created_at", { ascending: true }),
         supabase
           .from("user_experiences")
           .select(
@@ -95,10 +96,22 @@ export async function POST(request: Request) {
     const experienceData = experienceRes.data || [];
     const educationData = educationRes.data || [];
 
+    // Deduplicate candidate skills from DB
+    const rawSkillsList = skillsData.map((s) => s.name.trim()).filter(Boolean);
+    const candidateSkillsUnique: string[] = [];
+    const seenLower = new Set<string>();
+    for (const sk of rawSkillsList) {
+      const low = sk.toLowerCase();
+      if (!seenLower.has(low)) {
+        seenLower.add(low);
+        candidateSkillsUnique.push(sk);
+      }
+    }
+
     // Format candidate profile for the prompt
     const candidateProfile = {
       careerSummary: profileData?.career_summary || "None provided",
-      skills: skillsData.map((s) => `${s.name} (${s.category})`),
+      skills: candidateSkillsUnique,
       experiences: experienceData.map((exp) => ({
         role: exp.job_title,
         company: exp.company_name,
@@ -119,28 +132,60 @@ export async function POST(request: Request) {
     const openai = new OpenAI({ apiKey });
 
     const systemPrompt = `You are Kairo's Senior Technical Recruiter and Career Advisor AI.
-Your task is to conduct an objective, high-signal, and actionable job match evaluation comparing a candidate's background against a job description.
+Conduct a structured, high-signal, and objective Job Match Analysis comparing the candidate's background against the job posting.
 
-Evaluate:
-1. Match percentage (0 - 100): Calculated based on how well skills, years of experience, responsibilities, and seniority align.
-2. Recommendation: "apply" (strong fit >= 75%), "maybe" (moderate fit 50-74% or great stretch role), or "skip" (< 50% or critical hard blockers).
-3. Summary: 2-3 sentence executive synthesis of candidate-job alignment.
-4. Matched skills: list of specific skills & technologies the candidate has that match job requirements.
-5. Missing skills: list of specific skills & technologies mentioned or implied in the job description that the candidate does not list.
-6. Relevant experience: 2 to 4 bullet items highlighting specific past roles/achievements that prove candidate capability for this role.
-7. Unmet requirements: 1 to 3 items listing gaps (e.g., missing years of experience, specific domain knowledge, certifications, or requirements candidate lacks).
-8. Seniority assessment: 1-2 sentences assessing whether candidate's experience level matches the target role's seniority (Junior, Mid, Senior, Lead, Staff, Principal, Manager, etc.).
+IMPORTANT GUIDELINES FOR ACCURACY & RELIABILITY:
+
+1. SKILLS BREAKDOWN (Source of Truth is CANDIDATE BACKGROUND.skills):
+   - "matchedSkills": Required technical skills & tools mentioned in the job that the candidate POSSESSES (account for aliases like PHP/Laravel, Node.js/Node, Redux/Redux Toolkit, GraphQL/Apollo, React/React.js, TypeScript/TS, Postgres/PostgreSQL).
+   - "missingSkills": STRICTLY required technical skills that the candidate truly DOES NOT have. DO NOT put skills the candidate has here.
+   - "niceToHave": List optional / bonus / preferred technologies mentioned in the job (e.g., Docker, AWS, GraphQL if listed as nice-to-have or preferred). Separate these from strictly required skills.
+
+2. EXPERIENCE BREAKDOWN:
+   - "matchingExperience": 2 to 4 concrete bullet points highlighting specific roles, projects, or accomplishments from candidate's background that prove capability for this job.
+   - "experienceGaps": 1 to 2 specific domain or scope experience gaps (e.g. "Limited enterprise scale experience", "No prior FinTech domain background"), or empty array [] if none.
+
+3. REQUIREMENTS GAP ANALYSIS:
+   - "unmetRequirements": ONLY important NON-SKILL requirements that the candidate does NOT meet.
+     Examples:
+     - "5+ years of professional experience required (candidate has ~2 years)"
+     - "Bachelor's degree in Computer Science required"
+     - "Requires US work authorization / on-site in specific location"
+     - "Willing to work night shift / on-call rotation"
+   - DO NOT put technical skills (like PHP, GraphQL, Node, Redux) under "unmetRequirements". If a requirement lists multiple technology options (e.g. "PHP, Node JS, Rails or Python"), it is FULLY MET if the candidate has any of them.
+   - If candidate meets all non-skill requirements, return [].
+
+4. SENIORITY ASSESSMENT:
+   - "seniorityLevel": "Good Match" | "Slight Gap" | "Significant Gap"
+   - "seniorityAssessment": 1-2 sentences assessing how the candidate's years and level of responsibility compare to the target role (Junior, Mid, Senior, Lead, Staff, Principal, Manager, etc.).
+
+5. KAIRO'S ASSESSMENT:
+   - "keyStrengths": 2 to 4 bullet points highlighting the candidate's primary competitive advantages for this role.
+   - "potentialGaps": 1 to 3 constructive bullet points highlighting the main weaknesses/risks to prepare for.
+
+6. OVERALL RECOMMENDATION & SCORE:
+   - "matchPercentage": 0 - 100 percentage. Missing nice-to-haves should NOT heavily hurt the score.
+   - "recommendation": "apply" (>= 75% match), "maybe" (50-74% match), or "skip" (< 50% match).
+   - "recommendationReason": 1-2 sentences explaining why the user should apply, maybe apply, or skip.
+   - "summary": 2-3 sentence executive synthesis of alignment.
 
 Return the response STRICTLY as a JSON object matching this schema:
 {
   "matchPercentage": number,
+  "matchLabel": "Strong Match" | "Good Match" | "Moderate Match" | "Low Fit",
   "recommendation": "apply" | "maybe" | "skip",
+  "recommendationReason": string,
   "summary": string,
   "matchedSkills": string[],
   "missingSkills": string[],
-  "relevantExperience": string[],
+  "matchingExperience": string[],
+  "experienceGaps": string[],
   "unmetRequirements": string[],
-  "seniorityAssessment": string
+  "niceToHave": string[],
+  "seniorityLevel": "Good Match" | "Slight Gap" | "Significant Gap",
+  "seniorityAssessment": string,
+  "keyStrengths": string[],
+  "potentialGaps": string[]
 }`;
 
     const userPrompt = `CANDIDATE BACKGROUND:
@@ -152,11 +197,11 @@ Company: ${targetCompany || "Not specified"}
 Description:
 ${targetDescription}
 
-Analyze the match and provide the structured evaluation JSON.`;
+Evaluate the match thoroughly adhering strictly to the candidate's actual skills and background.`;
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
-      temperature: 0.2,
+      temperature: 0.1,
       response_format: { type: "json_object" },
       messages: [
         { role: "system", content: systemPrompt },
@@ -172,31 +217,52 @@ Analyze the match and provide the structured evaluation JSON.`;
       );
     }
 
-    const parsed = JSON.parse(content) as JobMatchAnalysis;
+    const parsed = JSON.parse(content);
 
-    // Normalize and validate
-    const sanitizedResult: JobMatchAnalysis = {
-      matchPercentage: Math.max(
-        0,
-        Math.min(100, Math.round(Number(parsed.matchPercentage) || 0))
-      ),
-      recommendation:
-        parsed.recommendation === "apply" ||
-        parsed.recommendation === "maybe" ||
-        parsed.recommendation === "skip"
-          ? parsed.recommendation
-          : "maybe",
-      summary: parsed.summary || "No summary provided.",
-      matchedSkills: Array.isArray(parsed.matchedSkills) ? parsed.matchedSkills : [],
-      missingSkills: Array.isArray(parsed.missingSkills) ? parsed.missingSkills : [],
-      relevantExperience: Array.isArray(parsed.relevantExperience)
+    // Run deterministic reconciliation against the database truth
+    const reconciled = reconcileJobMatch({
+      candidateSkills: candidateProfile.skills,
+      rawMatchedSkills: Array.isArray(parsed.matchedSkills) ? parsed.matchedSkills : [],
+      rawMissingSkills: Array.isArray(parsed.missingSkills) ? parsed.missingSkills : [],
+      rawUnmetRequirements: Array.isArray(parsed.unmetRequirements) ? parsed.unmetRequirements : [],
+      rawNiceToHave: Array.isArray(parsed.niceToHave) ? parsed.niceToHave : [],
+      rawMatchingExperience: Array.isArray(parsed.matchingExperience)
+        ? parsed.matchingExperience
+        : Array.isArray(parsed.relevantExperience)
         ? parsed.relevantExperience
         : [],
-      unmetRequirements: Array.isArray(parsed.unmetRequirements)
-        ? parsed.unmetRequirements
-        : [],
-      seniorityAssessment:
-        parsed.seniorityAssessment || "Seniority alignment not specified.",
+      rawExperienceGaps: Array.isArray(parsed.experienceGaps) ? parsed.experienceGaps : [],
+      rawSeniorityLevel: parsed.seniorityLevel,
+      rawSeniorityAssessment: parsed.seniorityAssessment,
+      rawKeyStrengths: Array.isArray(parsed.keyStrengths) ? parsed.keyStrengths : [],
+      rawPotentialGaps: Array.isArray(parsed.potentialGaps) ? parsed.potentialGaps : [],
+      rawMatchPercentage: Number(parsed.matchPercentage) || 0,
+    });
+
+    // Normalize and validate final payload
+    const sanitizedResult: JobMatchAnalysis = {
+      matchPercentage: reconciled.matchPercentage,
+      matchLabel: reconciled.matchLabel,
+      recommendation: reconciled.recommendation,
+      recommendationReason:
+        parsed.recommendationReason ||
+        (reconciled.recommendation === "apply"
+          ? "Your core stack and past experiences strongly align with the requirements for this role."
+          : reconciled.recommendation === "maybe"
+          ? "You match several key areas, making this a viable stretch role with some learnable gaps."
+          : "Significant prerequisites or core stack alignment are missing for this position."),
+      summary: parsed.summary || "No summary provided.",
+      matchedSkills: reconciled.matchedSkills,
+      missingSkills: reconciled.missingSkills,
+      matchingExperience: reconciled.matchingExperience,
+      experienceGaps: reconciled.experienceGaps,
+      unmetRequirements: reconciled.unmetRequirements,
+      niceToHave: reconciled.niceToHave,
+      seniorityLevel: reconciled.seniorityLevel,
+      seniorityAssessment: reconciled.seniorityAssessment,
+      keyStrengths: reconciled.keyStrengths,
+      potentialGaps: reconciled.potentialGaps,
+      relevantExperience: reconciled.matchingExperience, // Legacy fallback
       analyzedAt: new Date().toISOString(),
     };
 

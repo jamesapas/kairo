@@ -56,7 +56,6 @@ import {
 import {
   PREDEFINED_SKILLS,
   searchSkillSuggestions,
-  detectSkillCategory,
   getSkillIcon,
 } from "@/lib/constants/skills";
 import { CustomSelect, CustomSelectOption } from "@/components/jobs/custom-select";
@@ -699,10 +698,8 @@ export function ResumeCanvasView({
       return;
     }
 
-    const category = detectSkillCategory(trimmed);
-
     setAddingSkill(true);
-    const res = await createSkillAction(trimmed, category);
+    const res = await createSkillAction(trimmed);
     if (res.success && res.data) {
       setSkills((prev) => [...prev, res.data!]);
       setNewSkillInput("");
@@ -717,7 +714,7 @@ export function ResumeCanvasView({
   };
 
   return (
-    <form onSubmit={onSubmit} className="space-y-8 max-w-7xl mx-auto">
+    <form onSubmit={onSubmit} className="space-y-8 max-w-[1536px] mx-auto">
       {/* Top Notifications */}
       {errorMsg && (
         <div className="p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs flex items-center gap-2.5 animate-fade-in shadow-xs">
@@ -1572,9 +1569,6 @@ export function ResumeCanvasView({
                               <Icon icon={rec.icon} className="w-4 h-4 shrink-0" />
                               <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100 truncate">
                                 {rec.name}
-                              </span>
-                              <span className="text-[10px] px-2 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800 border border-zinc-200/60 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 font-semibold">
-                                {rec.category}
                               </span>
                             </div>
                             <span className="text-[11px] font-bold text-blue-600 dark:text-blue-400 inline-flex items-center gap-1 shrink-0 ml-2">

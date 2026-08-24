@@ -140,7 +140,7 @@ export function SettingsView() {
   };
 
   return (
-    <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+    <main className="flex-1 max-w-[1536px] mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       {/* Header & Breadcrumb - Always rendered immediately without skeleton delay */}
       <div className="space-y-3">
         <div className="flex items-center gap-2 text-xs font-semibold text-zinc-400 dark:text-zinc-500">
