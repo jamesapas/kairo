@@ -89,13 +89,10 @@ export function DashboardHeader({
         <button
           type="button"
           onClick={onAddNew}
-          className="px-4 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold transition flex items-center gap-2 cursor-pointer shadow-sm hover:shadow active:scale-[0.98]"
+          className="px-4 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer shadow-sm hover:shadow active:scale-[0.98]"
         >
           <Plus className="w-4 h-4" />
           <span>Add Application</span>
-          <kbd className="px-1.5 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-[10px] text-zinc-400 font-mono hidden sm:inline">
-            ⌘N
-          </kbd>
         </button>
       </div>
     </div>
