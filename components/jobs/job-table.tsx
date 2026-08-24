@@ -334,53 +334,87 @@ export function JobTable({
 
   if (isLoading) {
     return (
-      <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200/90 dark:border-zinc-800 shadow-[0_2px_8px_rgba(0,0,0,0.03)] overflow-hidden">
+      <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200/90 dark:border-zinc-800 shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs">
+          <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-zinc-200/80 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50">
-                <th className="py-3 pl-4 pr-1 w-8 text-center" />
-                <th className="py-3 px-3 font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider text-[10px]">Position & Company</th>
-                <th className="py-3 px-3 font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider text-[10px]">Stage</th>
-                <th className="py-3 px-3 font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider text-[10px]">Source</th>
-                <th className="py-3 px-3 font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider text-[10px]">Type</th>
-                <th className="py-3 px-3 font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider text-[10px]">Salary</th>
-                <th className="py-3 px-3 font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider text-[10px]">Applied</th>
-                <th className="py-3 px-4 text-right font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider text-[10px]">Actions</th>
+              <tr className="border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50/80 dark:bg-zinc-800/80 text-[10px] uppercase font-bold tracking-wider text-zinc-400 dark:text-zinc-500">
+                <th className="py-3 pl-4 pr-1 w-8 text-center">Match</th>
+                <th className="py-3 px-4">Role & Company</th>
+                <th className="py-3 px-3">Status</th>
+                <th className="py-3 px-3">Platform</th>
+                <th className="py-3 px-3">Workplace</th>
+                <th className="py-3 px-3">Salary</th>
+                <th className="py-3 px-3">Applied</th>
+                <th className="py-3 px-4 w-10 text-right"></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/80">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
+            <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800 text-xs">
+              {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
                 <tr key={i} className="animate-pulse">
-                  <td className="py-4 pl-4 pr-1 text-center">
-                    <div className="w-3.5 h-3.5 mx-auto rounded bg-zinc-200 dark:bg-zinc-800" />
+                  {/* Match */}
+                  <td className="py-3.5 pl-4 pr-1 text-center align-middle">
+                    <Star className="w-3.5 h-3.5 text-zinc-200 dark:text-zinc-700 mx-auto" />
                   </td>
-                  <td className="py-4 px-3 space-y-1.5">
-                    <div className="w-36 h-4 rounded bg-zinc-200 dark:bg-zinc-800" />
-                    <div className="w-24 h-3 rounded bg-zinc-100 dark:bg-zinc-800" />
+
+                  {/* Role & Company */}
+                  <td className="py-3.5 px-4">
+                    <div className="min-w-0 space-y-1.5">
+                      <div className="w-44 h-3.5 rounded bg-zinc-200 dark:bg-zinc-800" />
+                      <div className="w-28 h-2.5 rounded bg-zinc-100 dark:bg-zinc-800/70" />
+                    </div>
                   </td>
-                  <td className="py-4 px-3">
-                    <div className="w-24 h-6 rounded-lg bg-zinc-200 dark:bg-zinc-800" />
+
+                  {/* Status */}
+                  <td className="py-3.5 px-3">
+                    <div className="w-24 h-7 rounded-xl bg-zinc-100 dark:bg-zinc-800 border border-zinc-200/60 dark:border-zinc-700/60" />
                   </td>
-                  <td className="py-4 px-3">
-                    <div className="w-20 h-4 rounded bg-zinc-100 dark:bg-zinc-800" />
+
+                  {/* Platform */}
+                  <td className="py-3.5 px-3">
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-3.5 h-3.5 rounded-full bg-zinc-200 dark:bg-zinc-800 shrink-0" />
+                      <div className="w-16 h-3 rounded bg-zinc-100 dark:bg-zinc-800" />
+                    </div>
                   </td>
-                  <td className="py-4 px-3">
-                    <div className="w-14 h-5 rounded-md bg-zinc-100 dark:bg-zinc-800" />
+
+                  {/* Workplace */}
+                  <td className="py-3.5 px-3">
+                    <div className="w-14 h-5 rounded-md bg-zinc-100/70 dark:bg-zinc-800 border border-zinc-200/50 dark:border-zinc-700" />
                   </td>
-                  <td className="py-4 px-3">
-                    <div className="w-20 h-4 rounded bg-zinc-100 dark:bg-zinc-800" />
+
+                  {/* Salary */}
+                  <td className="py-3.5 px-3">
+                    <div className="w-20 h-3.5 rounded bg-zinc-100 dark:bg-zinc-800" />
                   </td>
-                  <td className="py-4 px-3">
-                    <div className="w-16 h-4 rounded bg-zinc-100 dark:bg-zinc-800" />
+
+                  {/* Applied */}
+                  <td className="py-3.5 px-3">
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-3.5 h-3.5 rounded bg-zinc-200 dark:bg-zinc-800" />
+                      <div className="w-14 h-3 rounded bg-zinc-100 dark:bg-zinc-800" />
+                    </div>
                   </td>
-                  <td className="py-4 px-4 text-right">
-                    <div className="w-7 h-7 ml-auto rounded-lg bg-zinc-100 dark:bg-zinc-800" />
+
+                  {/* Actions */}
+                  <td className="py-3.5 px-4 text-right">
+                    <div className="w-6 h-6 ml-auto rounded-lg bg-zinc-100 dark:bg-zinc-800" />
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
+        </div>
+
+        {/* Table Footer Skeleton */}
+        <div className="bg-white dark:bg-zinc-900 px-4 py-2.5 border-t border-zinc-100 dark:border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-3">
+            <div className="w-32 h-3.5 rounded bg-zinc-100 dark:bg-zinc-800 animate-pulse" />
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-16 h-7 rounded-lg bg-zinc-100 dark:bg-zinc-800 animate-pulse" />
+            <div className="w-16 h-7 rounded-lg bg-zinc-100 dark:bg-zinc-800 animate-pulse" />
+          </div>
         </div>
       </div>
     );
