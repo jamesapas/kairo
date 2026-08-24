@@ -353,7 +353,7 @@ export function JobTable({
                     setPageSize(Number(e.target.value));
                     setCurrentPage(1);
                   }}
-                  className="h-8 bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100/80 dark:hover:bg-zinc-750 border border-zinc-200 dark:border-zinc-700 text-zinc-800 dark:text-zinc-200 rounded-lg px-2 text-xs font-semibold focus:outline-none transition cursor-pointer"
+                  className="h-8 bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100/80 dark:hover:bg-zinc-700 border border-zinc-200 dark:border-zinc-700 text-zinc-800 dark:text-zinc-200 rounded-lg px-2 text-xs font-semibold focus:outline-none transition cursor-pointer"
                 >
                   <option value={5}>5 / page</option>
                   <option value={10}>10 / page</option>

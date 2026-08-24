@@ -97,7 +97,7 @@ export function CustomSelect<T extends string = string>({
           e.stopPropagation();
           setIsOpen(!isOpen);
         }}
-        className={`rounded-xl bg-white dark:bg-zinc-800 border border-zinc-200/90 dark:border-zinc-700 text-xs font-semibold text-zinc-700 dark:text-zinc-200 hover:border-zinc-300 dark:hover:border-zinc-600 hover:bg-zinc-50 dark:hover:bg-zinc-750 transition-all cursor-pointer shadow-2xs select-none ${
+        className={`rounded-xl bg-white dark:bg-zinc-800 border border-zinc-200/90 dark:border-zinc-700 text-xs font-semibold text-zinc-700 dark:text-zinc-200 hover:border-zinc-300 dark:hover:border-zinc-600 hover:bg-zinc-50 dark:hover:bg-zinc-700 cursor-pointer shadow-2xs select-none ${
           isFullWidth
             ? "flex w-full items-center justify-between px-3.5 py-2"
             : "inline-flex items-center gap-1.5 px-3 py-1.5"

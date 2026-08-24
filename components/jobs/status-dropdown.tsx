@@ -119,10 +119,10 @@ export function StatusDropdown({
           e.stopPropagation();
           setIsOpen(!isOpen);
         }}
-        className={`transition cursor-pointer select-none ${
+        className={`cursor-pointer select-none ${
           size === "sm"
-            ? "inline-flex items-center gap-1.5 rounded-full bg-white dark:bg-zinc-800 border border-zinc-200/90 dark:border-zinc-700 text-zinc-800 dark:text-zinc-200 shadow-2xs hover:border-zinc-300 dark:hover:border-zinc-600 hover:bg-zinc-50 dark:hover:bg-zinc-750 px-2.5 py-1 text-xs font-semibold"
-            : "flex w-full items-center justify-between px-3.5 py-2 text-xs font-semibold rounded-xl bg-zinc-50/80 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 text-zinc-800 dark:text-zinc-200 shadow-2xs hover:border-zinc-300 dark:hover:border-zinc-600 hover:bg-white dark:hover:bg-zinc-800"
+            ? "inline-flex items-center gap-1.5 rounded-full bg-white dark:bg-zinc-800 border border-zinc-200/90 dark:border-zinc-700 text-zinc-800 dark:text-zinc-200 shadow-2xs hover:border-zinc-300 dark:hover:border-zinc-600 hover:bg-zinc-50 dark:hover:bg-zinc-700 px-2.5 py-1 text-xs font-semibold"
+            : "flex w-full items-center justify-between px-3.5 py-2 text-xs font-semibold rounded-xl bg-zinc-50/80 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 text-zinc-800 dark:text-zinc-200 shadow-2xs hover:border-zinc-300 dark:hover:border-zinc-600 hover:bg-zinc-100/80 dark:hover:bg-zinc-700"
         }`}
       >
         <div className="flex items-center gap-1.5 truncate">
