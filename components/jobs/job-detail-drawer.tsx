@@ -154,7 +154,6 @@ export function JobDetailDrawer({
 
   const currentJob = displayJob;
   const currentStatusConfig = JOB_STATUS_CONFIG[currentJob.status] || JOB_STATUS_CONFIG.applied;
-  const companyInitial = currentJob.company ? currentJob.company.trim().charAt(0).toUpperCase() : "J";
 
   const handleCopyLink = () => {
     if (currentJob.jobUrl) {
@@ -243,9 +242,6 @@ export function JobDetailDrawer({
 
           {/* Job Title & Company Header */}
           <div className="flex items-start gap-3.5">
-            <div className="w-11 h-11 rounded-2xl bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 flex items-center justify-center font-black text-sm shrink-0 shadow-sm">
-              {companyInitial}
-            </div>
             <div className="min-w-0 flex-1">
               <h2 className="text-lg sm:text-xl font-extrabold text-zinc-900 dark:text-zinc-100 tracking-tight leading-tight">
                 {currentJob.jobTitle}

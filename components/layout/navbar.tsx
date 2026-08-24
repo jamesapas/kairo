@@ -6,6 +6,7 @@ import { signOutAction } from "@/lib/actions/auth";
 import {
   LogOut,
   Loader2,
+  User,
 } from "lucide-react";
 import { KairoLogo } from "@/components/ui/logo";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
@@ -36,8 +37,6 @@ export function Navbar({ userEmail }: NavbarProps = {}) {
     setLoggingOut(true);
     await signOutAction();
   };
-
-  const initial = userEmail ? userEmail.charAt(0).toUpperCase() : "U";
 
   return (
     <header className="sticky top-0 z-30 w-full bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border-b border-zinc-200/80 dark:border-zinc-800">
@@ -72,9 +71,9 @@ export function Navbar({ userEmail }: NavbarProps = {}) {
               onClick={() => setMenuOpen((prev) => !prev)}
               aria-label="User account menu"
               title={userEmail || "Account"}
-              className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200/70 dark:hover:bg-zinc-700/80 border border-zinc-200/90 dark:border-zinc-700/80 text-zinc-700 dark:text-zinc-200 flex items-center justify-center text-xs font-bold transition cursor-pointer select-none shadow-2xs"
+              className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200/70 dark:hover:bg-zinc-700/80 border border-zinc-200/90 dark:border-zinc-700/80 text-zinc-700 dark:text-zinc-200 flex items-center justify-center transition cursor-pointer select-none shadow-2xs"
             >
-              {initial}
+              <User className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
             </button>
 
             {/* Account Popover Menu */}

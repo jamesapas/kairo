@@ -39,9 +39,42 @@ export async function getJobsAction(): Promise<{
 
     const jobs = ((data as JobApplicationRow[]) || []).map(mapRowToJob);
     return { success: true, data: jobs };
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("Unexpected error fetching jobs:", err);
-    return { success: false, data: [], error: err.message || "Failed to fetch jobs" };
+    return { success: false, data: [], error: (err as Error)?.message || "Failed to fetch jobs" };
+  }
+}
+
+export async function getJobByIdAction(id: string): Promise<{
+  success: boolean;
+  data?: JobApplication;
+  error?: string;
+}> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return { success: false, error: "Not authenticated" };
+    }
+
+    const { data, error } = await supabase
+      .from("job_applications")
+      .select("*")
+      .eq("id", id)
+      .single();
+
+    if (error || !data) {
+      return { success: false, error: error?.message || "Application not found" };
+    }
+
+    return { success: true, data: mapRowToJob(data as JobApplicationRow) };
+  } catch (err: unknown) {
+    console.error("Unexpected error fetching job:", err);
+    return { success: false, error: (err as Error)?.message || "Failed to fetch application" };
   }
 }
 
@@ -92,9 +125,9 @@ export async function createJobAction(
 
     revalidatePath("/");
     return { success: true, data: mapRowToJob(data as JobApplicationRow) };
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("Unexpected error creating job:", err);
-    return { success: false, error: err.message || "Failed to create job" };
+    return { success: false, error: (err as Error)?.message || "Failed to create job" };
   }
 }
 
@@ -148,9 +181,9 @@ export async function updateJobAction(
 
     revalidatePath("/");
     return { success: true, data: mapRowToJob(data as JobApplicationRow) };
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("Unexpected error updating job:", err);
-    return { success: false, error: err.message || "Failed to update job" };
+    return { success: false, error: (err as Error)?.message || "Failed to update job" };
   }
 }
 
@@ -181,9 +214,9 @@ export async function deleteJobAction(id: string): Promise<{
 
     revalidatePath("/");
     return { success: true };
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("Unexpected error deleting job:", err);
-    return { success: false, error: err.message || "Failed to delete job" };
+    return { success: false, error: (err as Error)?.message || "Failed to delete job" };
   }
 }
 

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { Navbar } from "@/components/layout/navbar";
 import {
   Plus,
@@ -37,7 +38,6 @@ import {
 import { JobTable } from "./job-table";
 import { JobKanban } from "./job-kanban";
 import { JobModal } from "./job-modal";
-import { JobDetailDrawer } from "./job-detail-drawer";
 import { CustomSelect, CustomSelectOption } from "./custom-select";
 import { StatusIcon } from "./status-dropdown";
 import { PlatformIcon } from "./platform-badge";
@@ -53,6 +53,7 @@ interface JobDashboardProps {
 }
 
 export function JobDashboard({ userEmail, initialJobs = [] }: JobDashboardProps) {
+  const router = useRouter();
   const [jobs, setJobs] = useState<JobApplication[]>(initialJobs);
 
   useEffect(() => {
@@ -68,11 +69,10 @@ export function JobDashboard({ userEmail, initialJobs = [] }: JobDashboardProps)
   const [viewMode, setViewMode] = useState<"table" | "kanban">("table");
   const [weekOnlyFilter, setWeekOnlyFilter] = useState(false);
 
-  // Modal / Drawer state
+  // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isStreakModalOpen, setIsStreakModalOpen] = useState(false);
   const [editingJob, setEditingJob] = useState<JobApplication | null>(null);
-  const [selectedJob, setSelectedJob] = useState<JobApplication | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const showToast = (msg: string) => {
@@ -80,6 +80,10 @@ export function JobDashboard({ userEmail, initialJobs = [] }: JobDashboardProps)
     setTimeout(() => {
       setToastMessage(null);
     }, 3000);
+  };
+
+  const handleSelectJob = (job: JobApplication) => {
+    router.push(`/jobs/${job.id}`);
   };
 
   const handleSaveJob = async (
@@ -99,9 +103,6 @@ export function JobDashboard({ userEmail, initialJobs = [] }: JobDashboardProps)
       );
       setJobs(updated);
       showToast(`Updated ${jobData.jobTitle}`);
-      if (selectedJob && selectedJob.id === jobData.id) {
-        setSelectedJob({ ...selectedJob, ...jobData, updatedAt: now } as JobApplication);
-      }
 
       const res = await updateJobAction(jobData.id, jobData);
       if (!res.success) {
@@ -136,9 +137,6 @@ export function JobDashboard({ userEmail, initialJobs = [] }: JobDashboardProps)
     const prevJobs = [...jobs];
     const updated = jobs.map((j) => (j.id === id ? { ...j, status: newStatus, updatedAt: now } : j));
     setJobs(updated);
-    if (selectedJob && selectedJob.id === id) {
-      setSelectedJob({ ...selectedJob, status: newStatus, updatedAt: now });
-    }
 
     const res = await updateJobStatusAction(id, newStatus);
     if (!res.success) {
@@ -156,9 +154,6 @@ export function JobDashboard({ userEmail, initialJobs = [] }: JobDashboardProps)
     const updated = jobs.map((j) => (j.id === id ? { ...j, isPinned: nextPin, updatedAt: now } : j));
     setJobs(updated);
     showToast(nextPin ? `Pinned ${target.jobTitle}` : `Unpinned ${target.jobTitle}`);
-    if (selectedJob && selectedJob.id === id) {
-      setSelectedJob({ ...selectedJob, isPinned: nextPin, updatedAt: now });
-    }
 
     const res = await togglePinJobAction(id, nextPin);
     if (!res.success) {
@@ -174,9 +169,6 @@ export function JobDashboard({ userEmail, initialJobs = [] }: JobDashboardProps)
       const updated = jobs.filter((j) => j.id !== id);
       setJobs(updated);
       showToast("Application deleted");
-      if (selectedJob && selectedJob.id === id) {
-        setSelectedJob(null);
-      }
 
       const res = await deleteJobAction(id);
       if (!res.success) {
@@ -492,7 +484,7 @@ export function JobDashboard({ userEmail, initialJobs = [] }: JobDashboardProps)
           {viewMode === "table" ? (
             <JobTable
               jobs={filteredJobs}
-              onSelectJob={(job) => setSelectedJob(job)}
+              onSelectJob={handleSelectJob}
               onEditJob={(job) => {
                 setEditingJob(job);
                 setIsModalOpen(true);
@@ -508,7 +500,7 @@ export function JobDashboard({ userEmail, initialJobs = [] }: JobDashboardProps)
           ) : (
             <JobKanban
               jobs={filteredJobs}
-              onSelectJob={(job) => setSelectedJob(job)}
+              onSelectJob={handleSelectJob}
               onEditJob={(job) => {
                 setEditingJob(job);
                 setIsModalOpen(true);
@@ -530,31 +522,12 @@ export function JobDashboard({ userEmail, initialJobs = [] }: JobDashboardProps)
         initialJob={editingJob}
       />
 
-      {/* Detail Drawer */}
-      <JobDetailDrawer
-        isOpen={!!selectedJob}
-        job={selectedJob}
-        onClose={() => setSelectedJob(null)}
-        onEdit={(job) => {
-          setSelectedJob(null);
-          setEditingJob(job);
-          setIsModalOpen(true);
-        }}
-        onDelete={(id) => {
-          handleDeleteJob(id);
-        }}
-        onStatusChange={handleStatusChange}
-        onTogglePin={handleTogglePin}
-      />
-
       {/* Streak History & Activity Modal */}
       <StreakModal
         isOpen={isStreakModalOpen}
         onClose={() => setIsStreakModalOpen(false)}
         jobs={jobs}
-        onSelectJob={(job) => {
-          setSelectedJob(job);
-        }}
+        onSelectJob={handleSelectJob}
       />
     </div>
   );
