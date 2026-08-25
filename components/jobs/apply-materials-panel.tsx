@@ -64,7 +64,13 @@ export function ApplyMaterialsPanel({
   const [materialsMap, setMaterialsMap] = useState<JobApplyMaterialsMap>(
     initialMaterials || {}
   );
-  const [activeSubTab, setActiveSubTab] = useState<ApplyContentType>("resume-suggestions");
+  const [activeSubTab, setActiveSubTab] = useState<ApplyContentType>(() => {
+    if (initialMaterials) {
+      const firstSaved = APPLY_CONTENT_KEYS.find((k) => Boolean(initialMaterials[k]?.content));
+      if (firstSaved) return firstSaved;
+    }
+    return "resume-suggestions";
+  });
   const [editedContents, setEditedContents] = useState<Partial<Record<ApplyContentType, string>>>({});
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -86,7 +92,7 @@ export function ApplyMaterialsPanel({
     }
   }, [isEditing, activeSubTab]);
 
-  // Sync initialMaterials
+  // Sync initialMaterials (preserves current activeSubTab so regenerating doesn't switch tabs)
   useEffect(() => {
     if (initialMaterials) {
       setMaterialsMap(initialMaterials);
@@ -97,12 +103,6 @@ export function ApplyMaterialsPanel({
         }
       }
       setEditedContents(initialEdits);
-
-      // Default to first saved material if available
-      const firstSaved = APPLY_CONTENT_KEYS.find((k) => Boolean(initialMaterials[k]?.content));
-      if (firstSaved) {
-        setActiveSubTab(firstSaved);
-      }
     }
   }, [initialMaterials]);
 
@@ -466,8 +466,7 @@ export function ApplyMaterialsPanel({
             />
           ) : (
             <div
-              onClick={() => setIsEditing(true)}
-              className={`p-6 sm:p-8 rounded-2xl border text-xs sm:text-sm text-zinc-800 dark:text-zinc-200 leading-relaxed whitespace-pre-line cursor-text font-sans ${
+              className={`p-6 sm:p-8 rounded-2xl border text-xs sm:text-sm text-zinc-800 dark:text-zinc-200 leading-relaxed whitespace-pre-line select-text font-sans ${
                 activeSubTab === "cover-letter"
                   ? "bg-zinc-50/80 dark:bg-zinc-800/50 border-zinc-200/90 dark:border-zinc-800 shadow-2xs"
                   : "bg-zinc-50/70 dark:bg-zinc-800/40 border-zinc-200/80 dark:border-zinc-800"

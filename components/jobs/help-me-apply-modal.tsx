@@ -113,13 +113,6 @@ export function HelpMeApplyModal({
         }
       }
       setEditedContents(initialEdits);
-
-      // If existing materials already exist, default to viewing them
-      const hasAnySaved = APPLY_CONTENT_KEYS.some((k) => Boolean(initialMaterials[k]?.content));
-      if (hasAnySaved) {
-        const firstSaved = APPLY_CONTENT_KEYS.find((k) => Boolean(initialMaterials[k]?.content));
-        if (firstSaved) setActiveTab(firstSaved);
-      }
     }
   }, [initialMaterials]);
 
@@ -128,6 +121,10 @@ export function HelpMeApplyModal({
     if (isOpen) {
       setIsRendered(true);
       setIsClosing(false);
+      if (initialMaterials) {
+        const firstSaved = APPLY_CONTENT_KEYS.find((k) => Boolean(initialMaterials[k]?.content));
+        if (firstSaved) setActiveTab(firstSaved);
+      }
     } else if (isRendered) {
       setIsClosing(true);
       const timer = setTimeout(() => {
@@ -136,7 +133,7 @@ export function HelpMeApplyModal({
       }, 200);
       return () => clearTimeout(timer);
     }
-  }, [isOpen, isRendered]);
+  }, [isOpen]);
 
   const handleClose = useCallback(() => {
     if (isClosing || isLoading) return;
@@ -706,8 +703,7 @@ export function HelpMeApplyModal({
                 />
               ) : (
                 <div
-                  onClick={() => setIsEditing(true)}
-                  className="p-4 rounded-2xl bg-zinc-50/70 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700/80 text-xs text-zinc-800 dark:text-zinc-200 leading-relaxed whitespace-pre-line cursor-text font-sans"
+                  className="p-4 rounded-2xl bg-zinc-50/70 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700/80 text-xs text-zinc-800 dark:text-zinc-200 leading-relaxed whitespace-pre-line select-text font-sans"
                 >
                   {currentContent || (
                     <span className="text-zinc-400 italic">No content generated yet for this material.</span>
