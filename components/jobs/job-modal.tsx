@@ -5,11 +5,9 @@ import {
   X,
   AlertCircle,
   Pin,
-  Globe,
   Laptop,
   Building2,
   Building,
-  Star,
 } from "lucide-react";
 import {
   JobApplication,
@@ -17,7 +15,6 @@ import {
   WorkplaceType,
   PLATFORM_OPTIONS,
 } from "@/types/job";
-import { StatusDropdown } from "./status-dropdown";
 import { CustomSelect, CustomSelectOption } from "./custom-select";
 import { PlatformIcon } from "./platform-badge";
 
@@ -147,13 +144,6 @@ function JobModalForm({
     initialJob?.appliedOn || PLATFORM_OPTIONS[0]
   );
   const [jobUrl, setJobUrl] = useState(initialJob?.jobUrl || "");
-  const [contactUrl, setContactUrl] = useState(initialJob?.contactUrl || "");
-  const [dateApplied, setDateApplied] = useState(
-    initialJob?.dateApplied || new Date().toISOString().split("T")[0]
-  );
-  const [status, setStatus] = useState<JobStatus>(
-    initialJob?.status || "applied"
-  );
   const [workplaceType, setWorkplaceType] = useState<WorkplaceType>(
     initialJob?.workplaceType || "Remote"
   );
@@ -168,14 +158,12 @@ function JobModalForm({
   const [errors, setErrors] = useState<{
     jobTitle?: string;
     company?: string;
-    dateApplied?: string;
   }>({});
 
   const validate = () => {
-    const newErrors: { jobTitle?: string; company?: string; dateApplied?: string } = {};
+    const newErrors: { jobTitle?: string; company?: string } = {};
     if (!jobTitle.trim()) newErrors.jobTitle = "Job title is required";
     if (!company.trim()) newErrors.company = "Company name is required";
-    if (!dateApplied) newErrors.dateApplied = "Date applied is required";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -195,9 +183,9 @@ function JobModalForm({
       description: description.trim(),
       appliedOn,
       jobUrl: jobUrl.trim(),
-      contactUrl: contactUrl.trim(),
-      dateApplied,
-      status,
+      contactUrl: initialJob?.contactUrl || "",
+      dateApplied: initialJob?.dateApplied || new Date().toISOString().split("T")[0],
+      status: initialJob?.status || ("saved" as JobStatus),
       workplaceType,
       salary: formattedSalary,
       isPinned,
@@ -206,11 +194,11 @@ function JobModalForm({
   };
 
   return (
-    <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden my-auto">
+    <div className="relative z-10 bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden my-auto animate-scale-up">
       {/* Header */}
       <div className="px-6 py-4 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
         <h2 className="text-base font-bold text-zinc-900 dark:text-zinc-100">
-          {initialJob ? "Edit Application" : "Add Job Application"}
+          {initialJob ? "Edit Job" : "Add Job"}
         </h2>
         <button
           onClick={onClose}
@@ -230,7 +218,7 @@ function JobModalForm({
             </label>
             <input
               type="text"
-              placeholder="e.g. Software Engineer"
+              placeholder="e.g. Frontend Engineer"
               value={jobTitle}
               onChange={(e) => {
                 setJobTitle(e.target.value);
@@ -271,41 +259,11 @@ function JobModalForm({
           </div>
         </div>
 
-        {/* Status & Date Applied */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-          <div>
-            <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-              Status
-            </label>
-            <StatusDropdown
-              value={status}
-              onChange={(st) => setStatus(st)}
-              size="md"
-              className="w-full"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-              Date Applied <span className="text-rose-500">*</span>
-            </label>
-            <input
-              type="date"
-              value={dateApplied}
-              onChange={(e) => {
-                setDateApplied(e.target.value);
-                if (errors.dateApplied) setErrors({ ...errors, dateApplied: undefined });
-              }}
-              className="w-full px-3 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 text-xs font-medium text-zinc-900 dark:text-zinc-100 focus:border-zinc-400 dark:focus:border-zinc-500 cursor-pointer"
-            />
-          </div>
-        </div>
-
         {/* Platform & Workplace */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
           <div>
             <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-              Applied On
+              Platform / Source
             </label>
             <CustomSelect<string>
               value={appliedOn}
@@ -317,7 +275,7 @@ function JobModalForm({
 
           <div>
             <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-              Workplace
+              Workplace Type
             </label>
             <CustomSelect<WorkplaceType>
               value={workplaceType}
@@ -331,13 +289,13 @@ function JobModalForm({
         {/* Salary */}
         <div>
           <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-            Salary / Range
+            Salary / Range <span className="text-zinc-400 font-normal">(Optional)</span>
           </label>
           <div className="flex items-center rounded-xl bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 focus-within:border-zinc-400 dark:focus-within:border-zinc-500 transition overflow-hidden">
             <select
               value={salaryCurrency}
               onChange={(e) => setSalaryCurrency(e.target.value)}
-              className="bg-zinc-100/80 dark:bg-zinc-800 text-xs font-bold text-zinc-800 dark:text-zinc-200 py-2 pl-2.5 pr-1 border-r border-zinc-200 dark:border-zinc-700 cursor-pointer focus:outline-none shrink-0 hover:bg-zinc-200/50 dark:hover:bg-zinc-700 transition"
+              className="bg-zinc-100/80 dark:bg-zinc-800 text-xs font-bold text-zinc-800 dark:text-zinc-200 py-2 pl-2.5 pr-1 border-r border-zinc-200 dark:border-zinc-700 cursor-pointer focus:outline-hidden shrink-0 hover:bg-zinc-200/50 dark:hover:bg-zinc-700 transition"
             >
               {CURRENCY_OPTIONS.map((c) => (
                 <option key={c.value} value={c.value}>
@@ -350,12 +308,12 @@ function JobModalForm({
               placeholder="e.g. 50,000 - 80,000"
               value={salaryAmount}
               onChange={(e) => setSalaryAmount(formatSalaryInput(e.target.value))}
-              className="flex-1 min-w-0 bg-transparent px-2.5 py-2 text-xs font-medium text-zinc-900 dark:text-zinc-100 focus:outline-none placeholder:text-zinc-400 dark:placeholder:text-zinc-500"
+              className="flex-1 min-w-0 bg-transparent px-2.5 py-2 text-xs font-medium text-zinc-900 dark:text-zinc-100 focus:outline-hidden placeholder:text-zinc-400 dark:placeholder:text-zinc-500"
             />
             <select
               value={salaryPeriod}
               onChange={(e) => setSalaryPeriod(e.target.value)}
-              className="bg-zinc-100/80 dark:bg-zinc-800 text-xs font-semibold text-zinc-600 dark:text-zinc-300 py-2 pl-1.5 pr-2 border-l border-zinc-200 dark:border-zinc-700 cursor-pointer focus:outline-none shrink-0 hover:bg-zinc-200/50 dark:hover:bg-zinc-700 transition"
+              className="bg-zinc-100/80 dark:bg-zinc-800 text-xs font-semibold text-zinc-600 dark:text-zinc-300 py-2 pl-1.5 pr-2 border-l border-zinc-200 dark:border-zinc-700 cursor-pointer focus:outline-hidden shrink-0 hover:bg-zinc-200/50 dark:hover:bg-zinc-700 transition"
             >
               {PERIOD_OPTIONS.map((p) => (
                 <option key={p.value} value={p.value}>
@@ -366,43 +324,31 @@ function JobModalForm({
           </div>
         </div>
 
-        {/* Job URL & Contact URL */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-          <div>
-            <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-              Job URL
-            </label>
-            <input
-              type="url"
-              placeholder="https://company.com/careers/..."
-              value={jobUrl}
-              onChange={(e) => setJobUrl(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 text-xs font-medium text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:border-zinc-400 dark:focus:border-zinc-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-              Contact URL / Link
-            </label>
-            <input
-              type="url"
-              placeholder="e.g. LinkedIn message, recruiter profile..."
-              value={contactUrl}
-              onChange={(e) => setContactUrl(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 text-xs font-medium text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:border-zinc-400 dark:focus:border-zinc-500"
-            />
-          </div>
-        </div>
-
-        {/* Description */}
+        {/* Job URL */}
         <div>
           <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-            Description
+            Job Posting Link <span className="text-zinc-400 font-normal">(Optional)</span>
           </label>
+          <input
+            type="url"
+            placeholder="https://company.com/careers/..."
+            value={jobUrl}
+            onChange={(e) => setJobUrl(e.target.value)}
+            className="w-full px-3 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 text-xs font-medium text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:border-zinc-400 dark:focus:border-zinc-500"
+          />
+        </div>
+
+        {/* Description / Requirements */}
+        <div>
+          <div className="flex items-center justify-between mb-1">
+            <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+              Job Description & Requirements
+            </label>
+            <span className="text-[10px] text-zinc-400">Used for AI Match & Help Me Apply</span>
+          </div>
           <textarea
-            rows={4}
-            placeholder="Job description or notes..."
+            rows={5}
+            placeholder="Paste the job description, qualifications, and role scope here to enable AI matching and tailored application materials..."
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             className="w-full px-3 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 text-xs text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:border-zinc-400 dark:focus:border-zinc-500 resize-y"
@@ -420,7 +366,7 @@ function JobModalForm({
             />
             <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5">
               <Pin className="w-3.5 h-3.5 text-rose-500 fill-rose-500" />
-              Pin this application to top
+              Pin to top
             </span>
           </label>
         </div>
@@ -438,9 +384,9 @@ function JobModalForm({
         <button
           type="button"
           onClick={handleSubmit}
-          className="px-5 py-2 rounded-xl bg-zinc-900 dark:bg-zinc-100 hover:bg-zinc-800 dark:hover:bg-white text-white dark:text-zinc-900 font-semibold text-xs transition cursor-pointer shadow-sm"
+          className="px-5 py-2 rounded-xl bg-zinc-900 dark:bg-zinc-100 hover:bg-zinc-800 dark:hover:bg-white text-white dark:text-zinc-900 font-semibold text-xs transition cursor-pointer shadow-xs"
         >
-          {initialJob ? "Save Changes" : "Create Application"}
+          {initialJob ? "Save Changes" : "Save Job"}
         </button>
       </div>
     </div>
@@ -453,65 +399,39 @@ export function JobModal({
   onSave,
   initialJob,
 }: JobModalProps) {
-  const [isRendered, setIsRendered] = useState(isOpen);
-  const [isClosing, setIsClosing] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    if (isOpen) {
-      setIsRendered(true);
-      setIsClosing(false);
-    } else if (isRendered) {
-      setIsClosing(true);
-      const timer = setTimeout(() => {
-        setIsRendered(false);
-        setIsClosing(false);
-      }, 200);
-      return () => clearTimeout(timer);
-    }
-  }, [isOpen, isRendered]);
+    setMounted(true);
+  }, []);
 
-  const handleClose = () => {
-    if (isClosing) return;
-    setIsClosing(true);
-    setTimeout(() => {
-      onClose();
-      setIsRendered(false);
-      setIsClosing(false);
-    }, 200);
-  };
-
+  // Handle ESC key
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isRendered && !isClosing) {
-        handleClose();
+      if (e.key === "Escape" && isOpen) {
+        onClose();
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isRendered, isClosing]);
+  }, [isOpen, onClose]);
 
-  if (!isRendered) return null;
+  if (!isOpen || !mounted) return null;
 
   return (
-    <div
-      onClick={handleClose}
-      className={`fixed inset-0 z-50 overflow-y-auto bg-zinc-950/40 backdrop-blur-xs flex items-center justify-center p-4 ${
-        isClosing ? "animate-fade-out" : "animate-fade-in"
-      }`}
-    >
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 md:p-6 overflow-y-auto">
+      {/* Backdrop */}
       <div
-        onClick={(e) => e.stopPropagation()}
-        className={`w-full max-w-2xl ${
-          isClosing ? "animate-modal-out" : "animate-modal"
-        }`}
-      >
-        <JobModalForm
-          key={initialJob?.id || "new-job"}
-          initialJob={initialJob}
-          onSave={onSave}
-          onClose={handleClose}
-        />
-      </div>
+        className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity animate-fade-in"
+        onClick={onClose}
+      />
+
+      {/* Modal Card */}
+      <JobModalForm
+        initialJob={initialJob}
+        onSave={onSave}
+        onClose={onClose}
+      />
     </div>
   );
 }

@@ -498,11 +498,13 @@ export function JobDetailDrawer({
             jobTitle={currentJob.jobTitle}
             company={currentJob.company}
             description={currentJob.description}
+            currentStatus={currentJob.status}
             initialAnalysis={currentJob.aiMatchAnalysis}
             onOpenEditModal={() => {
               handleClose();
               onEdit(currentJob);
             }}
+            onMarkApplied={() => onStatusChange(currentJob.id, "applied")}
           />
         </div>
 

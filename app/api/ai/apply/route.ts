@@ -41,31 +41,19 @@ export async function POST(request: Request) {
       company,
       description: customDescription,
       contentType,
-      customQuestion,
     } = body as {
       jobId?: string;
       jobTitle?: string;
       company?: string;
       description?: string;
       contentType?: ApplyContentType;
-      customQuestion?: string;
     };
 
     if (!contentType || !APPLY_CONTENT_TYPES[contentType]) {
       return NextResponse.json(
         {
           success: false,
-          error: "A valid contentType is required (cover-letter, application-message, why-good-fit, tell-me-about-yourself, custom-question).",
-        },
-        { status: 400 }
-      );
-    }
-
-    if (contentType === "custom-question" && (!customQuestion || !customQuestion.trim())) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Please provide the custom application question to generate an answer.",
+          error: "A valid contentType is required (cover-letter, application-message, resume-suggestions).",
         },
         { status: 400 }
       );
@@ -195,24 +183,13 @@ ${compactExperiences ? `Experience:\n${compactExperiences}\n` : ""}${compactEduc
 - Sign-off with name: "${profileData?.name || "Candidate"}".`;
         break;
 
-      case "why-good-fit":
-        maxTokens = 450;
-        taskInstructions = `Generate a compelling "Why are you a good fit?" answer for "${targetJobTitle}" at ${targetCompany || "the company"}.
-- 2-3 focused bullet points connecting candidate's verified skills & accomplishments to role needs.
-- Crisp closing sentence.`;
-        break;
-
-      case "tell-me-about-yourself":
-        maxTokens = 450;
-        taskInstructions = `Generate a natural "Tell me about yourself" interview answer (2-3 paragraphs, 60-90s speech) for "${targetJobTitle}".
-- Present (current focus) -> Past (key journey wins) -> Future (why this role at ${targetCompany || "this company"}).`;
-        break;
-
-      case "custom-question":
-        maxTokens = 500;
-        taskInstructions = `Answer this question authentically using candidate's actual background:
-QUESTION: "${customQuestion}"
-- Provide a direct, well-structured response connecting real experiences to "${targetJobTitle}" at ${targetCompany || "the company"}.`;
+      case "resume-suggestions":
+        maxTokens = 600;
+        taskInstructions = `Generate high-impact tailored Resume Suggestions for "${targetJobTitle}" at ${targetCompany || "the company"}.
+Format into 3 clean, actionable sections:
+1. 🎯 Top Verified Skills to Feature: The most important skills from candidate's profile to place in the top skills section.
+2. ✍️ Recommended Bullet Rephrasings: 2-3 tailored bullet point examples adapted from candidate's actual experience to highlight measurable outcomes and keywords for this role.
+3. 🔍 Priority ATS Keywords: Essential keywords from the job description that match candidate's background to ensure ATS alignment.`;
         break;
     }
 
@@ -252,36 +229,31 @@ ${taskInstructions}`;
       ],
     });
 
-    const content = completion.choices[0]?.message?.content;
-    if (!content) {
-      return NextResponse.json(
-        { success: false, error: "Failed to generate application materials from AI." },
-        { status: 500 }
-      );
+    const rawResponse = completion.choices[0]?.message?.content;
+    if (!rawResponse) {
+      throw new Error("No response received from OpenAI.");
     }
 
-    const parsed = JSON.parse(content);
+    const parsed = JSON.parse(rawResponse);
 
-    const result: ApplyContentResponse = {
+    const data: ApplyContentResponse = {
       contentType,
-      title:
-        parsed.title ||
-        `${APPLY_CONTENT_TYPES[contentType].title} · ${targetJobTitle || "Application"}`,
-      content: parsed.content || "No content generated.",
-      generatedAt: new Date().toISOString(),
+      title: parsed.title || APPLY_CONTENT_TYPES[contentType].title,
+      content: parsed.content || "",
       keyPointsUsed: Array.isArray(parsed.keyPointsUsed) ? parsed.keyPointsUsed : [],
+      generatedAt: new Date().toISOString(),
     };
 
     return NextResponse.json({
       success: true,
-      data: result,
+      data,
     });
-  } catch (err: unknown) {
-    console.error("Error in AI apply route:", err);
+  } catch (error: unknown) {
+    console.error("AI Apply API Error:", error);
     return NextResponse.json(
       {
         success: false,
-        error: (err as Error)?.message || "Failed to generate application materials.",
+        error: (error as Error)?.message || "Failed to generate application materials.",
       },
       { status: 500 }
     );

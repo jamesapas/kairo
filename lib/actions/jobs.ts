@@ -105,7 +105,7 @@ export async function createJobAction(
       job_url: jobData.jobUrl || "",
       contact_url: jobData.contactUrl || "",
       date_applied: jobData.dateApplied || new Date().toISOString().split("T")[0],
-      status: jobData.status || "applied",
+      status: jobData.status || "saved",
       workplace_type: jobData.workplaceType || "Remote",
       salary: jobData.salary || "",
       is_pinned: jobData.isPinned || false,

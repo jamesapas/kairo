@@ -1,6 +1,7 @@
 import { JobMatchAnalysis } from "./ai-match";
 
 export type JobStatus =
+  | "saved"
   | "applied"
   | "interviewing"
   | "offer"
@@ -60,7 +61,7 @@ export function mapRowToJob(row: JobApplicationRow): JobApplication {
     jobUrl: row.job_url || "",
     contactUrl: row.contact_url || "",
     dateApplied: row.date_applied,
-    status: (row.status as JobStatus) || "applied",
+    status: (row.status as JobStatus) || "saved",
     workplaceType: (row.workplace_type as WorkplaceType) || "Remote",
     salary: row.salary || "",
     isPinned: Boolean(row.is_pinned),
@@ -74,6 +75,11 @@ export const JOB_STATUS_CONFIG: Record<
   JobStatus,
   { label: string; iconColor: string; dot: string }
 > = {
+  saved: {
+    label: "Saved",
+    iconColor: "text-slate-500",
+    dot: "bg-slate-400",
+  },
   applied: {
     label: "Applied",
     iconColor: "text-blue-500",

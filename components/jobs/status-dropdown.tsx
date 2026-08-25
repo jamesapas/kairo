@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import {
+  Bookmark,
   Send,
   CalendarCheck,
   BadgeCheck,
@@ -30,6 +31,8 @@ export function StatusIcon({
   className?: string;
 }) {
   switch (status) {
+    case "saved":
+      return <Bookmark className={`${className} text-slate-500 shrink-0`} />;
     case "applied":
       return <Send className={`${className} text-blue-600 shrink-0`} />;
     case "interviewing":
@@ -45,7 +48,7 @@ export function StatusIcon({
     case "withdrawn":
       return <Undo2 className={`${className} text-zinc-400 shrink-0`} />;
     default:
-      return <Send className={`${className} text-blue-600 shrink-0`} />;
+      return <Bookmark className={`${className} text-slate-500 shrink-0`} />;
   }
 }
 

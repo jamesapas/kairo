@@ -31,6 +31,7 @@ interface JobKanbanProps {
 }
 
 const KANBAN_COLUMNS: JobStatus[] = [
+  "saved",
   "applied",
   "interviewing",
   "offer",

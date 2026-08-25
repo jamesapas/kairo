@@ -30,6 +30,7 @@ import {
   Circle,
   AlertCircle,
   Sparkles,
+  Send,
 } from "lucide-react";
 import Loading from "@/app/(workspace)/jobs/[id]/loading";
 import {
@@ -397,6 +398,16 @@ export function JobDetailPage({ jobId }: JobDetailPageProps) {
 
           {/* Action Toolbar */}
           <div className="flex items-center gap-2">
+            {job.status === "saved" && (
+              <button
+                onClick={() => handleStatusChange("applied")}
+                className="px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition cursor-pointer shadow-xs flex items-center gap-1.5 active:scale-[0.98]"
+              >
+                <Send className="w-3.5 h-3.5" />
+                <span>Mark as Applied</span>
+              </button>
+            )}
+
             <button
               onClick={handleCopySummary}
               title="Copy formatted summary"
@@ -454,7 +465,11 @@ export function JobDetailPage({ jobId }: JobDetailPageProps) {
                   <Building2 className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
                   <span className="font-bold text-zinc-800 dark:text-zinc-200">{job.company}</span>
                   <span>•</span>
-                  <span>Applied on {formatDateWords(job.dateApplied)} ({formatRelativeDate(job.dateApplied)})</span>
+                  <span>
+                    {job.status === "saved"
+                      ? `Saved on ${formatDateWords(job.dateApplied)}`
+                      : `Applied on ${formatDateWords(job.dateApplied)} (${formatRelativeDate(job.dateApplied)})`}
+                  </span>
                 </div>
                 <h1 className="text-xl sm:text-2xl font-extrabold text-zinc-900 dark:text-zinc-100 tracking-tight truncate">
                   {job.jobTitle}
@@ -521,9 +536,11 @@ export function JobDetailPage({ jobId }: JobDetailPageProps) {
                   jobTitle={job.jobTitle}
                   company={job.company}
                   description={job.description}
+                  currentStatus={job.status}
                   initialAnalysis={job.aiMatchAnalysis}
                   onOpenEditModal={() => setIsModalOpen(true)}
                   onOpenHelpMeApply={() => setIsHelpMeApplyOpen(true)}
+                  onMarkApplied={() => handleStatusChange("applied")}
                 />
               )}
 
@@ -744,6 +761,8 @@ export function JobDetailPage({ jobId }: JobDetailPageProps) {
         jobTitle={job.jobTitle}
         company={job.company}
         description={job.description}
+        currentStatus={job.status}
+        onMarkApplied={() => handleStatusChange("applied")}
       />
     </>
   );

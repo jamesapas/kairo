@@ -29,6 +29,8 @@ export function calculateJobStats(jobs: JobApplication[]): JobStats {
   const interviewing = jobs.filter((j) => j.status === "interviewing").length;
   const offers = jobs.filter((j) => j.status === "offer").length;
 
+  const appliedJobs = jobs.filter((j) => j.status !== "saved");
+
   const responded = jobs.filter(
     (j) =>
       j.status === "interviewing" ||
@@ -37,7 +39,7 @@ export function calculateJobStats(jobs: JobApplication[]): JobStats {
       j.status === "rejected"
   ).length;
 
-  const responseRate = total > 0 ? Math.round((responded / total) * 100) : 0;
+  const responseRate = appliedJobs.length > 0 ? Math.round((responded / appliedJobs.length) * 100) : 0;
 
   const now = new Date();
 
@@ -55,7 +57,7 @@ export function calculateJobStats(jobs: JobApplication[]): JobStats {
   const startOfWeekStr = startOfWeek.toISOString().split("T")[0];
   const endOfWeekStr = endOfWeek.toISOString().split("T")[0];
 
-  const thisWeek = jobs.filter(
+  const thisWeek = appliedJobs.filter(
     (j) => j.dateApplied >= startOfWeekStr && j.dateApplied <= endOfWeekStr
   ).length;
 
@@ -68,9 +70,9 @@ export function calculateJobStats(jobs: JobApplication[]): JobStats {
       ? `${startMonth} ${startDay} – ${endDay}`
       : `${startMonth} ${startDay} – ${endMonth} ${endDay}`;
 
-  // Calculate Streak
+  // Calculate Streak based on submitted applications
   const uniqueDates = Array.from(
-    new Set(jobs.map((j) => j.dateApplied).filter(Boolean))
+    new Set(appliedJobs.map((j) => j.dateApplied).filter(Boolean))
   ).sort((a, b) => (a > b ? -1 : 1));
 
   const todayStr = now.toISOString().split("T")[0];
