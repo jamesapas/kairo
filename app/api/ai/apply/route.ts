@@ -163,6 +163,26 @@ ${compactExperiences ? `Experience:\n${compactExperiences}\n` : ""}${compactEduc
     // Clean and cap job description to prevent token waste from legal/footer disclaimers
     const cleanDescription = targetDescription.trim().slice(0, 3200);
 
+    // Extract candidate location, links, and current date for formal letter header
+    const candidateLocation =
+      experienceData.find((e) => Boolean(e.location?.trim()))?.location?.trim() || "";
+
+    const rawLinks = Array.isArray(profileData?.links) ? profileData.links : [];
+    const formattedLinks = rawLinks
+      .map((l: { url?: string; label?: string }) => {
+        if (!l?.url) return "";
+        return l.url.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "");
+      })
+      .filter(Boolean);
+    const formattedLinksStr = formattedLinks.join(" | ");
+    const contactLine = [profileData?.email, formattedLinksStr].filter(Boolean).join(" | ");
+
+    const formattedDate = new Date().toLocaleDateString("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    });
+
     // Build specific prompt instructions and set strict max token ceilings
     let taskInstructions = "";
     let systemPrompt = "";
@@ -170,23 +190,46 @@ ${compactExperiences ? `Experience:\n${compactExperiences}\n` : ""}${compactEduc
 
     switch (contentType) {
       case "cover-letter":
-        maxTokens = 650;
-        systemPrompt = `You are Kairo's AI Career Co-Pilot specializing in writing tailored, authentic Cover Letters.
+        maxTokens = 900;
+        systemPrompt = `You are Kairo's AI Career Co-Pilot specializing in writing authentic, formal, executive-ready Cover Letters.
 STRICT RULES:
 1. ONLY use verified skills, experiences, and education provided in the candidate context.
 2. DO NOT invent or assume any unlisted companies, tools, metrics, or credentials.
-3. Keep it punchy, professional, and directly relevant.
+3. DO NOT invent imaginary street addresses, postal codes, building names, or fake recipient addresses for the company. Only use the company name (and city/location ONLY IF explicitly mentioned in the job description).
+4. Output must follow a clean, formal letter structure with Candidate Header, Date, Recipient block, Subject line ('Re: ... Application'), formal salutation, 3-4 structured body paragraphs, and formal closing.
 
 Return JSON matching:
 {
-  "title": string,
-  "content": string,
+  "title": string, // e.g. "Cover Letter for [Job Title]"
+  "content": string, // Full formal cover letter text formatted with proper line breaks
   "keyPointsUsed": string[] // 2-3 brief bullet points of verified candidate strengths leveraged
 }`;
-        taskInstructions = `Generate a 3-paragraph professional Cover Letter for "${targetJobTitle}" at ${targetCompany || "the company"}.
-- Opening: Specific hook and enthusiasm for this role at ${targetCompany || "the company"}.
-- Body: Verified achievements and technical skills directly relevant to the role requirements.
-- Closing: Confident value proposition, interest in discussing further, and sign-off from "${profileData?.name || "Candidate"}".`;
+        taskInstructions = `Generate a formal, beautifully structured Cover Letter for "${targetJobTitle}" at ${targetCompany || "the company"}.
+
+Follow this EXACT layout structure:
+
+${(profileData?.name || "Candidate").toUpperCase()}
+${candidateLocation ? `${candidateLocation}\n` : ""}${contactLine}
+
+${formattedDate}
+
+Hiring Manager
+${targetCompany || "Hiring Team"}
+
+Re: ${targetJobTitle || "Role"} Application
+
+Dear Hiring Manager,
+
+[Paragraph 1: Clear application intent for the ${targetJobTitle || "role"} at ${targetCompany || "the company"}. Highlight total verified years of experience and core technical capabilities from profile.]
+
+[Paragraph 2: Specific hands-on accomplishments and technical tools from candidate's verified experience (e.g. frontend/backend systems, APIs, responsive design, performance optimization) matching the role requirements.]
+
+[Paragraph 3: Motivation for joining ${targetCompany || "the team"}, alignment with the role, problem-solving mindset, and willingness to learn and contribute.]
+
+[Paragraph 4: Thank them for considering the application, and state enthusiastic anticipation to discuss how candidate can contribute to the team.]
+
+Sincerely,
+${profileData?.name || "Candidate"}`;
         break;
 
       case "application-message":

@@ -19,6 +19,7 @@ import {
   Square,
   Save,
   CheckCircle2,
+  Download,
 } from "lucide-react";
 import {
   ApplyContentType,
@@ -29,6 +30,7 @@ import {
 } from "@/types/ai-apply";
 import { JobStatus } from "@/types/job";
 import { saveApplyMaterialAction } from "@/lib/actions/jobs";
+import { downloadCoverLetterPdf } from "@/lib/utils/cover-letter-pdf";
 
 interface HelpMeApplyModalProps {
   isOpen: boolean;
@@ -588,6 +590,25 @@ export function HelpMeApplyModal({
                     <RefreshCw className="w-3 h-3" />
                     <span>Regenerate</span>
                   </button>
+
+                  {/* Download PDF for Cover Letter */}
+                  {activeTab === "cover-letter" && Boolean(currentContent) && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        downloadCoverLetterPdf({
+                          content: currentContent,
+                          companyName: company,
+                          jobTitle: jobTitle,
+                        })
+                      }
+                      title="Download Cover Letter as formatted PDF (Arial)"
+                      className="px-2.5 py-1 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 text-xs font-semibold flex items-center gap-1 cursor-pointer transition shadow-2xs active:scale-[0.98]"
+                    >
+                      <Download className="w-3 h-3 text-rose-500" />
+                      <span>PDF</span>
+                    </button>
+                  )}
 
                   {/* Copy Button */}
                   <button
