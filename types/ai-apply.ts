@@ -1,40 +1,39 @@
 export type ApplyContentType =
+  | "resume-suggestions"
   | "cover-letter"
-  | "application-message"
-  | "resume-suggestions";
+  | "application-message";
 
 export interface ApplyContentConfig {
   id: ApplyContentType;
   title: string;
   shortLabel: string;
   description: string;
-  badge: string;
 }
 
+export const APPLY_CONTENT_KEYS: ApplyContentType[] = [
+  "resume-suggestions",
+  "cover-letter",
+  "application-message",
+];
+
 export const APPLY_CONTENT_TYPES: Record<ApplyContentType, ApplyContentConfig> = {
+  "resume-suggestions": {
+    id: "resume-suggestions",
+    title: "Resume Suggestions",
+    shortLabel: "Resume",
+    description: "Tailored bullet points, verified skills, and ATS keywords to feature.",
+  },
   "cover-letter": {
     id: "cover-letter",
-    title: "Tailored Cover Letter",
+    title: "Cover Letter",
     shortLabel: "Cover Letter",
-    description:
-      "A structured, persuasive cover letter highlighting your top matched accomplishments and relevant skills.",
-    badge: "Formal & Impactful",
+    description: "A professional 3-paragraph letter matching your experience to the role.",
   },
   "application-message": {
     id: "application-message",
-    title: "Quick Application Message",
-    shortLabel: "Short Message / Note",
-    description:
-      "A punchy 2-3 paragraph outreach message optimized for LinkedIn InMail, recruiter emails, or portal notes.",
-    badge: "Concise & Direct",
-  },
-  "resume-suggestions": {
-    id: "resume-suggestions",
-    title: "Tailored Resume Suggestions",
-    shortLabel: "Resume Suggestions",
-    description:
-      "Actionable recommendations to tailor your resume bullets, emphasize verified skills, and match ATS keywords for this role.",
-    badge: "Role-Specific Advice",
+    title: "Application Message",
+    shortLabel: "Message",
+    description: "A short 2-paragraph outreach note for recruiter messages or portal notes.",
   },
 };
 
@@ -53,3 +52,12 @@ export interface ApplyContentResponse {
   keyPointsUsed: string[];
   generatedAt: string;
 }
+
+export interface SavedApplyMaterial {
+  title?: string;
+  content: string;
+  keyPointsUsed?: string[];
+  updatedAt: string;
+}
+
+export type JobApplyMaterialsMap = Partial<Record<ApplyContentType, SavedApplyMaterial>>;

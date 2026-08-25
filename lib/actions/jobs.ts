@@ -165,6 +165,7 @@ export async function updateJobAction(
     if (updates.salary !== undefined) rowUpdates.salary = updates.salary;
     if (updates.isPinned !== undefined) rowUpdates.is_pinned = updates.isPinned;
     if (updates.aiMatchAnalysis !== undefined) rowUpdates.ai_match_analysis = updates.aiMatchAnalysis;
+    if (updates.aiApplyMaterials !== undefined) rowUpdates.ai_apply_materials = updates.aiApplyMaterials;
 
     const { data, error } = await supabase
       .from("job_applications")
@@ -183,6 +184,71 @@ export async function updateJobAction(
   } catch (err: unknown) {
     console.error("Unexpected error updating job:", err);
     return { success: false, error: (err as Error)?.message || "Failed to update job" };
+  }
+}
+
+export async function saveApplyMaterialAction(
+  jobId: string,
+  contentType: string,
+  material: { content: string; title?: string; keyPointsUsed?: string[] }
+): Promise<{
+  success: boolean;
+  data?: Record<string, unknown>;
+  error?: string;
+}> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return { success: false, error: "Not authenticated" };
+    }
+
+    const { data: existingJob, error: fetchErr } = await supabase
+      .from("job_applications")
+      .select("ai_apply_materials")
+      .eq("id", jobId)
+      .eq("user_id", user.id)
+      .single();
+
+    if (fetchErr) {
+      return { success: false, error: fetchErr.message };
+    }
+
+    const currentMaterials = (existingJob.ai_apply_materials as Record<string, unknown>) || {};
+    const updatedMaterials = {
+      ...currentMaterials,
+      [contentType]: {
+        title: material.title,
+        content: material.content,
+        keyPointsUsed: material.keyPointsUsed || [],
+        updatedAt: new Date().toISOString(),
+      },
+    };
+
+    const { error: updateErr } = await supabase
+      .from("job_applications")
+      .update({
+        ai_apply_materials: updatedMaterials,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", jobId)
+      .eq("user_id", user.id);
+
+    if (updateErr) {
+      return { success: false, error: updateErr.message };
+    }
+
+    revalidatePath(`/jobs/${jobId}`);
+    revalidatePath("/");
+
+    return { success: true, data: updatedMaterials };
+  } catch (err: unknown) {
+    console.error("Error saving apply material:", err);
+    return { success: false, error: (err as Error)?.message || "Failed to save material" };
   }
 }
 

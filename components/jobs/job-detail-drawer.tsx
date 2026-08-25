@@ -222,7 +222,7 @@ export function JobDetailDrawer({
               <button
                 onClick={handleClose}
                 title="Close drawer"
-                className="p-2 rounded-xl bg-white dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700/80 text-zinc-400 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition cursor-pointer ml-0.5"
+                className="p-2 rounded-full bg-white dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700/80 text-zinc-400 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition cursor-pointer ml-0.5"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -500,6 +500,7 @@ export function JobDetailDrawer({
             description={currentJob.description}
             currentStatus={currentJob.status}
             initialAnalysis={currentJob.aiMatchAnalysis}
+            initialMaterials={currentJob.aiApplyMaterials}
             onOpenEditModal={() => {
               handleClose();
               onEdit(currentJob);

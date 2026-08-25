@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
   X,
   AlertCircle,
@@ -132,10 +132,12 @@ function JobModalForm({
   initialJob,
   onSave,
   onClose,
+  isClosing = false,
 }: {
   initialJob?: JobApplication | null;
   onSave: JobModalProps["onSave"];
   onClose: () => void;
+  isClosing?: boolean;
 }) {
   const [jobTitle, setJobTitle] = useState(initialJob?.jobTitle || "");
   const [company, setCompany] = useState(initialJob?.company || "");
@@ -194,7 +196,11 @@ function JobModalForm({
   };
 
   return (
-    <div className="relative z-10 bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden my-auto animate-scale-up">
+    <div
+      className={`relative z-10 bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden my-auto ${
+        isClosing ? "animate-modal-out" : "animate-modal"
+      }`}
+    >
       {/* Header */}
       <div className="px-6 py-4 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
         <h2 className="text-base font-bold text-zinc-900 dark:text-zinc-100">
@@ -202,7 +208,7 @@ function JobModalForm({
         </h2>
         <button
           onClick={onClose}
-          className="w-8 h-8 rounded-xl bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 flex items-center justify-center text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 transition cursor-pointer"
+          className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 flex items-center justify-center text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 transition cursor-pointer"
         >
           <X className="w-4 h-4" />
         </button>
@@ -400,37 +406,66 @@ export function JobModal({
   initialJob,
 }: JobModalProps) {
   const [mounted, setMounted] = useState(false);
+  const [isRendered, setIsRendered] = useState(isOpen);
+  const [isClosing, setIsClosing] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
+  useEffect(() => {
+    if (isOpen) {
+      setIsRendered(true);
+      setIsClosing(false);
+    } else if (isRendered) {
+      setIsClosing(true);
+      const timer = setTimeout(() => {
+        setIsRendered(false);
+        setIsClosing(false);
+      }, 200);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, isRendered]);
+
+  const handleClose = useCallback(() => {
+    if (isClosing) return;
+    setIsClosing(true);
+    setTimeout(() => {
+      onClose();
+      setIsRendered(false);
+      setIsClosing(false);
+    }, 200);
+  }, [isClosing, onClose]);
+
   // Handle ESC key
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isOpen) {
-        onClose();
+      if (e.key === "Escape" && isRendered && !isClosing) {
+        handleClose();
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
+  }, [isRendered, isClosing, handleClose]);
 
-  if (!isOpen || !mounted) return null;
+  if (!isRendered || !mounted) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 md:p-6 overflow-y-auto">
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity animate-fade-in"
-        onClick={onClose}
+        className={`fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity ${
+          isClosing ? "animate-fade-out" : "animate-fade-in"
+        }`}
+        onClick={handleClose}
       />
 
       {/* Modal Card */}
       <JobModalForm
         initialJob={initialJob}
         onSave={onSave}
-        onClose={onClose}
+        onClose={handleClose}
+        isClosing={isClosing}
       />
     </div>
   );

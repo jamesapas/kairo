@@ -29,6 +29,7 @@ import {
   MatchRecommendation,
   SeniorityMatchLevel,
 } from "@/types/ai-match";
+import { JobApplyMaterialsMap } from "@/types/ai-apply";
 import { JobStatus } from "@/types/job";
 import { createSkillAction } from "@/lib/actions/skill";
 import { HelpMeApplyModal } from "./help-me-apply-modal";
@@ -40,9 +41,11 @@ interface AIMatchPanelProps {
   description?: string;
   currentStatus?: JobStatus;
   initialAnalysis?: JobMatchAnalysis | null;
+  initialMaterials?: JobApplyMaterialsMap | null;
   onOpenEditModal?: () => void;
   onOpenHelpMeApply?: () => void;
   onMarkApplied?: () => void;
+  onMaterialsUpdated?: (updatedMap: JobApplyMaterialsMap) => void;
 }
 
 export function AIMatchPanel({
@@ -52,9 +55,11 @@ export function AIMatchPanel({
   description,
   currentStatus,
   initialAnalysis,
+  initialMaterials,
   onOpenEditModal,
   onOpenHelpMeApply,
   onMarkApplied,
+  onMaterialsUpdated,
 }: AIMatchPanelProps) {
   const [isHelpMeApplyOpen, setIsHelpMeApplyOpen] = useState(false);
   const [analysis, setAnalysis] = useState<JobMatchAnalysis | null>(
@@ -878,7 +883,9 @@ export function AIMatchPanel({
         company={company}
         description={description}
         currentStatus={currentStatus}
+        initialMaterials={initialMaterials}
         onMarkApplied={onMarkApplied}
+        onMaterialsUpdated={onMaterialsUpdated}
       />
     </div>
   );

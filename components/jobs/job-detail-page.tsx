@@ -538,9 +538,13 @@ export function JobDetailPage({ jobId }: JobDetailPageProps) {
                   description={job.description}
                   currentStatus={job.status}
                   initialAnalysis={job.aiMatchAnalysis}
+                  initialMaterials={job.aiApplyMaterials}
                   onOpenEditModal={() => setIsModalOpen(true)}
                   onOpenHelpMeApply={() => setIsHelpMeApplyOpen(true)}
                   onMarkApplied={() => handleStatusChange("applied")}
+                  onMaterialsUpdated={(updatedMap) =>
+                    setJob((prev) => (prev ? { ...prev, aiApplyMaterials: updatedMap } : null))
+                  }
                 />
               )}
 
@@ -762,7 +766,11 @@ export function JobDetailPage({ jobId }: JobDetailPageProps) {
         company={job.company}
         description={job.description}
         currentStatus={job.status}
+        initialMaterials={job.aiApplyMaterials}
         onMarkApplied={() => handleStatusChange("applied")}
+        onMaterialsUpdated={(updatedMap) =>
+          setJob((prev) => (prev ? { ...prev, aiApplyMaterials: updatedMap } : null))
+        }
       />
     </>
   );

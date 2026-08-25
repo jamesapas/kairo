@@ -1,4 +1,5 @@
 import { JobMatchAnalysis } from "./ai-match";
+import { JobApplyMaterialsMap } from "./ai-apply";
 
 export type JobStatus =
   | "saved"
@@ -27,6 +28,7 @@ export interface JobApplication {
   salary?: string;
   isPinned?: boolean;
   aiMatchAnalysis?: JobMatchAnalysis | null;
+  aiApplyMaterials?: JobApplyMaterialsMap | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -46,6 +48,7 @@ export interface JobApplicationRow {
   salary: string | null;
   is_pinned: boolean;
   ai_match_analysis?: JobMatchAnalysis | null;
+  ai_apply_materials?: JobApplyMaterialsMap | null;
   created_at: string;
   updated_at: string;
 }
@@ -66,6 +69,7 @@ export function mapRowToJob(row: JobApplicationRow): JobApplication {
     salary: row.salary || "",
     isPinned: Boolean(row.is_pinned),
     aiMatchAnalysis: row.ai_match_analysis || null,
+    aiApplyMaterials: row.ai_apply_materials || null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

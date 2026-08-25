@@ -12,20 +12,23 @@ import {
   AlertCircle,
   ChevronLeft,
   ArrowRight,
-  ShieldCheck,
-  Zap,
   Edit3,
   Eye,
-  RotateCcw,
-  CheckCircle2,
   ListChecks,
+  CheckSquare,
+  Square,
+  Save,
+  CheckCircle2,
 } from "lucide-react";
 import {
   ApplyContentType,
   ApplyContentResponse,
   APPLY_CONTENT_TYPES,
+  APPLY_CONTENT_KEYS,
+  JobApplyMaterialsMap,
 } from "@/types/ai-apply";
 import { JobStatus } from "@/types/job";
+import { saveApplyMaterialAction } from "@/lib/actions/jobs";
 
 interface HelpMeApplyModalProps {
   isOpen: boolean;
@@ -35,24 +38,19 @@ interface HelpMeApplyModalProps {
   company?: string;
   description?: string;
   currentStatus?: JobStatus;
+  initialMaterials?: JobApplyMaterialsMap | null;
   onMarkApplied?: () => void;
+  onMaterialsUpdated?: (updatedMap: JobApplyMaterialsMap) => void;
 }
 
 const CONTENT_TYPE_ICONS: Record<
   ApplyContentType,
   React.ComponentType<{ className?: string }>
 > = {
+  "resume-suggestions": ListChecks,
   "cover-letter": FileText,
   "application-message": Send,
-  "resume-suggestions": ListChecks,
 };
-
-const LOADING_STEPS = [
-  "Retrieving verified profile & employment history...",
-  "Aligning your experience with role requirements...",
-  "Applying verified skills and key strengths...",
-  "Crafting high-signal application materials...",
-];
 
 export function HelpMeApplyModal({
   isOpen,
@@ -62,51 +60,178 @@ export function HelpMeApplyModal({
   company,
   description,
   currentStatus,
+  initialMaterials,
   onMarkApplied,
+  onMaterialsUpdated,
 }: HelpMeApplyModalProps) {
-  const [selectedType, setSelectedType] = useState<ApplyContentType>("cover-letter");
+  const [isRendered, setIsRendered] = useState(isOpen);
+  const [isClosing, setIsClosing] = useState(false);
+
+  // Multi-select state
+  const [selectedTypes, setSelectedTypes] = useState<Set<ApplyContentType>>(
+    new Set(["resume-suggestions", "cover-letter"])
+  );
+  const [activeTab, setActiveTab] = useState<ApplyContentType>("resume-suggestions");
+  const [materialsMap, setMaterialsMap] = useState<JobApplyMaterialsMap>(
+    initialMaterials || {}
+  );
+
   const [isLoading, setIsLoading] = useState(false);
-  const [loadingStep, setLoadingStep] = useState(0);
-  const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<ApplyContentResponse | null>(null);
-  const [editedContent, setEditedContent] = useState("");
-  const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [savedSuccess, setSavedSuccess] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Edit state per content type
+  const [editedContents, setEditedContents] = useState<Partial<Record<ApplyContentType, string>>>({});
+  const [isEditing, setIsEditing] = useState(false);
+  const [isViewingResults, setIsViewingResults] = useState(false);
   const [isAppliedUpdated, setIsAppliedUpdated] = useState(false);
 
-  // Reset state when opening/closing
+  // Sync initialMaterials whenever opening or prop changes
   useEffect(() => {
-    if (!isOpen) {
+    if (initialMaterials) {
+      setMaterialsMap(initialMaterials);
+      const initialEdits: Partial<Record<ApplyContentType, string>> = {};
+      for (const k of APPLY_CONTENT_KEYS) {
+        if (initialMaterials[k]?.content) {
+          initialEdits[k] = initialMaterials[k]?.content;
+        }
+      }
+      setEditedContents(initialEdits);
+
+      // If existing materials already exist, default to viewing them
+      const hasAnySaved = APPLY_CONTENT_KEYS.some((k) => Boolean(initialMaterials[k]?.content));
+      if (hasAnySaved) {
+        const firstSaved = APPLY_CONTENT_KEYS.find((k) => Boolean(initialMaterials[k]?.content));
+        if (firstSaved) setActiveTab(firstSaved);
+      }
+    }
+  }, [initialMaterials]);
+
+  // Handle open/close animation states
+  useEffect(() => {
+    if (isOpen) {
+      setIsRendered(true);
+      setIsClosing(false);
+    } else if (isRendered) {
+      setIsClosing(true);
+      const timer = setTimeout(() => {
+        setIsRendered(false);
+        setIsClosing(false);
+      }, 200);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, isRendered]);
+
+  const handleClose = useCallback(() => {
+    if (isClosing || isLoading) return;
+    setIsClosing(true);
+    setTimeout(() => {
+      onClose();
+      setIsRendered(false);
+      setIsClosing(false);
       setError(null);
       setCopied(false);
       setIsAppliedUpdated(false);
-    }
-  }, [isOpen]);
-
-  // Loading animation step interval
-  useEffect(() => {
-    if (!isLoading) {
-      setLoadingStep(0);
-      return;
-    }
-    const interval = setInterval(() => {
-      setLoadingStep((prev) => (prev + 1) % LOADING_STEPS.length);
-    }, 1400);
-    return () => clearInterval(interval);
-  }, [isLoading]);
+      setSavedSuccess(false);
+      setIsEditing(false);
+    }, 200);
+  }, [isClosing, isLoading, onClose]);
 
   // Handle ESC key
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isOpen && !isLoading) {
-        onClose();
+      if (e.key === "Escape" && isRendered && !isClosing && !isLoading) {
+        handleClose();
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, isLoading, onClose]);
+  }, [isRendered, isClosing, isLoading, handleClose]);
 
-  const handleGenerate = async (typeToGenerate = selectedType) => {
+  // Toggle selection for multi-select
+  const toggleSelectType = (type: ApplyContentType) => {
+    setSelectedTypes((prev) => {
+      const next = new Set(prev);
+      if (next.has(type)) {
+        if (next.size > 1) next.delete(type);
+      } else {
+        next.add(type);
+      }
+      return next;
+    });
+  };
+
+  // Generate all selected materials in parallel
+  const handleGenerateSelected = async () => {
+    if (selectedTypes.size === 0) {
+      setError("Please select at least one material to generate.");
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+    setCopied(false);
+    setSavedSuccess(false);
+
+    try {
+      const typesToGenerate = Array.from(selectedTypes);
+      const requests = typesToGenerate.map(async (type) => {
+        const response = await fetch("/api/ai/apply", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            jobId,
+            jobTitle,
+            company,
+            description,
+            contentType: type,
+          }),
+        });
+
+        const resData = await response.json();
+        if (!response.ok || !resData.success) {
+          throw new Error(resData.error || `Failed to generate ${APPLY_CONTENT_TYPES[type].title}.`);
+        }
+        return resData.data as ApplyContentResponse;
+      });
+
+      const results = await Promise.all(requests);
+
+      // Merge into materialsMap & editedContents
+      const nextMaterialsMap = { ...materialsMap };
+      const nextEdits = { ...editedContents };
+
+      for (const res of results) {
+        nextMaterialsMap[res.contentType] = {
+          title: res.title,
+          content: res.content,
+          keyPointsUsed: res.keyPointsUsed,
+          updatedAt: res.generatedAt,
+        };
+        nextEdits[res.contentType] = res.content;
+      }
+
+      setMaterialsMap(nextMaterialsMap);
+      setEditedContents(nextEdits);
+      setActiveTab(typesToGenerate[0]);
+      setIsViewingResults(true);
+      setIsEditing(false);
+
+      if (onMaterialsUpdated) {
+        onMaterialsUpdated(nextMaterialsMap);
+      }
+    } catch (err: unknown) {
+      console.error("AI Apply Generation Error:", err);
+      setError((err as Error)?.message || "Something went wrong while generating.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Single item regenerate
+  const handleRegenerateCurrent = async (type: ApplyContentType) => {
     setIsLoading(true);
     setError(null);
     setCopied(false);
@@ -120,34 +245,95 @@ export function HelpMeApplyModal({
           jobTitle,
           company,
           description,
-          contentType: typeToGenerate,
+          contentType: type,
         }),
       });
 
       const resData = await response.json();
-
       if (!response.ok || !resData.success) {
-        throw new Error(resData.error || "Failed to generate application copy.");
+        throw new Error(resData.error || "Failed to regenerate material.");
       }
 
-      setResult(resData.data);
-      setEditedContent(resData.data.content || "");
+      const generated = resData.data as ApplyContentResponse;
+      const nextMaterialsMap = {
+        ...materialsMap,
+        [type]: {
+          title: generated.title,
+          content: generated.content,
+          keyPointsUsed: generated.keyPointsUsed,
+          updatedAt: generated.generatedAt,
+        },
+      };
+      const nextEdits = {
+        ...editedContents,
+        [type]: generated.content,
+      };
+
+      setMaterialsMap(nextMaterialsMap);
+      setEditedContents(nextEdits);
       setIsEditing(false);
+
+      if (onMaterialsUpdated) {
+        onMaterialsUpdated(nextMaterialsMap);
+      }
     } catch (err: unknown) {
-      console.error("AI Apply Error:", err);
-      setError((err as Error)?.message || "Something went wrong while generating.");
+      console.error("Regenerate Error:", err);
+      setError((err as Error)?.message || "Failed to regenerate.");
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Save edits to database
+  const handleSaveEdits = async () => {
+    if (!jobId) return;
+    const currentText = editedContents[activeTab] || "";
+    setIsSaving(true);
+    setError(null);
+
+    try {
+      const res = await saveApplyMaterialAction(jobId, activeTab, {
+        content: currentText,
+        title: materialsMap[activeTab]?.title || APPLY_CONTENT_TYPES[activeTab].title,
+        keyPointsUsed: materialsMap[activeTab]?.keyPointsUsed,
+      });
+
+      if (!res.success) {
+        throw new Error(res.error || "Failed to save edits.");
+      }
+
+      setSavedSuccess(true);
+      setTimeout(() => setSavedSuccess(false), 2500);
+
+      const nextMaterialsMap = {
+        ...materialsMap,
+        [activeTab]: {
+          title: materialsMap[activeTab]?.title || APPLY_CONTENT_TYPES[activeTab].title,
+          content: currentText,
+          keyPointsUsed: materialsMap[activeTab]?.keyPointsUsed,
+          updatedAt: new Date().toISOString(),
+        },
+      };
+      setMaterialsMap(nextMaterialsMap);
+
+      if (onMaterialsUpdated) {
+        onMaterialsUpdated(nextMaterialsMap);
+      }
+    } catch (err: unknown) {
+      console.error("Save Edits Error:", err);
+      setError((err as Error)?.message || "Failed to save edits.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handleCopy = useCallback(() => {
-    const textToCopy = editedContent || result?.content;
+    const textToCopy = editedContents[activeTab] || materialsMap[activeTab]?.content || "";
     if (!textToCopy) return;
     navigator.clipboard.writeText(textToCopy);
     setCopied(true);
     setTimeout(() => setCopied(false), 2400);
-  }, [editedContent, result]);
+  }, [activeTab, editedContents, materialsMap]);
 
   const handleMarkApplied = () => {
     if (onMarkApplied) {
@@ -156,346 +342,306 @@ export function HelpMeApplyModal({
     }
   };
 
-  const wordCount = editedContent.trim()
-    ? editedContent.trim().split(/\s+/).length
+  const currentContent = editedContents[activeTab] ?? materialsMap[activeTab]?.content ?? "";
+  const isCurrentModified =
+    materialsMap[activeTab]?.content !== undefined &&
+    editedContents[activeTab] !== undefined &&
+    editedContents[activeTab] !== materialsMap[activeTab]?.content;
+
+  const currentWordCount = currentContent.trim()
+    ? currentContent.trim().split(/\s+/).length
     : 0;
 
-  const isModified = result && editedContent !== result.content;
+  // Available tabs that have content or are in selected types
+  const availableTabs = APPLY_CONTENT_KEYS.filter(
+    (k) => Boolean(materialsMap[k]?.content) || selectedTypes.has(k)
+  );
 
-  if (!isOpen) return null;
+  if (!isRendered) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 md:p-6 overflow-y-auto">
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity animate-fade-in"
-        onClick={() => !isLoading && onClose()}
+        className={`fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity ${
+          isClosing ? "animate-fade-out" : "animate-fade-in"
+        }`}
+        onClick={handleClose}
       />
 
-      {/* Modal Card */}
+      {/* Modal Card - Matches JobModal exact frame & styling */}
       <div
         role="dialog"
         aria-modal="true"
-        className="relative w-full max-w-3xl bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200/90 dark:border-zinc-800 shadow-2xl overflow-hidden z-10 my-auto flex flex-col max-h-[92vh] transition-all animate-scale-up"
+        className={`relative z-10 bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden my-auto ${
+          isClosing ? "animate-modal-out" : "animate-modal"
+        }`}
       >
-        {/* Modal Header */}
-        <div className="px-6 py-4.5 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between gap-4 bg-zinc-50/70 dark:bg-zinc-900/70">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 bg-gradient-to-br from-amber-500 via-orange-500 to-rose-500 text-white shadow-[0_0_16px_rgba(249,115,22,0.45)]">
-              <Sparkles className="w-4 h-4" />
+        {/* Header */}
+        <div className="px-6 py-4 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-xl flex items-center justify-center bg-gradient-to-br from-amber-500 via-orange-500 to-rose-500 text-white shadow-[0_0_12px_rgba(249,115,22,0.45)] shrink-0">
+              <Sparkles className="w-3.5 h-3.5" />
             </div>
-            <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <h2 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 truncate">
-                  Help Me Apply
-                </h2>
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 text-[10px] font-semibold uppercase tracking-wider">
-                  <ShieldCheck className="w-3 h-3 text-zinc-500" />
-                  Verified Profile Data
-                </span>
-              </div>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate flex items-center gap-1.5 mt-0.5">
-                {jobTitle && (
-                  <span className="font-semibold text-zinc-700 dark:text-zinc-300">
-                    {jobTitle}
-                  </span>
-                )}
-                {jobTitle && company && <span>•</span>}
-                {company && <span>{company}</span>}
+            <div>
+              <h2 className="text-base font-bold text-zinc-900 dark:text-zinc-100 leading-tight">
+                Help Me Apply
+              </h2>
+              <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                {jobTitle ? `${jobTitle}${company ? ` at ${company}` : ""}` : "Tailored application materials"}
               </p>
             </div>
           </div>
 
           <button
-            onClick={onClose}
+            onClick={handleClose}
             disabled={isLoading}
-            className="p-1.5 rounded-xl text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition cursor-pointer disabled:opacity-50"
-            title="Close modal"
+            className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 flex items-center justify-center text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 transition cursor-pointer disabled:opacity-50"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Modal Body */}
-        <div className="p-6 overflow-y-auto space-y-5 flex-1">
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-4">
           {/* Error Alert */}
           {error && (
-            <div className="p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 flex items-start gap-2.5 text-xs text-rose-700 dark:text-rose-300">
-              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-              <div className="flex-1 space-y-0.5">
-                <p className="font-semibold">Generation Failed</p>
-                <p className="opacity-90">{error}</p>
+            <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 flex items-center gap-2 text-xs text-rose-700 dark:text-rose-300">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <p className="flex-1">{error}</p>
+            </div>
+          )}
+
+          {/* VIEW 1: Selection Form */}
+          {!isViewingResults && !isLoading && (
+            <div className="space-y-3.5">
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+                  Select materials to generate
+                </label>
+                <span className="text-[11px] text-zinc-400">
+                  {selectedTypes.size} selected
+                </span>
+              </div>
+
+              {/* 3 Ordered Cards: Resume -> Cover Letter -> Application Message */}
+              <div className="space-y-2.5">
+                {APPLY_CONTENT_KEYS.map((typeKey) => {
+                  const item = APPLY_CONTENT_TYPES[typeKey];
+                  const Icon = CONTENT_TYPE_ICONS[typeKey];
+                  const isSelected = selectedTypes.has(typeKey);
+                  const isSaved = Boolean(materialsMap[typeKey]?.content);
+
+                  return (
+                    <div
+                      key={typeKey}
+                      onClick={() => toggleSelectType(typeKey)}
+                      className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
+                        isSelected
+                          ? "bg-zinc-50 dark:bg-zinc-800/80 border-amber-400/80 dark:border-amber-600/80 shadow-2xs"
+                          : "bg-zinc-50/50 dark:bg-zinc-800/30 border-zinc-200 dark:border-zinc-700/80 hover:bg-zinc-50 dark:hover:bg-zinc-800/60"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div
+                          className={`p-2 rounded-xl shrink-0 ${
+                            isSelected
+                              ? "bg-gradient-to-br from-amber-500 via-orange-500 to-rose-500 text-white shadow-[0_0_10px_rgba(249,115,22,0.35)]"
+                              : "bg-zinc-100 dark:bg-zinc-800 text-zinc-500"
+                          }`}
+                        >
+                          <Icon className="w-4 h-4" />
+                        </div>
+
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <h3 className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
+                              {item.title}
+                            </h3>
+                            {isSaved && (
+                              <span className="px-1.5 py-0.2 rounded text-[9px] font-semibold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
+                                Saved
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[11px] text-zinc-500 dark:text-zinc-400 truncate">
+                            {item.description}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="shrink-0 text-zinc-400">
+                        {isSelected ? (
+                          <CheckSquare className="w-4 h-4 text-orange-500" />
+                        ) : (
+                          <Square className="w-4 h-4 text-zinc-300 dark:text-zinc-600" />
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Quick Jump to Saved Material if any exist */}
+              {APPLY_CONTENT_KEYS.some((k) => Boolean(materialsMap[k]?.content)) && (
+                <div className="pt-1 text-center">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const firstSaved = APPLY_CONTENT_KEYS.find((k) => Boolean(materialsMap[k]?.content));
+                      if (firstSaved) setActiveTab(firstSaved);
+                      setIsViewingResults(true);
+                    }}
+                    className="text-xs font-semibold text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 underline cursor-pointer"
+                  >
+                    View existing saved materials →
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* VIEW 2: Loading State */}
+          {isLoading && (
+            <div className="py-12 space-y-4 text-center">
+              <div className="relative w-12 h-12 mx-auto flex items-center justify-center">
+                <div className="w-12 h-12 rounded-full border-2 border-amber-100 dark:border-amber-950/60 border-t-orange-500 animate-spin" />
+                <Sparkles className="w-3.5 h-3.5 absolute text-orange-500" />
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
+                  Generating {selectedTypes.size > 1 ? `${selectedTypes.size} Materials` : "Application Material"}...
+                </p>
+                <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                  Aligning your verified experience with role requirements
+                </p>
               </div>
             </div>
           )}
 
-          {/* VIEW A: 3 Streamlined Options Selector */}
-          {!result && !isLoading && (
-            <div className="space-y-5">
-              <div className="space-y-1">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                  Select Material to Generate
-                </h3>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                  Kairo uses your verified experience, education, skills, and the job match analysis to craft tailored materials.
-                </p>
-              </div>
-
-              {/* 3 Streamlined Options Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {(Object.keys(APPLY_CONTENT_TYPES) as ApplyContentType[]).map((typeKey) => {
-                  const item = APPLY_CONTENT_TYPES[typeKey];
-                  const Icon = CONTENT_TYPE_ICONS[typeKey];
-                  const isSelected = selectedType === typeKey;
+          {/* VIEW 3: Results Workspace with Tabs */}
+          {isViewingResults && !isLoading && (
+            <div className="space-y-3.5 animate-fade-in">
+              {/* Tab Switcher */}
+              <div className="flex items-center gap-1.5 p-1 bg-zinc-100 dark:bg-zinc-800/70 border border-zinc-200/80 dark:border-zinc-700/80 rounded-2xl">
+                {availableTabs.map((tabKey) => {
+                  const item = APPLY_CONTENT_TYPES[tabKey];
+                  const Icon = CONTENT_TYPE_ICONS[tabKey];
+                  const isActive = activeTab === tabKey;
 
                   return (
                     <button
-                      key={typeKey}
+                      key={tabKey}
                       type="button"
                       onClick={() => {
-                        setSelectedType(typeKey);
-                        setError(null);
+                        setActiveTab(tabKey);
+                        setIsEditing(false);
                       }}
-                      className={`p-4 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-3 ${
-                        isSelected
-                          ? "shadow-sm ring-1 ring-black/5 dark:ring-white/10 bg-gradient-to-br from-amber-50/80 via-orange-50/50 to-rose-50/30 dark:from-amber-950/40 dark:via-orange-950/30 dark:to-rose-950/20 border-amber-300/80 dark:border-amber-800 text-amber-950 dark:text-amber-100"
-                          : "bg-zinc-50/60 dark:bg-zinc-800/30 border-zinc-200/80 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800/60 text-zinc-900 dark:text-zinc-100"
+                      className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                        isActive
+                          ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-xs"
+                          : "text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200"
                       }`}
                     >
-                      <div className="space-y-2.5">
-                        <div className="flex items-center justify-between gap-2">
-                          <div
-                            className={`p-2 rounded-xl shrink-0 ${
-                              isSelected
-                                ? "bg-gradient-to-br from-amber-500 via-orange-500 to-rose-500 text-white shadow-[0_0_12px_rgba(249,115,22,0.4)]"
-                                : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
-                            }`}
-                          >
-                            <Icon className="w-4 h-4" />
-                          </div>
-                          <span
-                            className={`text-[10px] font-semibold px-2 py-0.5 rounded-md border shrink-0 ${
-                              isSelected
-                                ? "bg-black/10 dark:bg-white/15 text-current border-current/20"
-                                : "bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700"
-                            }`}
-                          >
-                            {item.badge}
-                          </span>
-                        </div>
-
-                        <h4 className="text-xs font-bold">
-                          {item.title}
-                        </h4>
-                      </div>
-
-                      <p
-                        className={`text-[11px] leading-relaxed font-normal ${
-                          isSelected
-                            ? "opacity-90 font-medium"
-                            : "text-zinc-500 dark:text-zinc-400"
-                        }`}
-                      >
-                        {item.description}
-                      </p>
+                      <Icon className="w-3.5 h-3.5" />
+                      <span>{item.shortLabel}</span>
                     </button>
                   );
                 })}
               </div>
-            </div>
-          )}
 
-          {/* VIEW B: Loading State */}
-          {isLoading && (
-            <div className="py-12 space-y-5 text-center">
-              <div className="relative w-16 h-16 mx-auto flex items-center justify-center">
-                <div className="w-14 h-14 rounded-full border-3 border-amber-100 dark:border-amber-950/60 border-t-orange-500 animate-spin" />
-                <Sparkles className="w-4 h-4 absolute animate-pulse text-orange-500" />
-              </div>
+              {/* Action Ribbon above text */}
+              <div className="flex items-center justify-between text-xs text-zinc-500 gap-2">
+                <span className="text-[11px]">
+                  {currentWordCount} words {isCurrentModified && "• (Unsaved edits)"}
+                </span>
 
-              <div className="space-y-1 max-w-md mx-auto">
-                <div className="text-xs font-bold text-zinc-900 dark:text-zinc-100 flex items-center justify-center gap-1.5">
-                  <span>Generating {APPLY_CONTENT_TYPES[selectedType].shortLabel}</span>
-                  <span className="flex space-x-1">
-                    <span className="w-1.5 h-1.5 rounded-full animate-bounce [animation-delay:-0.3s] bg-gradient-to-r from-amber-400 to-rose-400" />
-                    <span className="w-1.5 h-1.5 rounded-full animate-bounce [animation-delay:-0.15s] bg-gradient-to-r from-amber-400 to-rose-400" />
-                    <span className="w-1.5 h-1.5 rounded-full animate-bounce bg-gradient-to-r from-amber-400 to-rose-400" />
-                  </span>
-                </div>
-                <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                  {LOADING_STEPS[loadingStep]}
-                </p>
-              </div>
-
-              <div className="space-y-2 max-w-md mx-auto pt-2">
-                <div className="h-3 bg-zinc-100 dark:bg-zinc-800 rounded-lg animate-pulse" />
-                <div className="h-3 bg-zinc-100 dark:bg-zinc-800 rounded-lg animate-pulse w-4/5 mx-auto" />
-              </div>
-            </div>
-          )}
-
-          {/* VIEW C: Result View with Editable Review Canvas */}
-          {result && !isLoading && (
-            <div className="space-y-4 animate-fade-in">
-              {/* Meta Banner with Edit & Copy controls */}
-              <div className="p-3.5 rounded-2xl bg-zinc-50/80 dark:bg-zinc-800/40 border border-zinc-200/80 dark:border-zinc-800 flex flex-wrap items-center justify-between gap-3">
-                <div className="flex items-center gap-2.5">
-                  {(() => {
-                    const Icon = CONTENT_TYPE_ICONS[result.contentType] || FileText;
-                    return (
-                      <div className="p-2 rounded-xl shrink-0 bg-gradient-to-br from-amber-500 via-orange-500 to-rose-500 text-white shadow-[0_0_12px_rgba(249,115,22,0.4)]">
-                        <Icon className="w-3.5 h-3.5" />
-                      </div>
-                    );
-                  })()}
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
-                        {APPLY_CONTENT_TYPES[result.contentType]?.title || "Generated Material"}
-                      </h3>
-                      {isModified && (
-                        <span className="px-1.5 py-0.2 text-[9px] font-semibold rounded-md bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800">
-                          Edited
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                      {wordCount} words • Review and edit before copying
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  {/* Toggle Edit/Preview Mode */}
-                  <button
-                    onClick={() => setIsEditing(!isEditing)}
-                    className="px-2.5 py-1.5 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700 text-xs font-medium transition cursor-pointer flex items-center gap-1.5 shadow-2xs"
-                  >
-                    {isEditing ? (
-                      <>
-                        <Eye className="w-3 h-3 text-zinc-500" />
-                        <span>Preview</span>
-                      </>
-                    ) : (
-                      <>
-                        <Edit3 className="w-3 h-3 text-zinc-500" />
-                        <span>Edit Text</span>
-                      </>
-                    )}
-                  </button>
-
-                  {/* Reset to Original if edited */}
-                  {isModified && (
+                <div className="flex items-center gap-1.5">
+                  {/* Save Edits */}
+                  {isCurrentModified && jobId && (
                     <button
-                      onClick={() => setEditedContent(result.content)}
-                      title="Reset to original AI generation"
-                      className="p-1.5 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 text-xs transition cursor-pointer"
+                      onClick={handleSaveEdits}
+                      disabled={isSaving}
+                      className="px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-xs font-semibold flex items-center gap-1 cursor-pointer transition"
                     >
-                      <RotateCcw className="w-3.5 h-3.5" />
+                      <Save className="w-3 h-3" />
+                      <span>{savedSuccess ? "Saved!" : isSaving ? "Saving..." : "Save"}</span>
                     </button>
                   )}
 
-                  {/* Regenerate Button */}
+                  {/* Edit / Preview Toggle */}
                   <button
-                    onClick={() => handleGenerate(result.contentType)}
-                    disabled={isLoading}
-                    title="Regenerate new variation"
-                    className="px-2.5 py-1.5 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700 text-xs font-medium transition cursor-pointer flex items-center gap-1.5 shadow-2xs"
+                    onClick={() => setIsEditing(!isEditing)}
+                    className="px-2.5 py-1 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-xs font-medium flex items-center gap-1 cursor-pointer transition hover:bg-zinc-50"
                   >
-                    <RefreshCw className="w-3 h-3 text-zinc-400" />
+                    {isEditing ? <Eye className="w-3 h-3" /> : <Edit3 className="w-3 h-3" />}
+                    <span>{isEditing ? "Preview" : "Edit"}</span>
+                  </button>
+
+                  {/* Regenerate Current */}
+                  <button
+                    onClick={() => handleRegenerateCurrent(activeTab)}
+                    disabled={isLoading}
+                    title="Regenerate this material"
+                    className="px-2.5 py-1 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 text-xs font-medium flex items-center gap-1 cursor-pointer transition hover:bg-zinc-50"
+                  >
+                    <RefreshCw className="w-3 h-3" />
                     <span>Regenerate</span>
                   </button>
 
                   {/* Copy Button */}
                   <button
                     onClick={handleCopy}
-                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs ${
+                    className={`px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer shadow-xs ${
                       copied
                         ? "bg-emerald-600 text-white"
-                        : "bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 hover:from-amber-400 hover:to-rose-400 text-white shadow-[0_4px_24px_rgba(249,115,22,0.5)] border border-amber-300/40"
+                        : "bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-white"
                     }`}
                   >
-                    {copied ? (
-                      <>
-                        <Check className="w-3.5 h-3.5" />
-                        <span>Copied!</span>
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="w-3.5 h-3.5" />
-                        <span>Copy</span>
-                      </>
-                    )}
+                    {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                    <span>{copied ? "Copied" : "Copy"}</span>
                   </button>
                 </div>
               </div>
 
-              {/* Verified Profile Strengths Emphasized */}
-              {result.keyPointsUsed && result.keyPointsUsed.length > 0 && (
-                <div className="p-3 rounded-2xl bg-zinc-50/60 dark:bg-zinc-800/30 border border-zinc-200/60 dark:border-zinc-800 space-y-1.5">
-                  <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                    <Zap className="w-3.5 h-3.5 text-orange-500" />
-                    <span>Verified Profile Strengths Emphasized</span>
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {result.keyPointsUsed.map((point, idx) => (
-                      <span
-                        key={idx}
-                        className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200/80 dark:border-zinc-700/80 text-[11px] font-medium shadow-2xs"
-                      >
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-                        {point}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Review / Edit Canvas */}
+              {/* Text Canvas */}
               {isEditing ? (
-                <div className="space-y-1.5">
-                  <textarea
-                    rows={12}
-                    value={editedContent}
-                    onChange={(e) => setEditedContent(e.target.value)}
-                    className="w-full text-xs sm:text-sm p-4 rounded-2xl bg-white dark:bg-zinc-900 border border-amber-400/80 dark:border-amber-600/80 text-zinc-800 dark:text-zinc-200 leading-relaxed font-normal focus:outline-hidden focus:ring-2 focus:ring-amber-400 shadow-inner resize-y min-h-[220px]"
-                    placeholder="Edit your material here..."
-                  />
-                  <p className="text-[10px] text-zinc-400 px-1">
-                    You can edit the text freely above before copying.
-                  </p>
-                </div>
+                <textarea
+                  rows={10}
+                  value={editedContents[activeTab] ?? ""}
+                  onChange={(e) =>
+                    setEditedContents((prev) => ({ ...prev, [activeTab]: e.target.value }))
+                  }
+                  className="w-full text-xs p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-300 dark:border-zinc-600 text-zinc-900 dark:text-zinc-100 font-medium focus:border-zinc-500 focus:outline-hidden resize-y min-h-[220px]"
+                  placeholder="Edit content here..."
+                />
               ) : (
                 <div
                   onClick={() => setIsEditing(true)}
-                  title="Click to edit"
-                  className="p-5 rounded-2xl bg-white dark:bg-zinc-800/40 border border-zinc-200/90 dark:border-zinc-800 shadow-inner hover:border-zinc-300 dark:hover:border-zinc-700 transition cursor-text group relative"
+                  className="p-4 rounded-2xl bg-zinc-50/70 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700/80 text-xs text-zinc-800 dark:text-zinc-200 leading-relaxed whitespace-pre-line cursor-text min-h-[200px]"
                 >
-                  <div className="text-xs sm:text-sm text-zinc-800 dark:text-zinc-200 leading-relaxed whitespace-pre-line font-normal selection:bg-orange-100 dark:selection:bg-orange-950/60">
-                    {editedContent || result.content}
-                  </div>
-                  <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity bg-zinc-100 dark:bg-zinc-800 text-zinc-500 text-[10px] font-semibold px-2 py-1 rounded-lg border border-zinc-200 dark:border-zinc-700">
-                    Click to edit
-                  </div>
+                  {currentContent || (
+                    <span className="text-zinc-400 italic">No content generated yet for this material.</span>
+                  )}
                 </div>
               )}
 
-              {/* Optional Quick Action: Mark as Applied */}
+              {/* Mark as Applied Action if saved */}
               {currentStatus === "saved" && onMarkApplied && (
-                <div className="p-3.5 rounded-2xl bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200/80 dark:border-blue-900/50 flex flex-wrap items-center justify-between gap-3 animate-fade-in">
-                  <div className="space-y-0.5">
-                    <p className="text-xs font-bold text-blue-950 dark:text-blue-200">
-                      Ready to submit your application?
+                <div className="p-3 rounded-2xl bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200/80 dark:border-blue-900/50 flex items-center justify-between gap-3 text-xs">
+                  <div className="min-w-0">
+                    <p className="font-bold text-blue-950 dark:text-blue-200">
+                      Applied with these materials?
                     </p>
-                    <p className="text-[11px] text-blue-700/80 dark:text-blue-300/80">
-                      Once you submit on the job board or company portal, mark this job as Applied.
+                    <p className="text-[11px] text-blue-700 dark:text-blue-300 truncate">
+                      Move this job directly to Applied.
                     </p>
                   </div>
                   <button
                     type="button"
                     onClick={handleMarkApplied}
                     disabled={isAppliedUpdated}
-                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs ${
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer shrink-0 ${
                       isAppliedUpdated
                         ? "bg-emerald-600 text-white"
                         : "bg-blue-600 hover:bg-blue-500 text-white"
@@ -504,12 +650,12 @@ export function HelpMeApplyModal({
                     {isAppliedUpdated ? (
                       <>
                         <CheckCircle2 className="w-3.5 h-3.5" />
-                        <span>Marked as Applied!</span>
+                        <span>Applied!</span>
                       </>
                     ) : (
                       <>
                         <Send className="w-3.5 h-3.5" />
-                        <span>Mark as Applied</span>
+                        <span>Mark Applied</span>
                       </>
                     )}
                   </button>
@@ -519,61 +665,48 @@ export function HelpMeApplyModal({
           )}
         </div>
 
-        {/* Modal Footer */}
-        <div className="px-6 py-4 border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-900/70 flex items-center justify-between gap-3">
-          {result ? (
+        {/* Footer - Matches JobModal exact styling */}
+        <div className="px-6 py-4 border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/80 flex items-center justify-between gap-2.5">
+          {isViewingResults ? (
             <>
               <button
-                onClick={() => {
-                  setResult(null);
-                  setError(null);
-                  setIsEditing(false);
-                }}
+                type="button"
+                onClick={() => setIsViewingResults(false)}
                 className="px-3.5 py-2 rounded-xl text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition cursor-pointer flex items-center gap-1.5"
               >
                 <ChevronLeft className="w-3.5 h-3.5" />
-                <span>Choose Another Material</span>
+                <span>Choose Materials</span>
               </button>
 
               <button
+                type="button"
                 onClick={handleCopy}
-                className={`px-5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs ${
-                  copied
-                    ? "bg-emerald-600 text-white"
-                    : "bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 hover:from-amber-400 hover:to-rose-400 text-white shadow-[0_4px_24px_rgba(249,115,22,0.5)] border border-amber-300/40"
-                }`}
+                className="px-5 py-2 rounded-xl bg-zinc-900 dark:bg-zinc-100 hover:bg-zinc-800 dark:hover:bg-white text-white dark:text-zinc-900 font-semibold text-xs transition cursor-pointer shadow-xs flex items-center gap-1.5"
               >
-                {copied ? (
-                  <>
-                    <Check className="w-3.5 h-3.5" />
-                    <span>Copied to Clipboard</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy className="w-3.5 h-3.5" />
-                    <span>Copy All</span>
-                  </>
-                )}
+                <Copy className="w-3.5 h-3.5" />
+                <span>Copy Current</span>
               </button>
             </>
           ) : (
             <>
               <button
-                onClick={onClose}
+                type="button"
+                onClick={handleClose}
                 disabled={isLoading}
-                className="px-4 py-2 rounded-xl text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition cursor-pointer disabled:opacity-50"
+                className="px-4 py-2 rounded-xl border border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 hover:bg-zinc-100/70 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-semibold text-xs transition cursor-pointer shadow-2xs"
               >
                 Cancel
               </button>
 
               <button
-                onClick={() => handleGenerate(selectedType)}
-                disabled={isLoading}
-                className="px-5 py-2.5 rounded-xl text-xs font-bold bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 hover:from-amber-400 hover:to-rose-400 text-white shadow-[0_4px_24px_rgba(249,115,22,0.5),0_0_12px_rgba(244,63,94,0.35)] hover:shadow-[0_6px_32px_rgba(249,115,22,0.7)] border border-amber-300/40 transition-all flex items-center gap-1.5 cursor-pointer active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed group"
+                type="button"
+                onClick={handleGenerateSelected}
+                disabled={isLoading || selectedTypes.size === 0}
+                className="px-5 py-2 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 hover:from-amber-400 hover:to-rose-400 text-white shadow-[0_4px_24px_rgba(249,115,22,0.5),0_0_12px_rgba(244,63,94,0.35)] hover:shadow-[0_6px_32px_rgba(249,115,22,0.7)] border border-amber-300/40 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Sparkles className="w-3.5 h-3.5 opacity-90 group-hover:rotate-12 transition-transform" />
-                <span>Generate Material</span>
-                <ArrowRight className="w-3.5 h-3.5 opacity-90 group-hover:translate-x-0.5 transition-transform" />
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Generate ({selectedTypes.size})</span>
+                <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </>
           )}

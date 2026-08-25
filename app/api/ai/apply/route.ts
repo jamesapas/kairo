@@ -244,6 +244,41 @@ ${taskInstructions}`;
       generatedAt: new Date().toISOString(),
     };
 
+    // Auto-save generated materials to database if jobId is provided
+    if (jobId) {
+      try {
+        const { data: currentJob } = await supabase
+          .from("job_applications")
+          .select("ai_apply_materials")
+          .eq("id", jobId)
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        const currentMaterials =
+          (currentJob?.ai_apply_materials as Record<string, unknown>) || {};
+        const updatedMaterials = {
+          ...currentMaterials,
+          [contentType]: {
+            title: data.title,
+            content: data.content,
+            keyPointsUsed: data.keyPointsUsed,
+            updatedAt: data.generatedAt,
+          },
+        };
+
+        await supabase
+          .from("job_applications")
+          .update({
+            ai_apply_materials: updatedMaterials,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", jobId)
+          .eq("user_id", user.id);
+      } catch (saveErr) {
+        console.error("Failed to auto-save generated material to DB:", saveErr);
+      }
+    }
+
     return NextResponse.json({
       success: true,
       data,
