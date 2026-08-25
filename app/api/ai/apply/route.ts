@@ -253,22 +253,26 @@ Return JSON matching:
         break;
 
       case "resume-suggestions":
-        maxTokens = 600;
+        maxTokens = 850;
         systemPrompt = `You are Kairo's AI Career Co-Pilot specializing in generating single-column, ATS-friendly resumes.
 ABSOLUTE STRICT RULES:
 1. ONLY use verified skills, experiences, and career history provided in the candidate context.
 2. DO NOT invent or assume any unlisted companies, tools, metrics, or credentials.
 3. DO NOT write letters, greetings ('Dear...'), or conversational filler.
-4. Auto-detect the best professional role title (e.g. 'Full-Stack Developer', 'Front-End Developer', 'Software Engineer') based on the job description and candidate's verified skills.
-5. Generate the tailored Resume Header and the 'PROFESSIONAL SUMMARY' section.
+4. Auto-detect the best professional role title (e.g. 'Full-Stack Developer', 'Front-End Developer', 'Software Engineer', 'Mobile Developer') based on the job description and candidate's verified skills.
+5. Generate the tailored Resume Header, 'PROFESSIONAL SUMMARY', and 'TECHNICAL SKILLS' sections.
+6. In 'TECHNICAL SKILLS', be smart and dynamically choose 3-5 categories that directly target what the target job is looking for.
+   - Categories should reflect the role: e.g. for Front-End roles focus on Languages, Frontend Development, UI/UX & Web Standards, Tools (omit AI/LLM or heavy backend unless role asks for it). For Full-Stack roles, include relevant Languages, Frontend, Backend, Databases, Tools.
+   - You can include short technical practices and proficiencies where verified (e.g. 'Responsive Web Design', 'REST APIs', 'SEO Best Practices', 'State Management', 'Web Performance') alongside tech stack tools, but keep them concise and relevant without overdoing it.
+   - Format each category line as: "Category Name: Skill1, Skill2, Skill3".
 
 Return JSON matching:
 {
   "title": string, // e.g. "Tailored Resume - [Job Title]"
-  "content": string, // ATS Resume text starting with Header and PROFESSIONAL SUMMARY
+  "content": string, // ATS Resume text starting with Header, PROFESSIONAL SUMMARY, and TECHNICAL SKILLS
   "keyPointsUsed": string[] // 2-3 brief bullet points of verified candidate strengths leveraged
 }`;
-        taskInstructions = `Generate the single-column ATS Resume header and PROFESSIONAL SUMMARY for "${targetJobTitle}" at ${targetCompany || "the company"}.
+        taskInstructions = `Generate the single-column ATS Resume header, PROFESSIONAL SUMMARY, and TECHNICAL SKILLS for "${targetJobTitle}" at ${targetCompany || "the company"}.
 
 Follow this EXACT layout structure:
 
@@ -278,7 +282,18 @@ ${candidateContactRow}
 
 PROFESSIONAL SUMMARY
 --------------------
-[A strong 3-4 sentence professional summary tailored to "${targetJobTitle}". Connect candidate's verified technical background (e.g. React, Next.js, TypeScript, APIs), years of hands-on experience, core strengths, and value provided to ${targetCompany || "the team"}. Do not invent any unverified tools.]`;
+[A strong 3-4 sentence professional summary tailored directly to "${targetJobTitle}". Highlight candidate's verified technical experience, key achievements, and direct value to ${targetCompany || "the company"}. Do not invent unverified tools.]
+
+TECHNICAL SKILLS
+----------------
+[3-5 dynamically chosen categories tailored to what the job description requires from the candidate's verified background. Examples:
+Languages: TypeScript, JavaScript, HTML5, CSS3
+Frontend: Next.js, React, Tailwind CSS, Responsive Web Design
+Backend: Node.js, Express.js, RESTful APIs
+Databases: PostgreSQL, Supabase
+Tools & Practices: Git, GitHub, Cursor, Web Performance, SEO Best Practices
+
+Only include categories and skills relevant to the specific job and backed by candidate profile. Do not force AI/LLM unless the job requires it.]`;
         break;
     }
 

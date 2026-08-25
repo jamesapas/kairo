@@ -103,7 +103,8 @@ export function downloadResumePdf({
     cursorY += 6.0; // Breathable space before first section
   }
 
-  // 2. Process Sections & Body (e.g. PROFESSIONAL SUMMARY)
+  // 2. Process Sections & Body (e.g. PROFESSIONAL SUMMARY, TECHNICAL SKILLS)
+  let isFirstSection = true;
   while (i < lines.length) {
     const line = lines[i].trim();
     if (!line) {
@@ -117,25 +118,91 @@ export function downloadResumePdf({
       continue;
     }
 
-    // Check for Section Header (e.g. "PROFESSIONAL SUMMARY")
-    if (line.match(/^[A-Z\s]{4,}$/i) && line.toUpperCase().includes("SUMMARY")) {
+    // Check for Section Header (e.g. "PROFESSIONAL SUMMARY", "TECHNICAL SKILLS")
+    const isSectionHeader =
+      line.match(/^[A-Z\s/&-]{3,}$/) &&
+      (line.includes("SUMMARY") ||
+        line.includes("SKILL") ||
+        line.includes("EXPERIENCE") ||
+        line.includes("EDUCATION") ||
+        line.includes("PROJECT"));
+
+    if (isSectionHeader) {
+      if (!isFirstSection) {
+        cursorY += 3.5; // Breathable space between sections
+      }
+      isFirstSection = false;
+
       checkPageBreak(14);
       doc.setFont(FONT_FAMILY, "bold");
       doc.setFontSize(SECTION_FONT_SIZE);
       doc.setTextColor(0, 0, 0);
       doc.text(line.toUpperCase(), marginX, cursorY);
-      cursorY += 2.0;
+      cursorY += 1.8;
 
       // Draw solid black horizontal line across printable boundary
       doc.setDrawColor(0, 0, 0);
       doc.setLineWidth(0.35);
       doc.line(marginX, cursorY, marginX + printableWidth, cursorY);
-      cursorY += 5.5; // Small space after horizontal line for the body text
+      cursorY += 4.5; // Small space after horizontal line for the body text
       i++;
       continue;
     }
 
-    // Body text paragraph (10.5px / 9pt)
+    // Check for categorized line (e.g. "Languages: TypeScript, JavaScript, HTML, CSS")
+    const colonMatch = line.match(/^([^:]+:)\s*(.*)$/);
+    if (colonMatch) {
+      const categoryLabel = colonMatch[1] + " ";
+      const skillsContent = colonMatch[2];
+
+      doc.setFont(FONT_FAMILY, "bold");
+      doc.setFontSize(BODY_FONT_SIZE);
+      doc.setTextColor(0, 0, 0);
+      const labelWidth = doc.getTextWidth(categoryLabel);
+
+      doc.setFont(FONT_FAMILY, "normal");
+      const contentWidth = doc.getTextWidth(skillsContent);
+
+      if (labelWidth + contentWidth <= printableWidth) {
+        checkPageBreak(LINE_HEIGHT_MM);
+        doc.setFont(FONT_FAMILY, "bold");
+        doc.text(categoryLabel, marginX, cursorY);
+        doc.setFont(FONT_FAMILY, "normal");
+        doc.text(skillsContent, marginX + labelWidth, cursorY);
+        cursorY += LINE_HEIGHT_MM;
+      } else {
+        checkPageBreak(LINE_HEIGHT_MM);
+        doc.setFont(FONT_FAMILY, "bold");
+        doc.text(categoryLabel, marginX, cursorY);
+        doc.setFont(FONT_FAMILY, "normal");
+
+        const words = skillsContent.split(" ");
+        let firstLine = "";
+        let w = 0;
+        while (w < words.length) {
+          const test = firstLine ? `${firstLine} ${words[w]}` : words[w];
+          if (doc.getTextWidth(test) > printableWidth - labelWidth) break;
+          firstLine = test;
+          w++;
+        }
+        doc.text(firstLine, marginX + labelWidth, cursorY);
+        cursorY += LINE_HEIGHT_MM;
+
+        const remaining = words.slice(w).join(" ");
+        if (remaining) {
+          const restLines = doc.splitTextToSize(remaining, printableWidth);
+          for (const rLine of restLines) {
+            checkPageBreak(LINE_HEIGHT_MM);
+            doc.text(rLine, marginX, cursorY);
+            cursorY += LINE_HEIGHT_MM;
+          }
+        }
+      }
+      i++;
+      continue;
+    }
+
+    // Standard body text paragraph (10.5px / 9pt)
     doc.setFont(FONT_FAMILY, "normal");
     doc.setFontSize(BODY_FONT_SIZE);
     doc.setTextColor(0, 0, 0);
@@ -146,7 +213,7 @@ export function downloadResumePdf({
       doc.text(wLine, marginX, cursorY);
       cursorY += LINE_HEIGHT_MM;
     }
-    cursorY += 2.0;
+    cursorY += 1.5;
     i++;
   }
 

@@ -183,7 +183,15 @@ function renderResumeContent(content: string) {
       continue;
     }
 
-    if (line.match(/^[A-Z\s]{4,}$/i) && line.toUpperCase().includes("SUMMARY")) {
+    const isSectionHeader =
+      line.match(/^[A-Z\s/&-]{3,}$/) &&
+      (line.includes("SUMMARY") ||
+        line.includes("SKILL") ||
+        line.includes("EXPERIENCE") ||
+        line.includes("EDUCATION") ||
+        line.includes("PROJECT"));
+
+    if (isSectionHeader) {
       if (currentSectionTitle) {
         sections.push({ title: currentSectionTitle, body: currentBody });
       }
@@ -232,9 +240,22 @@ function renderResumeContent(content: string) {
             </div>
             {/* Body with subtle gap */}
             <div className="text-xs leading-relaxed text-zinc-800 dark:text-zinc-200 space-y-1.5 pt-0.5 font-sans">
-              {sec.body.map((p, pIdx) => (
-                <p key={pIdx}>{p}</p>
-              ))}
+              {sec.body.map((p, pIdx) => {
+                const colonMatch = p.match(/^([^:]+:)\s*(.*)$/);
+                if (colonMatch) {
+                  return (
+                    <p key={pIdx}>
+                      <strong className="font-bold text-zinc-950 dark:text-zinc-50">
+                        {colonMatch[1]}
+                      </strong>{" "}
+                      <span className="font-normal text-zinc-800 dark:text-zinc-200">
+                        {colonMatch[2]}
+                      </span>
+                    </p>
+                  );
+                }
+                return <p key={pIdx}>{p}</p>;
+              })}
             </div>
           </div>
         ))}
