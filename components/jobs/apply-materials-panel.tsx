@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   Sparkles,
   FileText,
@@ -16,6 +16,7 @@ import {
   ArrowRight,
   AlertCircle,
   Download,
+  X,
 } from "lucide-react";
 import {
   ApplyContentType,
@@ -72,6 +73,18 @@ export function ApplyMaterialsPanel({
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isAppliedUpdated, setIsAppliedUpdated] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Auto-resize textarea to fit content without shifting page scroll position
+  useEffect(() => {
+    if (isEditing && textareaRef.current) {
+      const el = textareaRef.current;
+      const scrollY = window.scrollY;
+      el.style.height = "auto";
+      el.style.height = `${Math.max(el.scrollHeight, 120)}px`;
+      window.scrollTo(0, scrollY);
+    }
+  }, [isEditing, activeSubTab]);
 
   // Sync initialMaterials
   useEffect(() => {
@@ -166,6 +179,7 @@ export function ApplyMaterialsPanel({
       }
 
       setSavedSuccess(true);
+      setIsEditing(false);
       setTimeout(() => setSavedSuccess(false), 2500);
 
       const nextMaterialsMap = {
@@ -190,6 +204,14 @@ export function ApplyMaterialsPanel({
     }
   };
 
+  const handleCancelEdit = () => {
+    setEditedContents((prev) => ({
+      ...prev,
+      [activeSubTab]: materialsMap[activeSubTab]?.content || "",
+    }));
+    setIsEditing(false);
+  };
+
   const handleCopy = useCallback(() => {
     const textToCopy = editedContents[activeSubTab] || materialsMap[activeSubTab]?.content || "";
     if (!textToCopy) return;
@@ -211,6 +233,27 @@ export function ApplyMaterialsPanel({
     materialsMap[activeSubTab]?.content !== undefined &&
     editedContents[activeSubTab] !== undefined &&
     editedContents[activeSubTab] !== materialsMap[activeSubTab]?.content;
+
+  const isAnyModified = APPLY_CONTENT_KEYS.some((k) => {
+    const saved = materialsMap[k]?.content;
+    const edited = editedContents[k];
+    return saved !== undefined && edited !== undefined && edited !== saved;
+  });
+
+  // Prompt confirmation if user tries to refresh or close tab with unsaved edits
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isAnyModified) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [isAnyModified]);
 
   const currentWordCount = currentContent.trim()
     ? currentContent.trim().split(/\s+/).length
@@ -314,92 +357,117 @@ export function ApplyMaterialsPanel({
               {currentWordCount} words {isCurrentModified && "• (Unsaved edits)"}
             </span>
 
-            <div className="flex items-center gap-1.5">
-              {/* Save Edits */}
-              {isCurrentModified && jobId && (
+            {isEditing ? (
+              /* When Editing: Prominent Cancel & Save Actions */
+              <div className="flex items-center gap-1.5">
+                {/* Cancel Edit Button */}
+                <button
+                  type="button"
+                  onClick={handleCancelEdit}
+                  title="Discard edits and exit"
+                  className="h-7 px-2.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 text-xs font-semibold flex items-center gap-1 cursor-pointer transition shadow-2xs active:scale-[0.98]"
+                >
+                  <X className="w-3.5 h-3.5" />
+                  <span>Cancel</span>
+                </button>
+
+                {/* Save Edits Button */}
                 <button
                   type="button"
                   onClick={handleSaveEdits}
                   disabled={isSaving}
-                  className="px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-xs font-semibold flex items-center gap-1 cursor-pointer transition"
+                  title="Save changes"
+                  className="h-7 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition shadow-2xs active:scale-[0.98]"
                 >
-                  <Save className="w-3 h-3" />
+                  <Save className="w-3.5 h-3.5" />
                   <span>{savedSuccess ? "Saved!" : isSaving ? "Saving..." : "Save"}</span>
                 </button>
-              )}
-
-              {/* Edit / Preview Toggle */}
-              <button
-                type="button"
-                onClick={() => setIsEditing(!isEditing)}
-                className="px-2.5 py-1 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-xs font-medium flex items-center gap-1 cursor-pointer transition hover:bg-zinc-50"
-              >
-                {isEditing ? <Eye className="w-3 h-3" /> : <Edit3 className="w-3 h-3" />}
-                <span>{isEditing ? "Preview" : "Edit"}</span>
-              </button>
-
-              {/* Regenerate Button */}
-              <button
-                type="button"
-                onClick={() => handleGenerateMaterial(activeSubTab)}
-                disabled={isLoading}
-                title="Regenerate this material"
-                className="px-2.5 py-1 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 text-xs font-medium flex items-center gap-1 cursor-pointer transition hover:bg-zinc-50"
-              >
-                <RefreshCw className="w-3 h-3" />
-                <span>Regenerate</span>
-              </button>
-
-              {/* Download PDF (for Cover Letter) */}
-              {activeSubTab === "cover-letter" && (
+              </div>
+            ) : (
+              /* When Viewing: Standard Toolbar Actions */
+              <div className="flex items-center gap-1.5">
+                {/* Regenerate Button (With Label) */}
                 <button
                   type="button"
-                  onClick={() =>
-                    downloadCoverLetterPdf({
-                      content: currentContent,
-                      companyName: company,
-                      jobTitle: jobTitle,
-                    })
-                  }
-                  title="Download Cover Letter as formatted PDF (Arial)"
-                  className="px-2.5 py-1 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 text-xs font-semibold flex items-center gap-1 cursor-pointer transition shadow-2xs active:scale-[0.98]"
+                  onClick={() => handleGenerateMaterial(activeSubTab)}
+                  disabled={isLoading}
+                  title="Regenerate this material"
+                  aria-label="Regenerate"
+                  className="h-7 px-2.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition shadow-2xs active:scale-[0.98]"
                 >
-                  <Download className="w-3 h-3 text-rose-500" />
-                  <span>PDF</span>
+                  <RefreshCw className="w-3.5 h-3.5 text-zinc-500 dark:text-zinc-400" />
+                  <span>Regenerate</span>
                 </button>
-              )}
 
-              {/* Copy Button */}
-              <button
-                type="button"
-                onClick={handleCopy}
-                className={`px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer shadow-xs ${
-                  copied
-                    ? "bg-emerald-600 text-white"
-                    : "bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-white"
-                }`}
-              >
-                {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-                <span>{copied ? "Copied" : "Copy"}</span>
-              </button>
-            </div>
+                {/* Download PDF (for Cover Letter) */}
+                {activeSubTab === "cover-letter" && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      downloadCoverLetterPdf({
+                        content: currentContent,
+                        companyName: company,
+                        jobTitle: jobTitle,
+                      })
+                    }
+                    title="Download Cover Letter as formatted PDF (Arial)"
+                    className="h-7 px-2.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition shadow-2xs active:scale-[0.98]"
+                  >
+                    <Download className="w-3.5 h-3.5 text-rose-500" />
+                    <span>PDF</span>
+                  </button>
+                )}
+
+                {/* Edit Button (Icon Only) */}
+                <button
+                  type="button"
+                  onClick={() => setIsEditing(true)}
+                  title="Edit text"
+                  aria-label="Edit text"
+                  className="h-7 w-7 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 flex items-center justify-center cursor-pointer transition shadow-2xs active:scale-[0.98]"
+                >
+                  <Edit3 className="w-3.5 h-3.5" />
+                </button>
+
+                {/* Copy Button (Icon Only) */}
+                <button
+                  type="button"
+                  onClick={handleCopy}
+                  title={copied ? "Copied to clipboard!" : "Copy to clipboard"}
+                  aria-label={copied ? "Copied" : "Copy"}
+                  className={`h-7 w-7 rounded-lg border flex items-center justify-center cursor-pointer transition shadow-2xs active:scale-[0.98] ${
+                    copied
+                      ? "bg-emerald-50 dark:bg-emerald-950/60 border-emerald-300 dark:border-emerald-700 text-emerald-600 dark:text-emerald-400"
+                      : "border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300"
+                  }`}
+                >
+                  {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Text Canvas */}
           {isEditing ? (
             <textarea
-              rows={14}
+              ref={textareaRef}
               value={editedContents[activeSubTab] ?? ""}
-              onChange={(e) =>
-                setEditedContents((prev) => ({ ...prev, [activeSubTab]: e.target.value }))
-              }
-              className="w-full text-xs sm:text-sm p-5 sm:p-6 rounded-2xl bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-300 dark:border-zinc-600 text-zinc-900 dark:text-zinc-100 font-medium focus:border-zinc-500 focus:outline-hidden resize-y min-h-[300px] leading-relaxed font-sans"
+              onChange={(e) => {
+                const val = e.target.value;
+                setEditedContents((prev) => ({ ...prev, [activeSubTab]: val }));
+                const el = e.target;
+                const scrollY = window.scrollY;
+                el.style.height = "auto";
+                el.style.height = `${Math.max(el.scrollHeight, 120)}px`;
+                window.scrollTo(0, scrollY);
+              }}
+              className="w-full text-xs sm:text-sm p-5 sm:p-6 rounded-2xl bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-300 dark:border-zinc-600 text-zinc-900 dark:text-zinc-100 font-medium focus:border-zinc-500 focus:outline-hidden resize-none overflow-hidden leading-relaxed font-sans"
               placeholder="Edit content here..."
             />
           ) : (
             <div
               onClick={() => setIsEditing(true)}
-              className={`p-6 sm:p-8 rounded-2xl border text-xs sm:text-sm text-zinc-800 dark:text-zinc-200 leading-relaxed whitespace-pre-line cursor-text min-h-[260px] font-sans ${
+              className={`p-6 sm:p-8 rounded-2xl border text-xs sm:text-sm text-zinc-800 dark:text-zinc-200 leading-relaxed whitespace-pre-line cursor-text font-sans ${
                 activeSubTab === "cover-letter"
                   ? "bg-zinc-50/80 dark:bg-zinc-800/50 border-zinc-200/90 dark:border-zinc-800 shadow-2xs"
                   : "bg-zinc-50/70 dark:bg-zinc-800/40 border-zinc-200/80 dark:border-zinc-800"
