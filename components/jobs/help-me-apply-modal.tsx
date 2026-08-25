@@ -55,6 +55,105 @@ const CONTENT_TYPE_ICONS: Record<
   "application-message": Send,
 };
 
+function renderCoverLetterContent(content: string) {
+  const normalized = content.replace(/\r\n/g, "\n").replace(/\r/g, "\n").trim();
+  if (!normalized) return null;
+
+  const blocks = normalized.split(/\n\s*\n+/);
+
+  return (
+    <div className="space-y-3.5 font-sans text-zinc-900 dark:text-zinc-100 max-w-xl mx-auto">
+      {blocks.map((rawBlock, bIdx) => {
+        const block = rawBlock.trim();
+        if (!block) return null;
+
+        // Block 1: Candidate Header (First block)
+        if (bIdx === 0) {
+          const lines = block.split("\n").map((l) => l.trim()).filter(Boolean);
+          const firstLine = lines[0] || "";
+          const isCandidateName =
+            firstLine.length > 0 &&
+            (firstLine === firstLine.toUpperCase() ||
+              /^[A-Z\s.-]+$/i.test(firstLine));
+
+          if (isCandidateName) {
+            return (
+              <div key={bIdx} className="space-y-0.5 pb-1">
+                <h3 className="text-xs sm:text-sm font-bold tracking-tight uppercase text-zinc-950 dark:text-zinc-50">
+                  {firstLine}
+                </h3>
+                {lines.slice(1).map((l, lIdx) => (
+                  <p key={lIdx} className="text-[11px] sm:text-xs text-zinc-800 dark:text-zinc-200 font-normal">
+                    {l}
+                  </p>
+                ))}
+              </div>
+            );
+          }
+        }
+
+        // Subject line ("Re: ... Application")
+        if (/^re:/i.test(block)) {
+          return (
+            <div key={bIdx}>
+              <p className="text-[11px] sm:text-xs font-bold text-zinc-950 dark:text-zinc-50">
+                {block}
+              </p>
+            </div>
+          );
+        }
+
+        // Formal sign-off ("Sincerely,\nJames Karl Apas")
+        if (
+          /^(sincerely|best regards|warm regards|regards|respectfully|thank you),?/i.test(block)
+        ) {
+          const signLines = block.split("\n").map((l) => l.trim()).filter(Boolean);
+          return (
+            <div key={bIdx} className="space-y-2.5 pt-1">
+              <p className="text-[11px] sm:text-xs text-zinc-800 dark:text-zinc-200 font-normal">
+                {signLines[0]}
+              </p>
+              {signLines.slice(1).map((s, sIdx) => (
+                <p key={sIdx} className="text-[11px] sm:text-xs font-bold text-zinc-950 dark:text-zinc-50">
+                  {s}
+                </p>
+              ))}
+            </div>
+          );
+        }
+
+        // Multi-line Date & Recipient block
+        const linesInBlock = block.split("\n").map((l) => l.trim()).filter(Boolean);
+        const looksLikeDateOrRecipient =
+          linesInBlock.length >= 2 &&
+          linesInBlock.length <= 6 &&
+          linesInBlock.some(
+            (l) =>
+              /^(january|february|march|april|may|june|july|august|september|october|november|december)\s+\d+/i.test(l) ||
+              /hiring|manager|director|recruiter|team|inc|llc|co|ltd|corp/i.test(l)
+          );
+
+        if (looksLikeDateOrRecipient) {
+          return (
+            <div key={bIdx} className="space-y-0.5 text-[11px] sm:text-xs text-zinc-800 dark:text-zinc-200 font-normal">
+              {linesInBlock.map((line, lIdx) => (
+                <p key={lIdx}>{line}</p>
+              ))}
+            </div>
+          );
+        }
+
+        // Standard body paragraph or salutation
+        return (
+          <p key={bIdx} className="text-[11px] sm:text-xs text-zinc-800 dark:text-zinc-200 leading-relaxed font-normal">
+            {block}
+          </p>
+        );
+      })}
+    </div>
+  );
+}
+
 function renderResumeContent(content: string) {
   const normalized = content.replace(/\r\n/g, "\n").replace(/\r/g, "\n").trim();
   if (!normalized) return null;
@@ -819,6 +918,8 @@ export function HelpMeApplyModal({
                   {currentContent ? (
                     activeTab === "resume-suggestions" ? (
                       renderResumeContent(currentContent)
+                    ) : activeTab === "cover-letter" ? (
+                      renderCoverLetterContent(currentContent)
                     ) : (
                       currentContent
                     )
