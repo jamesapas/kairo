@@ -28,6 +28,7 @@ import {
 import { JobStatus } from "@/types/job";
 import { saveApplyMaterialAction } from "@/lib/actions/jobs";
 import { downloadCoverLetterPdf } from "@/lib/utils/cover-letter-pdf";
+import { downloadResumePdf } from "@/lib/utils/resume-pdf";
 
 interface ApplyMaterialsPanelProps {
   jobId: string;
@@ -49,6 +50,101 @@ const CONTENT_TYPE_ICONS: Record<
   "cover-letter": FileText,
   "application-message": Send,
 };
+
+function renderResumeContent(content: string) {
+  const normalized = content.replace(/\r\n/g, "\n").replace(/\r/g, "\n").trim();
+  if (!normalized) return null;
+  const lines = normalized.split("\n");
+
+  const headerLines: string[] = [];
+  let idx = 0;
+  while (idx < lines.length && !lines[idx].trim().match(/^PROFESSIONAL SUMMARY/i)) {
+    const line = lines[idx].trim();
+    if (line) headerLines.push(line);
+    idx++;
+  }
+
+  const sections: { title: string; body: string[] }[] = [];
+  let currentSectionTitle = "";
+  let currentBody: string[] = [];
+
+  while (idx < lines.length) {
+    const line = lines[idx].trim();
+    if (!line) {
+      idx++;
+      continue;
+    }
+
+    if (line.match(/^[-=_]{3,}$/)) {
+      idx++;
+      continue;
+    }
+
+    if (line.match(/^[A-Z\s]{4,}$/i) && line.toUpperCase().includes("SUMMARY")) {
+      if (currentSectionTitle) {
+        sections.push({ title: currentSectionTitle, body: currentBody });
+      }
+      currentSectionTitle = line.toUpperCase();
+      currentBody = [];
+      idx++;
+      continue;
+    }
+
+    currentBody.push(line);
+    idx++;
+  }
+
+  if (currentSectionTitle) {
+    sections.push({ title: currentSectionTitle, body: currentBody });
+  }
+
+  if (headerLines.length > 0) {
+    return (
+      <div className="space-y-6 font-sans text-zinc-900 dark:text-zinc-100 max-w-2xl mx-auto">
+        {/* ATS Resume Header */}
+        <div className="text-center space-y-1 pb-1">
+          <h3 className="text-base sm:text-[18px] font-bold tracking-tight uppercase text-zinc-950 dark:text-zinc-50">
+            {headerLines[0]}
+          </h3>
+          {headerLines[1] && (
+            <p className="text-xs sm:text-[12px] font-normal text-zinc-800 dark:text-zinc-200">
+              {headerLines[1]}
+            </p>
+          )}
+          {headerLines.slice(2).map((l, i) => (
+            <p key={i} className="text-[10px] sm:text-[11px] font-normal text-zinc-800 dark:text-zinc-200 pt-0.5">
+              {l}
+            </p>
+          ))}
+        </div>
+
+        {/* Sections */}
+        {sections.map((sec, sIdx) => (
+          <div key={sIdx} className="space-y-1.5">
+            {/* Section Header with Black Horizontal Line */}
+            <div className="border-b border-black dark:border-white pb-0.5">
+              <h4 className="text-[11px] font-bold uppercase tracking-wider text-zinc-950 dark:text-zinc-50">
+                {sec.title}
+              </h4>
+            </div>
+            {/* Body with small subtle space matching PDF */}
+            <div className="text-xs sm:text-[10.5px] leading-relaxed text-zinc-800 dark:text-zinc-200 space-y-1.5 pt-0.5 font-sans">
+              {sec.body.map((p, pIdx) => (
+                <p key={pIdx}>{p}</p>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="text-xs sm:text-sm text-zinc-800 dark:text-zinc-200 leading-relaxed whitespace-pre-line select-text font-sans">
+      {content}
+    </div>
+  );
+}
 
 export function ApplyMaterialsPanel({
   jobId,
@@ -399,18 +495,29 @@ export function ApplyMaterialsPanel({
                   <span>Regenerate</span>
                 </button>
 
-                {/* Download PDF (for Cover Letter) */}
-                {activeSubTab === "cover-letter" && (
+                {/* Download PDF (for Cover Letter or Resume) */}
+                {(activeSubTab === "cover-letter" || activeSubTab === "resume-suggestions") && (
                   <button
                     type="button"
-                    onClick={() =>
-                      downloadCoverLetterPdf({
-                        content: currentContent,
-                        companyName: company,
-                        jobTitle: jobTitle,
-                      })
+                    onClick={() => {
+                      if (activeSubTab === "cover-letter") {
+                        downloadCoverLetterPdf({
+                          content: currentContent,
+                          companyName: company,
+                          jobTitle: jobTitle,
+                        });
+                      } else {
+                        downloadResumePdf({
+                          content: currentContent,
+                          jobTitle: jobTitle,
+                        });
+                      }
+                    }}
+                    title={
+                      activeSubTab === "cover-letter"
+                        ? "Download Cover Letter as formatted PDF (Arial)"
+                        : "Download ATS Resume as formatted PDF (Arial)"
                     }
-                    title="Download Cover Letter as formatted PDF (Arial)"
                     className="h-7 px-2.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition shadow-2xs active:scale-[0.98]"
                   >
                     <Download className="w-3.5 h-3.5 text-rose-500" />
@@ -466,13 +573,19 @@ export function ApplyMaterialsPanel({
             />
           ) : (
             <div
-              className={`p-6 sm:p-8 rounded-2xl border text-xs sm:text-sm text-zinc-800 dark:text-zinc-200 leading-relaxed whitespace-pre-line select-text font-sans ${
+              className={`p-6 sm:p-8 rounded-2xl border text-xs sm:text-sm text-zinc-800 dark:text-zinc-200 leading-relaxed select-text font-sans ${
                 activeSubTab === "cover-letter"
-                  ? "bg-zinc-50/80 dark:bg-zinc-800/50 border-zinc-200/90 dark:border-zinc-800 shadow-2xs"
-                  : "bg-zinc-50/70 dark:bg-zinc-800/40 border-zinc-200/80 dark:border-zinc-800"
+                  ? "bg-zinc-50/80 dark:bg-zinc-800/50 border-zinc-200/90 dark:border-zinc-800 shadow-2xs whitespace-pre-line"
+                  : activeSubTab === "resume-suggestions"
+                  ? "bg-zinc-50/90 dark:bg-zinc-800/60 border-zinc-200/90 dark:border-zinc-800 shadow-2xs"
+                  : "bg-zinc-50/70 dark:bg-zinc-800/40 border-zinc-200/80 dark:border-zinc-800 whitespace-pre-line"
               }`}
             >
-              {currentContent}
+              {activeSubTab === "resume-suggestions" ? (
+                renderResumeContent(currentContent)
+              ) : (
+                currentContent
+              )}
             </div>
           )}
         </div>

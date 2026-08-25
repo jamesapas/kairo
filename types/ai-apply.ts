@@ -19,9 +19,9 @@ export const APPLY_CONTENT_KEYS: ApplyContentType[] = [
 export const APPLY_CONTENT_TYPES: Record<ApplyContentType, ApplyContentConfig> = {
   "resume-suggestions": {
     id: "resume-suggestions",
-    title: "Resume Suggestions",
+    title: "Tailored Resume",
     shortLabel: "Resume",
-    description: "Tailored bullet points, verified skills, and ATS keywords to feature.",
+    description: "Single-column, ATS-friendly resume tailored to role specifications.",
   },
   "cover-letter": {
     id: "cover-letter",

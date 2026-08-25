@@ -174,7 +174,9 @@ ${compactExperiences ? `Experience:\n${compactExperiences}\n` : ""}${compactEduc
       })
       .filter(Boolean);
     const formattedLinksStr = formattedLinks.join(" | ");
-    const contactLine = [profileData?.email, formattedLinksStr].filter(Boolean).join(" | ");
+    const candidateContactRow = [candidateLocation, profileData?.email, formattedLinksStr]
+      .filter(Boolean)
+      .join(" | ");
 
     const formattedDate = new Date().toLocaleDateString("en-US", {
       month: "long",
@@ -208,7 +210,7 @@ Return JSON matching:
 Follow this EXACT layout structure:
 
 ${(profileData?.name || "Candidate").toUpperCase()}
-${candidateLocation ? `${candidateLocation}\n` : ""}${contactLine}
+${candidateLocation ? `${candidateLocation}\n` : ""}${candidateContactRow}
 
 ${formattedDate}
 
@@ -251,32 +253,32 @@ Return JSON matching:
         break;
 
       case "resume-suggestions":
-        maxTokens = 700;
-        systemPrompt = `You are Kairo's AI Career Co-Pilot specializing in Resume Optimization, ATS keyword matching, and bullet point crafting.
+        maxTokens = 600;
+        systemPrompt = `You are Kairo's AI Career Co-Pilot specializing in generating single-column, ATS-friendly resumes.
 ABSOLUTE STRICT RULES:
-1. DO NOT write a letter, email, greeting ('Dear...'), or cover letter. This is NOT a message or letter.
-2. ONLY use verified skills, experiences, and education provided in the candidate context.
-3. DO NOT invent or assume any unlisted companies, tools, metrics, or credentials.
-4. Output MUST be formatted resume bullet point recommendations and skills suggestions.
+1. ONLY use verified skills, experiences, and career history provided in the candidate context.
+2. DO NOT invent or assume any unlisted companies, tools, metrics, or credentials.
+3. DO NOT write letters, greetings ('Dear...'), or conversational filler.
+4. Auto-detect the best professional role title (e.g. 'Full-Stack Developer', 'Front-End Developer', 'Software Engineer') based on the job description and candidate's verified skills.
+5. Generate the tailored Resume Header and the 'PROFESSIONAL SUMMARY' section.
 
 Return JSON matching:
 {
-  "title": string, // e.g. "Resume Tailoring for [Job Title]"
-  "content": string, // Formatted markdown with headings and bullet points
+  "title": string, // e.g. "Tailored Resume - [Job Title]"
+  "content": string, // ATS Resume text starting with Header and PROFESSIONAL SUMMARY
   "keyPointsUsed": string[] // 2-3 brief bullet points of verified candidate strengths leveraged
 }`;
-        taskInstructions = `Generate structured, high-impact Resume Suggestions and bullet point rephrasings for "${targetJobTitle}" at ${targetCompany || "the company"}.
+        taskInstructions = `Generate the single-column ATS Resume header and PROFESSIONAL SUMMARY for "${targetJobTitle}" at ${targetCompany || "the company"}.
 
-Format the "content" strictly into these 3 clean sections:
+Follow this EXACT layout structure:
 
-1. 🎯 Top Verified Skills to Feature
-- [List 4-6 most relevant verified skills from candidate's profile that directly match the job description]
+${(profileData?.name || "Candidate").toUpperCase()}
+[Auto-detected Role Title matching the job, e.g. Full-Stack Developer / Front-End Developer]
+${candidateContactRow}
 
-2. ✍️ Tailored Experience Bullet Points
-- [Provide 3 quantifiable, high-impact resume bullet point examples tailored from candidate's actual background using Action Verb + Task + Tool + Result]
-
-3. 🔍 Priority ATS Keywords
-- [List 5-8 essential keywords and technical terms found in the job requirements to include in candidate's resume]`;
+PROFESSIONAL SUMMARY
+--------------------
+[A strong 3-4 sentence professional summary tailored to "${targetJobTitle}". Connect candidate's verified technical background (e.g. React, Next.js, TypeScript, APIs), years of hands-on experience, core strengths, and value provided to ${targetCompany || "the team"}. Do not invent any unverified tools.]`;
         break;
     }
 
