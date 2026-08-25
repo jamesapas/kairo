@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -31,6 +31,8 @@ import {
   AlertCircle,
   Sparkles,
   Send,
+  Plus,
+  MoreHorizontal,
 } from "lucide-react";
 import Loading from "@/app/(workspace)/jobs/[id]/loading";
 import {
@@ -51,6 +53,7 @@ import { AIMatchPanel } from "./ai-match-panel";
 import { HelpMeApplyModal } from "./help-me-apply-modal";
 import {
   deleteJobAction,
+  updateJobAction,
   updateJobStatusAction,
   togglePinJobAction,
 } from "@/lib/actions/jobs";
@@ -101,6 +104,117 @@ function WorkplaceBadge({ type }: { type: WorkplaceType }) {
   );
 }
 
+function LinkActionDropdown({
+  url,
+  onEdit,
+  onDelete,
+  onCopy,
+  copied,
+}: {
+  url: string;
+  onEdit: () => void;
+  onDelete: () => void;
+  onCopy: () => void;
+  copied: boolean;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isOpen]);
+
+  return (
+    <div className="relative shrink-0" ref={dropdownRef} onClick={(e) => e.stopPropagation()}>
+      <button
+        type="button"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setIsOpen((prev) => !prev);
+        }}
+        className="p-1.5 rounded-xl text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-200/60 dark:hover:bg-zinc-700/60 transition cursor-pointer"
+        title="Link options"
+      >
+        <MoreHorizontal className="w-4 h-4" />
+      </button>
+
+      {isOpen && (
+        <div className="absolute right-0 top-full mt-1 z-30 w-36 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xl py-1 text-xs font-semibold animate-scale-up">
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => setIsOpen(false)}
+            className="flex items-center gap-2 px-3 py-2 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-white transition cursor-pointer"
+          >
+            <ArrowUpRight className="w-3.5 h-3.5 text-zinc-400" />
+            <span>Visit link</span>
+          </a>
+
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              onCopy();
+              setIsOpen(false);
+            }}
+            className="w-full flex items-center gap-2 px-3 py-2 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-white transition cursor-pointer text-left"
+          >
+            {copied ? (
+              <>
+                <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                <span className="text-emerald-600 dark:text-emerald-400">Copied</span>
+              </>
+            ) : (
+              <>
+                <Copy className="w-3.5 h-3.5 text-zinc-400" />
+                <span>Copy link</span>
+              </>
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              onEdit();
+              setIsOpen(false);
+            }}
+            className="w-full flex items-center gap-2 px-3 py-2 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-white transition cursor-pointer text-left"
+          >
+            <Edit3 className="w-3.5 h-3.5 text-zinc-400" />
+            <span>Edit link</span>
+          </button>
+
+          <div className="border-t border-zinc-100 dark:border-zinc-800 my-1" />
+
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              onDelete();
+              setIsOpen(false);
+            }}
+            className="w-full flex items-center gap-2 px-3 py-2 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition cursor-pointer text-left"
+          >
+            <Trash2 className="w-3.5 h-3.5 text-rose-500" />
+            <span>Delete</span>
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function JobDetailPage({ jobId }: JobDetailPageProps) {
   const router = useRouter();
   const [job, setJob] = useState<JobApplication | null>(null);
@@ -117,6 +231,11 @@ export function JobDetailPage({ jobId }: JobDetailPageProps) {
 
   // Active Tab State
   const [activeTab, setActiveTab] = useState<ActiveTab>("ai-match");
+
+  // Quick Link Inline Edit state
+  const [editingLinkType, setEditingLinkType] = useState<"jobUrl" | "contactUrl" | null>(null);
+  const [tempLinkValue, setTempLinkValue] = useState("");
+  const [isSavingLink, setIsSavingLink] = useState(false);
 
   // Checklist state persisted to localStorage per job
   const [checklist, setChecklist] = useState<Record<string, boolean>>({});
@@ -317,6 +436,66 @@ export function JobDetailPage({ jobId }: JobDetailPageProps) {
     }
   };
 
+  const startEditLink = (type: "jobUrl" | "contactUrl", currentValue: string = "") => {
+    setEditingLinkType(type);
+    setTempLinkValue(currentValue);
+  };
+
+  const cancelEditLink = () => {
+    setEditingLinkType(null);
+    setTempLinkValue("");
+  };
+
+  const handleSaveQuickLink = async (type: "jobUrl" | "contactUrl") => {
+    if (!job) return;
+    const trimmed = tempLinkValue.trim();
+    setIsSavingLink(true);
+
+    try {
+      const updates = { [type]: trimmed };
+      const res = await updateJobAction(job.id, updates);
+      if (!res.success) {
+        alert(res.error || "Failed to update link");
+      } else {
+        setJob((prev) => (prev ? { ...prev, [type]: trimmed } : null));
+        setEditingLinkType(null);
+        setTempLinkValue("");
+        showToast(
+          trimmed
+            ? `${type === "jobUrl" ? "Posting URL" : "Contact link"} saved!`
+            : `${type === "jobUrl" ? "Posting URL" : "Contact link"} removed.`
+        );
+      }
+    } catch (err) {
+      console.error("Error updating link:", err);
+    } finally {
+      setIsSavingLink(false);
+    }
+  };
+
+  const handleDeleteQuickLink = async (type: "jobUrl" | "contactUrl") => {
+    if (!job) return;
+    const label = type === "jobUrl" ? "Posting URL" : "Contact link";
+    setIsSavingLink(true);
+
+    try {
+      const updates = { [type]: "" };
+      const res = await updateJobAction(job.id, updates);
+      if (!res.success) {
+        alert(res.error || "Failed to remove link");
+      } else {
+        setJob((prev) => (prev ? { ...prev, [type]: "" } : null));
+        setEditingLinkType(null);
+        setTempLinkValue("");
+        showToast(`${label} removed.`);
+      }
+    } catch (err) {
+      console.error("Error removing link:", err);
+    } finally {
+      setIsSavingLink(false);
+    }
+  };
+
   // Keyboard shortcuts listener
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -397,51 +576,13 @@ export function JobDetailPage({ jobId }: JobDetailPageProps) {
           </div>
 
           {/* Action Toolbar */}
-          <div className="flex items-center gap-2">
-            {job.status === "saved" && (
-              <button
-                onClick={() => handleStatusChange("applied")}
-                className="px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition cursor-pointer shadow-xs flex items-center gap-1.5 active:scale-[0.98]"
-              >
-                <Send className="w-3.5 h-3.5" />
-                <span>Mark as Applied</span>
-              </button>
-            )}
-
-            <button
-              onClick={handleCopySummary}
-              title="Copy formatted summary"
-              className="px-3 py-1.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-800 text-xs font-semibold transition cursor-pointer shadow-2xs flex items-center gap-1.5"
-            >
-              {copiedSummary ? (
-                <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-              ) : (
-                <Share2 className="w-3.5 h-3.5" />
-              )}
-              <span>{copiedSummary ? "Copied" : "Share"}</span>
-            </button>
-
-            <button
-              onClick={handleTogglePin}
-              title={job.isPinned ? "Unpin application (P)" : "Pin to top (P)"}
-              className={`p-2 rounded-xl transition cursor-pointer border ${
-                job.isPinned
-                  ? "bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-900/50 hover:bg-rose-100 dark:hover:bg-rose-950/70"
-                  : "bg-white dark:bg-zinc-900 border-zinc-200/80 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-800 shadow-2xs"
-              }`}
-            >
-              <Pin className={`w-3.5 h-3.5 ${job.isPinned ? "fill-rose-500 text-rose-500" : ""}`} />
-            </button>
-
+          <div className="flex items-center gap-1.5">
             <button
               onClick={() => setIsModalOpen(true)}
-              className="px-3.5 py-1.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition cursor-pointer text-xs font-semibold flex items-center gap-1.5 shadow-2xs"
+              title="Edit Application (E)"
+              className="p-2 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition cursor-pointer shadow-2xs"
             >
-              <Edit3 className="w-3.5 h-3.5 text-zinc-400" />
-              <span>Edit</span>
-              <kbd className="hidden sm:inline-block px-1 py-0.2 bg-zinc-100 dark:bg-zinc-800 text-[10px] text-zinc-400 rounded border border-zinc-200 dark:border-zinc-700">
-                E
-              </kbd>
+              <Edit3 className="w-3.5 h-3.5" />
             </button>
 
             <button
@@ -491,12 +632,23 @@ export function JobDetailPage({ jobId }: JobDetailPageProps) {
               </div>
 
               <div className="shrink-0 pt-0.5">
-                <StatusDropdown
-                  value={job.status}
-                  onChange={handleStatusChange}
-                  size="md"
-                  className="w-full sm:w-auto min-w-[145px]"
-                />
+                {job.status === "saved" ? (
+                  <button
+                    type="button"
+                    onClick={() => handleStatusChange("applied")}
+                    className="w-full sm:w-auto px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-sm hover:shadow active:scale-[0.98]"
+                  >
+                    <Send className="w-3.5 h-3.5" />
+                    <span>Mark as Applied</span>
+                  </button>
+                ) : (
+                  <StatusDropdown
+                    value={job.status}
+                    onChange={handleStatusChange}
+                    size="md"
+                    className="w-full sm:w-auto min-w-[145px]"
+                  />
+                )}
               </div>
             </div>
 
@@ -644,86 +796,177 @@ export function JobDetailPage({ jobId }: JobDetailPageProps) {
               </div>
             </div>
 
-            {/* Direct Links Card */}
-            {(job.jobUrl || job.contactUrl) && (
-              <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 border border-zinc-200/90 dark:border-zinc-800 shadow-[0_2px_8px_rgba(0,0,0,0.03)] space-y-4">
-                <h3 className="text-xs uppercase font-bold tracking-wider text-zinc-400 dark:text-zinc-500 pb-2 border-b border-zinc-100 dark:border-zinc-800">
+            {/* Direct Links Card - Minimalist List Mode */}
+            <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 border border-zinc-200/90 dark:border-zinc-800 shadow-[0_2px_8px_rgba(0,0,0,0.03)] space-y-3">
+              <div className="flex items-center justify-between pb-2 border-b border-zinc-100 dark:border-zinc-800">
+                <h3 className="text-xs uppercase font-bold tracking-wider text-zinc-400 dark:text-zinc-500">
                   Links & Outreach
                 </h3>
+              </div>
 
-                {/* Job URL */}
-                {job.jobUrl && (
-                  <div className="p-3.5 rounded-2xl bg-zinc-50/70 dark:bg-zinc-800/40 border border-zinc-200/70 dark:border-zinc-800 space-y-2">
-                    <div className="flex items-center gap-2 text-xs font-bold text-zinc-800 dark:text-zinc-200">
+              {/* List items */}
+              <div className="space-y-2">
+                {/* 1. Job Posting URL */}
+                {editingLinkType === "jobUrl" ? (
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      handleSaveQuickLink("jobUrl");
+                    }}
+                    className="p-3 rounded-2xl bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700 space-y-2"
+                  >
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-zinc-800 dark:text-zinc-200">
                       <Globe className="w-3.5 h-3.5 text-zinc-400" />
                       <span>Posting URL</span>
                     </div>
-                    <p className="text-[11px] font-mono text-zinc-500 truncate" title={job.jobUrl}>
-                      {getDomain(job.jobUrl)}
-                    </p>
-                    <div className="flex items-center gap-2 pt-1">
+                    <input
+                      type="url"
+                      autoFocus
+                      value={tempLinkValue}
+                      onChange={(e) => setTempLinkValue(e.target.value)}
+                      placeholder="https://example.com/job/..."
+                      className="w-full px-3 py-1.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 text-xs font-medium text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:border-zinc-500"
+                    />
+                    <div className="flex items-center justify-end gap-1.5 pt-0.5">
                       <button
-                        onClick={handleCopyLink}
-                        className="flex-1 py-1.5 px-2 rounded-xl bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-xs font-semibold text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition cursor-pointer flex items-center justify-center gap-1.5"
+                        type="button"
+                        onClick={cancelEditLink}
+                        className="px-2.5 py-1 rounded-lg border border-zinc-200 dark:border-zinc-700 text-xs font-medium text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition cursor-pointer"
                       >
-                        {copiedLink ? (
-                          <Check className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
-                        ) : (
-                          <Copy className="w-3 h-3 text-zinc-400" />
-                        )}
-                        <span>{copiedLink ? "Copied" : "Copy"}</span>
+                        Cancel
                       </button>
-
-                      <a
-                        href={job.jobUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex-1 py-1.5 px-2 rounded-xl bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-xs font-semibold hover:bg-zinc-800 dark:hover:bg-white transition cursor-pointer flex items-center justify-center gap-1 shadow-2xs"
+                      <button
+                        type="submit"
+                        disabled={isSavingLink}
+                        className="px-3 py-1 rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-xs font-semibold hover:bg-zinc-800 dark:hover:bg-white transition cursor-pointer disabled:opacity-50"
                       >
-                        <span>Visit</span>
-                        <ArrowUpRight className="w-3 h-3" />
-                      </a>
+                        {isSavingLink ? "Saving..." : "Save"}
+                      </button>
                     </div>
+                  </form>
+                ) : job.jobUrl ? (
+                  <div className="p-2.5 rounded-2xl bg-zinc-50/70 dark:bg-zinc-800/40 border border-zinc-200/70 dark:border-zinc-800 flex items-center justify-between gap-2 hover:bg-zinc-50 dark:hover:bg-zinc-800/70 transition group">
+                    <a
+                      href={job.jobUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2.5 min-w-0 flex-1 cursor-pointer"
+                    >
+                      <div className="p-2 rounded-xl bg-white dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700 text-zinc-500 shrink-0 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition">
+                        <Globe className="w-3.5 h-3.5" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs font-bold text-zinc-800 dark:text-zinc-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition truncate">
+                            Posting URL
+                          </span>
+                          <ArrowUpRight className="w-3 h-3 text-zinc-400 group-hover:text-blue-500 transition shrink-0" />
+                        </div>
+                        <p className="text-[11px] font-mono text-zinc-400 dark:text-zinc-500 truncate" title={job.jobUrl}>
+                          {getDomain(job.jobUrl)}
+                        </p>
+                      </div>
+                    </a>
+
+                    <LinkActionDropdown
+                      url={job.jobUrl}
+                      onEdit={() => startEditLink("jobUrl", job.jobUrl)}
+                      onDelete={() => handleDeleteQuickLink("jobUrl")}
+                      onCopy={handleCopyLink}
+                      copied={copiedLink}
+                    />
                   </div>
+                ) : (
+                  <button
+                    onClick={() => startEditLink("jobUrl", "")}
+                    className="w-full py-2 px-3 rounded-2xl border border-dashed border-zinc-200 dark:border-zinc-800 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:border-zinc-300 dark:hover:border-zinc-700 bg-zinc-50/40 dark:bg-zinc-800/20 text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add Job Posting URL</span>
+                  </button>
                 )}
 
-                {/* Contact URL */}
-                {job.contactUrl && (
-                  <div className="p-3.5 rounded-2xl bg-zinc-50/70 dark:bg-zinc-800/40 border border-zinc-200/70 dark:border-zinc-800 space-y-2">
-                    <div className="flex items-center gap-2 text-xs font-bold text-zinc-800 dark:text-zinc-200">
+                {/* 2. Contact / Recruiter URL */}
+                {editingLinkType === "contactUrl" ? (
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      handleSaveQuickLink("contactUrl");
+                    }}
+                    className="p-3 rounded-2xl bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700 space-y-2"
+                  >
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-zinc-800 dark:text-zinc-200">
                       <Link2 className="w-3.5 h-3.5 text-zinc-400" />
                       <span>Contact / Recruiter</span>
                     </div>
-                    <p className="text-[11px] font-mono text-zinc-500 truncate" title={job.contactUrl}>
-                      {getDomain(job.contactUrl)}
-                    </p>
-                    <div className="flex items-center gap-2 pt-1">
+                    <input
+                      type="url"
+                      autoFocus
+                      value={tempLinkValue}
+                      onChange={(e) => setTempLinkValue(e.target.value)}
+                      placeholder="https://linkedin.com/in/... or email link"
+                      className="w-full px-3 py-1.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 text-xs font-medium text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:border-zinc-500"
+                    />
+                    <div className="flex items-center justify-end gap-1.5 pt-0.5">
                       <button
-                        onClick={handleCopyContactLink}
-                        className="flex-1 py-1.5 px-2 rounded-xl bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-xs font-semibold text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition cursor-pointer flex items-center justify-center gap-1.5"
+                        type="button"
+                        onClick={cancelEditLink}
+                        className="px-2.5 py-1 rounded-lg border border-zinc-200 dark:border-zinc-700 text-xs font-medium text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition cursor-pointer"
                       >
-                        {copiedContactLink ? (
-                          <Check className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
-                        ) : (
-                          <Copy className="w-3 h-3 text-zinc-400" />
-                        )}
-                        <span>{copiedContactLink ? "Copied" : "Copy"}</span>
+                        Cancel
                       </button>
-
-                      <a
-                        href={job.contactUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex-1 py-1.5 px-2 rounded-xl bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-xs font-semibold hover:bg-zinc-800 dark:hover:bg-white transition cursor-pointer flex items-center justify-center gap-1 shadow-2xs"
+                      <button
+                        type="submit"
+                        disabled={isSavingLink}
+                        className="px-3 py-1 rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-xs font-semibold hover:bg-zinc-800 dark:hover:bg-white transition cursor-pointer disabled:opacity-50"
                       >
-                        <span>Visit</span>
-                        <ArrowUpRight className="w-3 h-3" />
-                      </a>
+                        {isSavingLink ? "Saving..." : "Save"}
+                      </button>
                     </div>
+                  </form>
+                ) : job.contactUrl ? (
+                  <div className="p-2.5 rounded-2xl bg-zinc-50/70 dark:bg-zinc-800/40 border border-zinc-200/70 dark:border-zinc-800 flex items-center justify-between gap-2 hover:bg-zinc-50 dark:hover:bg-zinc-800/70 transition group">
+                    <a
+                      href={job.contactUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2.5 min-w-0 flex-1 cursor-pointer"
+                    >
+                      <div className="p-2 rounded-xl bg-white dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700 text-zinc-500 shrink-0 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition">
+                        <Link2 className="w-3.5 h-3.5" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs font-bold text-zinc-800 dark:text-zinc-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition truncate">
+                            Contact / Recruiter
+                          </span>
+                          <ArrowUpRight className="w-3 h-3 text-zinc-400 group-hover:text-blue-500 transition shrink-0" />
+                        </div>
+                        <p className="text-[11px] font-mono text-zinc-400 dark:text-zinc-500 truncate" title={job.contactUrl}>
+                          {getDomain(job.contactUrl)}
+                        </p>
+                      </div>
+                    </a>
+
+                    <LinkActionDropdown
+                      url={job.contactUrl}
+                      onEdit={() => startEditLink("contactUrl", job.contactUrl)}
+                      onDelete={() => handleDeleteQuickLink("contactUrl")}
+                      onCopy={handleCopyContactLink}
+                      copied={copiedContactLink}
+                    />
                   </div>
+                ) : (
+                  <button
+                    onClick={() => startEditLink("contactUrl", "")}
+                    className="w-full py-2.5 px-3 rounded-2xl border border-dashed border-zinc-200 dark:border-zinc-800 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:border-zinc-300 dark:hover:border-zinc-700 bg-zinc-50/40 dark:bg-zinc-800/20 text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add Contact / Recruiter Link</span>
+                  </button>
                 )}
               </div>
-            )}
+            </div>
 
             {/* Audit & Timestamps Card */}
             <div className="bg-white dark:bg-zinc-900 rounded-3xl p-5 border border-zinc-200/90 dark:border-zinc-800 shadow-[0_2px_8px_rgba(0,0,0,0.03)] space-y-2 text-[11px] text-zinc-500 dark:text-zinc-400">
