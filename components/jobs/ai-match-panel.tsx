@@ -10,8 +10,6 @@ import {
   Briefcase,
   Award,
   AlertTriangle,
-  ChevronDown,
-  ChevronUp,
   Check,
   X,
   Plus,
@@ -22,7 +20,6 @@ import {
   ShieldCheck,
   CheckCheck,
   Zap,
-  PenLine,
 } from "lucide-react";
 import {
   JobMatchAnalysis,
@@ -67,7 +64,6 @@ export function AIMatchPanel({
   );
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isExpanded, setIsExpanded] = useState(true);
   const [loadingStep, setLoadingStep] = useState(0);
   const [addingSkill, setAddingSkill] = useState<string | null>(null);
   const [addedSkillNotification, setAddedSkillNotification] = useState<string | null>(
@@ -314,63 +310,26 @@ export function AIMatchPanel({
   return (
     <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 border border-zinc-200/90 dark:border-zinc-800 shadow-[0_2px_8px_rgba(0,0,0,0.03)] space-y-5 transition-all">
       {/* Modern Header with Top-Level Controls */}
-      <div className="flex flex-wrap items-center justify-between gap-3 pb-3.5 border-b border-zinc-100 dark:border-zinc-800">
-        <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-xl flex items-center justify-center bg-gradient-to-br from-amber-500 via-orange-500 to-rose-500 text-white shadow-[0_0_16px_rgba(249,115,22,0.5)]">
-            <Sparkles className="w-3.5 h-3.5" />
-          </div>
-          <div>
-            <h3 className="text-xs uppercase font-bold tracking-wider text-zinc-900 dark:text-zinc-100">
-              Job Match Analysis
-            </h3>
-          </div>
+      <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 pb-3.5">
+        <div className="flex items-center gap-2">
+          <Sparkles className="w-4 h-4 text-indigo-500" />
+          <h2 className="text-xs uppercase font-bold tracking-wider text-zinc-500 dark:text-zinc-400">
+            AI Match Analysis
+          </h2>
         </div>
 
         {/* Top Header Action Cluster */}
         <div className="flex items-center gap-2">
-          {analysis && (
-            <>
-              {/* Primary 'Help Me Apply' Button with Orange Gradient & Glow Shadow */}
-              <button
-                type="button"
-                onClick={() => {
-                  if (onOpenHelpMeApply) {
-                    onOpenHelpMeApply();
-                  } else {
-                    setIsHelpMeApplyOpen(true);
-                  }
-                }}
-                className="px-3.5 py-1.5 rounded-xl text-xs bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 hover:from-amber-400 hover:to-rose-400 text-white font-bold shadow-[0_4px_24px_rgba(249,115,22,0.5),0_0_12px_rgba(244,63,94,0.35)] hover:shadow-[0_6px_32px_rgba(249,115,22,0.7)] border border-amber-300/40 transition flex items-center gap-1.5 cursor-pointer active:scale-[0.98] group"
-              >
-                <PenLine className="w-3.5 h-3.5 opacity-90 group-hover:opacity-100 group-hover:rotate-6 transition-all" />
-                <span>Help Me Apply</span>
-              </button>
-
-              {/* Re-analyze Button */}
-              <button
-                onClick={handleAnalyze}
-                disabled={isLoading}
-                title="Re-analyze match against current profile"
-                className="px-2.5 py-1.5 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 text-xs font-medium transition cursor-pointer disabled:opacity-50 flex items-center gap-1.5 shadow-2xs active:scale-[0.98]"
-              >
-                <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? "animate-spin text-zinc-600" : "text-zinc-400"}`} />
-                <span className="hidden sm:inline">Re-analyze</span>
-              </button>
-
-              {/* Collapse / Expand Toggle */}
-              <button
-                onClick={() => setIsExpanded(!isExpanded)}
-                className="p-1.5 rounded-xl text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition cursor-pointer"
-                title={isExpanded ? "Collapse panel" : "Expand panel"}
-              >
-                {isExpanded ? (
-                  <ChevronUp className="w-4 h-4" />
-                ) : (
-                  <ChevronDown className="w-4 h-4" />
-                )}
-              </button>
-            </>
-          )}
+          {/* Re-analyze Button */}
+          <button
+            onClick={handleAnalyze}
+            disabled={isLoading}
+            title="Re-analyze match against current profile"
+            className="px-3 py-1.5 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 text-xs font-semibold transition cursor-pointer disabled:opacity-50 flex items-center gap-1.5 shadow-2xs active:scale-[0.98]"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? "animate-spin text-zinc-600" : "text-zinc-400"}`} />
+            <span>Re-analyze</span>
+          </button>
         </div>
       </div>
 
@@ -541,9 +500,8 @@ export function AIMatchPanel({
             </div>
           )}
 
-          {/* Collapsible Structured Details */}
-          {isExpanded && (
-            <div className="space-y-4 pt-1 text-xs">
+          {/* Structured Details */}
+          <div className="space-y-4 pt-1 text-xs">
               {/* =========================================================================
                   1. SKILLS GROUP
                   ========================================================================= */}
@@ -870,7 +828,6 @@ export function AIMatchPanel({
                 </div>
               )}
             </div>
-          )}
         </div>
       )}
 

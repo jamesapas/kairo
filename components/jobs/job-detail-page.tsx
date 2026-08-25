@@ -28,6 +28,7 @@ import {
   ListChecks,
   CheckCircle,
   Circle,
+  Briefcase,
   AlertCircle,
   Sparkles,
   Send,
@@ -51,6 +52,8 @@ import { PlatformIcon } from "./platform-badge";
 import { JobModal } from "./job-modal";
 import { AIMatchPanel } from "./ai-match-panel";
 import { HelpMeApplyModal } from "./help-me-apply-modal";
+import { ApplyMaterialsPanel } from "./apply-materials-panel";
+import { APPLY_CONTENT_KEYS } from "@/types/ai-apply";
 import {
   deleteJobAction,
   updateJobAction,
@@ -62,7 +65,7 @@ interface JobDetailPageProps {
   jobId: string;
 }
 
-type ActiveTab = "ai-match" | "description";
+type ActiveTab = "ai-match" | "materials" | "description";
 
 const DEFAULT_CHECKLIST_ITEMS = [
   "Customized resume & portfolio submitted",
@@ -656,26 +659,43 @@ export function JobDetailPage({ jobId }: JobDetailPageProps) {
             <div className="flex items-center gap-1.5 p-1 bg-zinc-100/90 dark:bg-zinc-800/70 border border-zinc-200/80 dark:border-zinc-700/80 rounded-2xl">
               <button
                 onClick={() => setActiveTab("ai-match")}
-                className={`flex-1 py-2.5 px-3.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer ${
+                className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer truncate ${
                   activeTab === "ai-match"
                     ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-xs"
                     : "text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200"
                 }`}
               >
-                <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
-                <span>AI Match Analysis</span>
+                <Sparkles className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                <span className="truncate">AI Match Analysis</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab("materials")}
+                className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer truncate ${
+                  activeTab === "materials"
+                    ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-xs"
+                    : "text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200"
+                }`}
+              >
+                <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                <span className="truncate">Help Me Apply</span>
+                {APPLY_CONTENT_KEYS.filter((k) => Boolean(job.aiApplyMaterials?.[k]?.content)).length > 0 && (
+                  <span className="px-1.5 py-0.2 rounded-md bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 text-[10px] font-extrabold shrink-0">
+                    {APPLY_CONTENT_KEYS.filter((k) => Boolean(job.aiApplyMaterials?.[k]?.content)).length}
+                  </span>
+                )}
               </button>
 
               <button
                 onClick={() => setActiveTab("description")}
-                className={`flex-1 py-2.5 px-3.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer ${
+                className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer truncate ${
                   activeTab === "description"
                     ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-xs"
                     : "text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200"
                 }`}
               >
-                <FileText className="w-3.5 h-3.5 text-blue-500" />
-                <span>Job Description & Scope</span>
+                <Briefcase className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                <span className="truncate">Job Description</span>
               </button>
             </div>
 
@@ -700,12 +720,29 @@ export function JobDetailPage({ jobId }: JobDetailPageProps) {
                 />
               )}
 
-              {/* Tab 2: Job Description & Scope */}
+              {/* Tab 2: Application Materials Kit */}
+              {activeTab === "materials" && (
+                <ApplyMaterialsPanel
+                  jobId={job.id}
+                  jobTitle={job.jobTitle}
+                  company={job.company}
+                  description={job.description}
+                  currentStatus={job.status}
+                  initialMaterials={job.aiApplyMaterials}
+                  onOpenHelpMeApply={() => setIsHelpMeApplyOpen(true)}
+                  onMarkApplied={() => handleStatusChange("applied")}
+                  onMaterialsUpdated={(updatedMap) =>
+                    setJob((prev) => (prev ? { ...prev, aiApplyMaterials: updatedMap } : null))
+                  }
+                />
+              )}
+
+              {/* Tab 3: Job Description & Scope */}
               {activeTab === "description" && (
                 <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 sm:p-7 border border-zinc-200/90 dark:border-zinc-800 shadow-[0_2px_8px_rgba(0,0,0,0.03)] space-y-4">
                   <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 pb-3.5">
                     <div className="flex items-center gap-2">
-                      <FileText className="w-4 h-4 text-zinc-400" />
+                      <Briefcase className="w-4 h-4 text-blue-500" />
                       <h2 className="text-xs uppercase font-bold tracking-wider text-zinc-500 dark:text-zinc-400">
                         Job Description & Role Scope
                       </h2>
@@ -714,7 +751,7 @@ export function JobDetailPage({ jobId }: JobDetailPageProps) {
                     {job.description && (
                       <button
                         onClick={handleCopyDescription}
-                        className="inline-flex items-center gap-1.5 text-xs font-semibold text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 cursor-pointer transition"
+                        className="px-3 py-1.5 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-2xs active:scale-[0.98]"
                       >
                         {copiedDesc ? (
                           <>
@@ -737,7 +774,7 @@ export function JobDetailPage({ jobId }: JobDetailPageProps) {
                     </div>
                   ) : (
                     <div className="py-10 text-center space-y-3">
-                      <FileText className="w-8 h-8 text-zinc-300 dark:text-zinc-600 mx-auto" />
+                      <Briefcase className="w-8 h-8 text-zinc-300 dark:text-zinc-600 mx-auto" />
                       <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">
                         No description or requirements provided
                       </p>
@@ -758,7 +795,7 @@ export function JobDetailPage({ jobId }: JobDetailPageProps) {
           <div className="lg:col-span-4 space-y-6">
             {/* Application Checklist */}
             <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 border border-zinc-200/90 dark:border-zinc-800 shadow-[0_2px_8px_rgba(0,0,0,0.03)] space-y-4">
-              <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 pb-3">
+              <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 pb-3.5">
                 <div className="flex items-center gap-2">
                   <ListChecks className="w-4 h-4 text-zinc-400" />
                   <h2 className="text-xs uppercase font-bold tracking-wider text-zinc-500 dark:text-zinc-400">
@@ -798,10 +835,13 @@ export function JobDetailPage({ jobId }: JobDetailPageProps) {
 
             {/* Direct Links Card - Minimalist List Mode */}
             <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 border border-zinc-200/90 dark:border-zinc-800 shadow-[0_2px_8px_rgba(0,0,0,0.03)] space-y-3">
-              <div className="flex items-center justify-between pb-2 border-b border-zinc-100 dark:border-zinc-800">
-                <h3 className="text-xs uppercase font-bold tracking-wider text-zinc-400 dark:text-zinc-500">
-                  Links & Outreach
-                </h3>
+              <div className="flex items-center justify-between pb-3.5 border-b border-zinc-100 dark:border-zinc-800">
+                <div className="flex items-center gap-2">
+                  <Globe className="w-4 h-4 text-zinc-400" />
+                  <h2 className="text-xs uppercase font-bold tracking-wider text-zinc-500 dark:text-zinc-400">
+                    Links & Outreach
+                  </h2>
+                </div>
               </div>
 
               {/* List items */}

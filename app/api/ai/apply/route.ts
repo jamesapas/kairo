@@ -165,35 +165,13 @@ ${compactExperiences ? `Experience:\n${compactExperiences}\n` : ""}${compactEduc
 
     // Build specific prompt instructions and set strict max token ceilings
     let taskInstructions = "";
+    let systemPrompt = "";
     let maxTokens = 500;
 
     switch (contentType) {
       case "cover-letter":
         maxTokens = 650;
-        taskInstructions = `Generate a 3-paragraph professional Cover Letter for "${targetJobTitle}" at ${targetCompany || "the company"}.
-- Paragraph 1: Enthusiastic hook and alignment for this specific role.
-- Paragraph 2: Core relevant experience and verified skills from profile.
-- Paragraph 3: Value proposition and confident sign-off with candidate's name: "${profileData?.name || "Candidate"}".`;
-        break;
-
-      case "application-message":
-        maxTokens = 300;
-        taskInstructions = `Generate a punchy 2-paragraph outreach note (approx. 100-140 words) for recruiter/portal note.
-- Brief greeting, core match points from verified skills, and interest in ${targetCompany || "this role"}.
-- Sign-off with name: "${profileData?.name || "Candidate"}".`;
-        break;
-
-      case "resume-suggestions":
-        maxTokens = 600;
-        taskInstructions = `Generate high-impact tailored Resume Suggestions for "${targetJobTitle}" at ${targetCompany || "the company"}.
-Format into 3 clean, actionable sections:
-1. 🎯 Top Verified Skills to Feature: The most important skills from candidate's profile to place in the top skills section.
-2. ✍️ Recommended Bullet Rephrasings: 2-3 tailored bullet point examples adapted from candidate's actual experience to highlight measurable outcomes and keywords for this role.
-3. 🔍 Priority ATS Keywords: Essential keywords from the job description that match candidate's background to ensure ATS alignment.`;
-        break;
-    }
-
-    const systemPrompt = `You are Kairo's AI Career Co-Pilot. Generate concise, high-signal, authentic application copy.
+        systemPrompt = `You are Kairo's AI Career Co-Pilot specializing in writing tailored, authentic Cover Letters.
 STRICT RULES:
 1. ONLY use verified skills, experiences, and education provided in the candidate context.
 2. DO NOT invent or assume any unlisted companies, tools, metrics, or credentials.
@@ -205,15 +183,69 @@ Return JSON matching:
   "content": string,
   "keyPointsUsed": string[] // 2-3 brief bullet points of verified candidate strengths leveraged
 }`;
+        taskInstructions = `Generate a 3-paragraph professional Cover Letter for "${targetJobTitle}" at ${targetCompany || "the company"}.
+- Opening: Specific hook and enthusiasm for this role at ${targetCompany || "the company"}.
+- Body: Verified achievements and technical skills directly relevant to the role requirements.
+- Closing: Confident value proposition, interest in discussing further, and sign-off from "${profileData?.name || "Candidate"}".`;
+        break;
 
-    const userPrompt = `CANDIDATE:
+      case "application-message":
+        maxTokens = 300;
+        systemPrompt = `You are Kairo's AI Career Co-Pilot specializing in concise recruiter outreach and application notes.
+STRICT RULES:
+1. ONLY use verified skills, experiences, and education provided in the candidate context.
+2. DO NOT invent or assume any unlisted companies, tools, metrics, or credentials.
+3. Keep it punchy, professional, and directly relevant (100-140 words).
+
+Return JSON matching:
+{
+  "title": string,
+  "content": string,
+  "keyPointsUsed": string[] // 2-3 brief bullet points of verified candidate strengths leveraged
+}`;
+        taskInstructions = `Generate a punchy 2-paragraph outreach note (approx. 100-140 words) for recruiter messages or portal notes.
+- Brief greeting, core match points from verified skills, and interest in ${targetCompany || "this role"}.
+- Sign-off with name: "${profileData?.name || "Candidate"}".`;
+        break;
+
+      case "resume-suggestions":
+        maxTokens = 700;
+        systemPrompt = `You are Kairo's AI Career Co-Pilot specializing in Resume Optimization, ATS keyword matching, and bullet point crafting.
+ABSOLUTE STRICT RULES:
+1. DO NOT write a letter, email, greeting ('Dear...'), or cover letter. This is NOT a message or letter.
+2. ONLY use verified skills, experiences, and education provided in the candidate context.
+3. DO NOT invent or assume any unlisted companies, tools, metrics, or credentials.
+4. Output MUST be formatted resume bullet point recommendations and skills suggestions.
+
+Return JSON matching:
+{
+  "title": string, // e.g. "Resume Tailoring for [Job Title]"
+  "content": string, // Formatted markdown with headings and bullet points
+  "keyPointsUsed": string[] // 2-3 brief bullet points of verified candidate strengths leveraged
+}`;
+        taskInstructions = `Generate structured, high-impact Resume Suggestions and bullet point rephrasings for "${targetJobTitle}" at ${targetCompany || "the company"}.
+
+Format the "content" strictly into these 3 clean sections:
+
+1. 🎯 Top Verified Skills to Feature
+- [List 4-6 most relevant verified skills from candidate's profile that directly match the job description]
+
+2. ✍️ Tailored Experience Bullet Points
+- [Provide 3 quantifiable, high-impact resume bullet point examples tailored from candidate's actual background using Action Verb + Task + Tool + Result]
+
+3. 🔍 Priority ATS Keywords
+- [List 5-8 essential keywords and technical terms found in the job requirements to include in candidate's resume]`;
+        break;
+    }
+
+    const userPrompt = `CANDIDATE PROFILE:
 ${candidateProfileText}
 
 ${matchContextText ? `${matchContextText}\n\n` : ""}TARGET ROLE: ${targetJobTitle || "Role"} at ${targetCompany || "Company"}
 JOB REQUIREMENTS:
 ${cleanDescription}
 
-TASK (${APPLY_CONTENT_TYPES[contentType].title}):
+TASK:
 ${taskInstructions}`;
 
     const openai = new OpenAI({ apiKey });

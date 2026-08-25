@@ -56,6 +56,7 @@ export default function Loading() {
           <div className="flex items-center gap-1.5 p-1 bg-zinc-100/90 dark:bg-zinc-800/70 border border-zinc-200/80 dark:border-zinc-700/80 rounded-2xl">
             <div className="flex-1 h-9 rounded-xl bg-white dark:bg-zinc-900 shadow-xs animate-pulse" />
             <div className="flex-1 h-9 rounded-xl bg-transparent animate-pulse" />
+            <div className="flex-1 h-9 rounded-xl bg-transparent animate-pulse" />
           </div>
 
           {/* AI Match Panel Content Skeleton */}
