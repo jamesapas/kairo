@@ -26,6 +26,7 @@ export function SettingsView() {
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [location, setLocation] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
   const [careerSummary, setCareerSummary] = useState("");
   const [links, setLinks] = useState<ProfileLink[]>([]);
@@ -41,12 +42,14 @@ export function SettingsView() {
       if (profRes.success && profRes.data) {
         const initName = profRes.data.name || "";
         const initEmail = profRes.data.email || "";
+        const initLocation = profRes.data.location || "";
         const initAvatarUrl = profRes.data.avatarUrl || "";
         const initCareerSummary = profRes.data.careerSummary || "";
         const initLinks = profRes.data.links || [];
 
         setName(initName);
         setEmail(initEmail);
+        setLocation(initLocation);
         setAvatarUrl(initAvatarUrl);
         setCareerSummary(initCareerSummary);
         setLinks(initLinks);
@@ -54,6 +57,7 @@ export function SettingsView() {
         setSavedSnapshot(
           JSON.stringify({
             name: initName,
+            location: initLocation,
             avatarUrl: initAvatarUrl,
             careerSummary: initCareerSummary,
             links: initLinks,
@@ -94,7 +98,7 @@ export function SettingsView() {
   const isDirty =
     !loadingProfile &&
     savedSnapshot !== "" &&
-    savedSnapshot !== JSON.stringify({ name, avatarUrl, careerSummary, links });
+    savedSnapshot !== JSON.stringify({ name, location, avatarUrl, careerSummary, links });
 
   // Native browser prompt when refreshing or closing tab with unsaved changes
   useEffect(() => {
@@ -119,6 +123,7 @@ export function SettingsView() {
 
     const res = await updateProfileAction({
       name,
+      location,
       avatarUrl,
       careerSummary,
       links,
@@ -132,7 +137,7 @@ export function SettingsView() {
     }
 
     // Update baseline saved snapshot
-    setSavedSnapshot(JSON.stringify({ name, avatarUrl, careerSummary, links }));
+    setSavedSnapshot(JSON.stringify({ name, location, avatarUrl, careerSummary, links }));
     setSuccessMsg("Profile and career canvas saved successfully");
     setTimeout(() => {
       setSuccessMsg("");
@@ -175,6 +180,8 @@ export function SettingsView() {
         name={name}
         setName={setName}
         email={email}
+        location={location}
+        setLocation={setLocation}
         avatarUrl={avatarUrl}
         setAvatarUrl={setAvatarUrl}
         careerSummary={careerSummary}

@@ -9,7 +9,9 @@ export interface CoverLetterPdfOptions {
 }
 
 /**
- * Cleanly generates a formal, beautifully formatted Cover Letter PDF in standard Arial/Helvetica font.
+ * Generates a clean, classic, executive Cover Letter PDF formatted in standard Arial/Helvetica.
+ * Features 1-inch (25.4mm) margins, uniform 10pt typography matching body size, solid black text,
+ * zero overflow, and consistent business-letter line and paragraph spacing.
  */
 export function downloadCoverLetterPdf({
   content,
@@ -28,21 +30,21 @@ export function downloadCoverLetterPdf({
 
   const pageWidth = 210;
   const pageHeight = 297;
-  const marginX = 20; // 20mm left & right margins
-  const marginTop = 22; // 22mm top margin
-  const marginBottom = 20; // 20mm bottom margin
-  const printableWidth = pageWidth - marginX * 2; // 170mm
+  const marginX = 25.4; // Standard 1-inch (25.4mm) left & right margins
+  const marginTop = 25.4; // Standard 1-inch (25.4mm) top margin
+  const marginBottom = 25.4; // Standard 1-inch (25.4mm) bottom margin
+  const printableWidth = pageWidth - marginX * 2; // 159.2mm exact printable boundary
 
-  // Standard Arial/Helvetica font
-  doc.setFont("helvetica", "normal");
-  doc.setTextColor(30, 30, 30); // Clean dark charcoal (#1e1e1e)
+  // Uniform typography constants
+  const FONT_FAMILY = "helvetica";
+  const BODY_FONT_SIZE = 10; // pt
+  const NAME_FONT_SIZE = 11.5; // pt (Bold)
+  const LINE_HEIGHT_MM = 5.0; // mm per line
+  const PARAGRAPH_GAP_MM = 4.0; // mm between paragraph blocks
 
   let cursorY = marginTop;
 
-  // Split content into lines and paragraphs
-  const rawLines = content.split("\n");
-
-  // Helper to add line with auto-paging
+  // Helper to handle auto-paging cleanly
   const checkPageBreak = (neededHeight: number) => {
     if (cursorY + neededHeight > pageHeight - marginBottom) {
       doc.addPage();
@@ -50,167 +52,137 @@ export function downloadCoverLetterPdf({
     }
   };
 
-  // Check if content begins with a structured candidate header (Name, Location, Contact)
-  let lineIdx = 0;
+  // Helper to print a wrapped block of text safely within printableWidth
+  const printWrappedBlock = (
+    text: string,
+    isBold: boolean = false,
+    customFontSize: number = BODY_FONT_SIZE
+  ) => {
+    doc.setFont(FONT_FAMILY, isBold ? "bold" : "normal");
+    doc.setFontSize(customFontSize);
+    doc.setTextColor(0, 0, 0); // Solid black for formal print
 
-  // 1. Process candidate header if present at top
-  const firstNonEmpty = rawLines.findIndex((l) => l.trim().length > 0);
-  if (firstNonEmpty !== -1) {
-    const firstLine = rawLines[firstNonEmpty].trim();
+    // Normalize text while maintaining word breaks
+    const cleanText = text.replace(/[ \t]+/g, " ").trim();
+    if (!cleanText) return;
 
-    // Check if first line looks like Candidate Name (uppercase or matches candidateName)
-    const isCandidateName =
-      firstLine === firstLine.toUpperCase() ||
-      (candidateName && firstLine.toLowerCase() === candidateName.toLowerCase());
+    const wrappedLines = doc.splitTextToSize(cleanText, printableWidth);
+    for (const line of wrappedLines) {
+      checkPageBreak(LINE_HEIGHT_MM);
+      doc.text(line, marginX, cursorY);
+      cursorY += LINE_HEIGHT_MM;
+    }
+  };
 
-    if (isCandidateName) {
-      // Candidate Name (Bold, 13pt)
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(13);
-      doc.setTextColor(17, 24, 39); // Zinc-900
-      doc.text(firstLine, marginX, cursorY);
-      cursorY += 5.5;
+  // Normalize raw content into paragraphs split by double line breaks
+  const normalizedContent = content
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n")
+    .trim();
 
-      lineIdx = firstNonEmpty + 1;
+  const blocks = normalizedContent.split(/\n\s*\n+/);
 
-      // Check for Location & Contact lines immediately following name
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(9);
-      doc.setTextColor(75, 85, 99); // Zinc-600
+  for (let bIdx = 0; bIdx < blocks.length; bIdx++) {
+    const rawBlock = blocks[bIdx].trim();
+    if (!rawBlock) continue;
 
-      while (lineIdx < rawLines.length) {
-        const line = rawLines[lineIdx].trim();
-        if (!line) {
-          lineIdx++;
-          break; // Empty line signals end of header
+    // Check 1: Candidate Header (First block containing Name, Location, Links)
+    if (bIdx === 0) {
+      const headerLines = rawBlock.split("\n").map((l) => l.trim()).filter(Boolean);
+      const firstLine = headerLines[0] || "";
+
+      const isCandidateName =
+        firstLine.length > 0 &&
+        (firstLine === firstLine.toUpperCase() ||
+          (candidateName && firstLine.toLowerCase() === candidateName.trim().toLowerCase()));
+
+      if (isCandidateName) {
+        // Line 1: Candidate Name (Bold 11.5pt)
+        printWrappedBlock(firstLine, true, NAME_FONT_SIZE);
+
+        // Subsequent lines: Location, Email, Links (Normal 10pt, same style & size as body)
+        for (let i = 1; i < headerLines.length; i++) {
+          printWrappedBlock(headerLines[i], false, BODY_FONT_SIZE);
         }
 
-        // If line contains Date or "Dear" or "Re:", break out of header
-        if (
+        cursorY += PARAGRAPH_GAP_MM;
+        continue;
+      }
+    }
+
+    // Check 2: Subject Line ("Re: ... Application")
+    if (/^re:/i.test(rawBlock)) {
+      printWrappedBlock(rawBlock, true, BODY_FONT_SIZE);
+      cursorY += PARAGRAPH_GAP_MM;
+      continue;
+    }
+
+    // Check 3: Salutation ("Dear Hiring Manager," / "Dear Hiring Team,")
+    if (/^dear\s+/i.test(rawBlock)) {
+      printWrappedBlock(rawBlock, false, BODY_FONT_SIZE);
+      cursorY += PARAGRAPH_GAP_MM;
+      continue;
+    }
+
+    // Check 4: Formal Sign-off ("Sincerely,\nJames Karl Apas")
+    if (
+      /^(sincerely|best regards|warm regards|regards|respectfully|thank you),?/i.test(
+        rawBlock
+      )
+    ) {
+      const signLines = rawBlock.split("\n").map((l) => l.trim()).filter(Boolean);
+      if (signLines.length > 0) {
+        // "Sincerely," (Normal 10pt)
+        printWrappedBlock(signLines[0], false, BODY_FONT_SIZE);
+
+        // Add classic signature gap
+        cursorY += 2.0;
+
+        // Candidate Name (Bold 10.5pt)
+        for (let i = 1; i < signLines.length; i++) {
+          printWrappedBlock(signLines[i], true, BODY_FONT_SIZE);
+        }
+      }
+      cursorY += PARAGRAPH_GAP_MM;
+      continue;
+    }
+
+    // Check 5: Multi-line Date & Recipient block (e.g. Date, Hiring Manager, Company Name, Address)
+    const linesInBlock = rawBlock.split("\n").map((l) => l.trim()).filter(Boolean);
+    const looksLikeDateOrRecipient =
+      linesInBlock.length >= 2 &&
+      linesInBlock.length <= 6 &&
+      linesInBlock.some(
+        (l) =>
           /^(january|february|march|april|may|june|july|august|september|october|november|december)\s+\d+/i.test(
-            line
+            l
           ) ||
-          /^re:/i.test(line) ||
-          /^dear\s+/i.test(line)
-        ) {
-          break;
-        }
+          /hiring|manager|director|recruiter|team|inc|llc|co|ltd|corp/i.test(l)
+      );
 
-        const contactLines = doc.splitTextToSize(line, printableWidth);
-        for (const cl of contactLines) {
-          doc.text(cl, marginX, cursorY);
-          cursorY += 4.2;
-        }
-        lineIdx++;
+    if (looksLikeDateOrRecipient) {
+      for (const line of linesInBlock) {
+        printWrappedBlock(line, false, BODY_FONT_SIZE);
       }
-
-      // Subtle modern divider line below header
-      cursorY += 1.5;
-      doc.setDrawColor(229, 231, 235); // Zinc-200
-      doc.setLineWidth(0.3);
-      doc.line(marginX, cursorY, pageWidth - marginX, cursorY);
-      cursorY += 6.5;
+      cursorY += PARAGRAPH_GAP_MM;
+      continue;
     }
+
+    // Check 6: Standard Body Paragraph (Normal 10pt, smooth wrapping within printableWidth)
+    printWrappedBlock(rawBlock, false, BODY_FONT_SIZE);
+    cursorY += PARAGRAPH_GAP_MM;
   }
 
-  // 2. Process remaining sections (Date, Recipient, Subject, Salutation, Body, Sign-off)
-  // Re-group lines into logical paragraphs separated by empty lines
-  const remainingText = rawLines.slice(lineIdx).join("\n").trim();
-  const paragraphs = remainingText.split(/\n\s*\n+/);
+  // Generate safe filename and trigger download
+  const sanitize = (s: string) =>
+    s
+      .replace(/[^a-zA-Z0-9_-]/g, "_")
+      .replace(/_+/g, "_")
+      .trim();
 
-  for (const para of paragraphs) {
-    const trimmedPara = para.trim();
-    if (!trimmedPara) continue;
-
-    // Check if this block is a "Re: ..." subject line
-    if (/^re:/i.test(trimmedPara)) {
-      checkPageBreak(8);
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(10.5);
-      doc.setTextColor(17, 24, 39);
-
-      const subLines = doc.splitTextToSize(trimmedPara, printableWidth);
-      for (const sl of subLines) {
-        doc.text(sl, marginX, cursorY);
-        cursorY += 5;
-      }
-      cursorY += 2; // Small gap after Subject
-      continue;
-    }
-
-    // Check if this block is Salutation (e.g. "Dear Hiring Manager,")
-    if (/^dear\s+/i.test(trimmedPara)) {
-      checkPageBreak(7);
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(10);
-      doc.setTextColor(30, 30, 30);
-
-      doc.text(trimmedPara, marginX, cursorY);
-      cursorY += 6.5;
-      continue;
-    }
-
-    // Check if this block is Sign-off (e.g. "Sincerely,\nJames Karl Apas")
-    if (/^(sincerely|best regards|regards|warm regards|respectfully),?/i.test(trimmedPara)) {
-      checkPageBreak(16);
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(10);
-      doc.setTextColor(30, 30, 30);
-
-      const signLines = trimmedPara.split("\n");
-      for (let i = 0; i < signLines.length; i++) {
-        const sl = signLines[i].trim();
-        if (i === signLines.length - 1 && sl) {
-          // Candidate Name at end of sign-off: Bold
-          doc.setFont("helvetica", "bold");
-          doc.setTextColor(17, 24, 39);
-        }
-        if (sl) {
-          doc.text(sl, marginX, cursorY);
-          cursorY += 5;
-        }
-      }
-      cursorY += 4;
-      continue;
-    }
-
-    // Regular paragraph or Recipient / Date block
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
-    doc.setTextColor(30, 30, 30);
-
-    // If paragraph contains individual lines like Date & Recipient block
-    const subLines = trimmedPara.split("\n");
-    if (subLines.length > 1 && subLines.length <= 4 && subLines.some((l) => /hiring/i.test(l) || /inc|llc|co|ltd|corp/i.test(l))) {
-      for (const sl of subLines) {
-        const text = sl.trim();
-        if (text) {
-          checkPageBreak(5);
-          doc.text(text, marginX, cursorY);
-          cursorY += 4.8;
-        }
-      }
-      cursorY += 3;
-      continue;
-    }
-
-    // Standard body paragraph
-    const wrappedLines = doc.splitTextToSize(trimmedPara.replace(/\n+/g, " "), printableWidth);
-    const neededHeight = wrappedLines.length * 4.8 + 4;
-    checkPageBreak(neededHeight);
-
-    for (const wl of wrappedLines) {
-      doc.text(wl, marginX, cursorY);
-      cursorY += 4.8;
-    }
-    cursorY += 3.8; // Paragraph margin
-  }
-
-  // Generate safe filename
-  const sanitize = (s: string) => s.replace(/[^a-zA-Z0-9_-]/g, "_").replace(/_+/g, "_");
-  const defaultFileName = `${sanitize(candidateName || "Candidate")}_Cover_Letter_${sanitize(
-    companyName || jobTitle || "Application"
-  )}.pdf`;
+  const safeCandidate = sanitize(candidateName || "Candidate");
+  const safeCompany = sanitize(companyName || jobTitle || "Application");
+  const defaultFileName = `${safeCandidate}_Cover_Letter_${safeCompany}.pdf`;
 
   const finalName = fileName || defaultFileName;
   doc.save(finalName);

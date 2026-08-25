@@ -9,6 +9,7 @@ export interface UserProfile {
   id: string;
   name: string;
   email: string;
+  location?: string;
   avatarUrl: string;
   careerSummary: string;
   links: ProfileLink[];
@@ -20,6 +21,7 @@ export interface UserProfileRow {
   id: string;
   name: string | null;
   email: string | null;
+  location: string | null;
   avatar_url: string | null;
   career_summary: string | null;
   links: ProfileLink[] | null;
@@ -32,6 +34,7 @@ export function mapRowToProfile(row: UserProfileRow): UserProfile {
     id: row.id,
     name: row.name || "",
     email: row.email || "",
+    location: row.location || "",
     avatarUrl: row.avatar_url || "",
     careerSummary: row.career_summary || "",
     links: Array.isArray(row.links) ? row.links : [],

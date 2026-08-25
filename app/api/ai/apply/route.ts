@@ -95,7 +95,7 @@ export async function POST(request: Request) {
       await Promise.all([
         supabase
           .from("users")
-          .select("name, email, career_summary, links")
+          .select("name, email, location, career_summary, links")
           .eq("id", user.id)
           .maybeSingle(),
         supabase
@@ -149,7 +149,7 @@ export async function POST(request: Request) {
     }).join("\n");
 
     const candidateProfileText = `Name: ${profileData?.name || "Candidate"}
-${profileData?.career_summary ? `Summary: ${profileData.career_summary}\n` : ""}Skills: ${candidateSkillsUnique.join(", ") || "None listed"}
+${profileData?.location ? `Location: ${profileData.location}\n` : ""}${profileData?.career_summary ? `Summary: ${profileData.career_summary}\n` : ""}Skills: ${candidateSkillsUnique.join(", ") || "None listed"}
 ${compactExperiences ? `Experience:\n${compactExperiences}\n` : ""}${compactEducation ? `Education:\n${compactEducation}` : ""}`.trim();
 
     // Extract key AI match context if available (concise)
@@ -163,9 +163,8 @@ ${compactExperiences ? `Experience:\n${compactExperiences}\n` : ""}${compactEduc
     // Clean and cap job description to prevent token waste from legal/footer disclaimers
     const cleanDescription = targetDescription.trim().slice(0, 3200);
 
-    // Extract candidate location, links, and current date for formal letter header
-    const candidateLocation =
-      experienceData.find((e) => Boolean(e.location?.trim()))?.location?.trim() || "";
+    // Extract candidate location from profile (only if added by user)
+    const candidateLocation = profileData?.location?.trim() || "";
 
     const rawLinks = Array.isArray(profileData?.links) ? profileData.links : [];
     const formattedLinks = rawLinks

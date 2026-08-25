@@ -68,7 +68,7 @@ export async function getProfileAction(): Promise<{
 }
 
 export async function updateProfileAction(
-  payload: Partial<Pick<UserProfile, "name" | "avatarUrl" | "careerSummary" | "links">>
+  payload: Partial<Pick<UserProfile, "name" | "location" | "avatarUrl" | "careerSummary" | "links">>
 ): Promise<{
   success: boolean;
   data?: UserProfile;
@@ -90,6 +90,7 @@ export async function updateProfileAction(
     };
 
     if (payload.name !== undefined) updateFields.name = payload.name.trim();
+    if (payload.location !== undefined) updateFields.location = payload.location.trim();
     if (payload.avatarUrl !== undefined) updateFields.avatar_url = payload.avatarUrl.trim();
     if (payload.careerSummary !== undefined) updateFields.career_summary = payload.careerSummary.trim();
     if (payload.links !== undefined) updateFields.links = payload.links;

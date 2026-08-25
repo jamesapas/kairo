@@ -388,18 +388,22 @@ export function ApplyMaterialsPanel({
           {/* Text Canvas */}
           {isEditing ? (
             <textarea
-              rows={12}
+              rows={14}
               value={editedContents[activeSubTab] ?? ""}
               onChange={(e) =>
                 setEditedContents((prev) => ({ ...prev, [activeSubTab]: e.target.value }))
               }
-              className="w-full text-xs sm:text-sm p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-300 dark:border-zinc-600 text-zinc-900 dark:text-zinc-100 font-medium focus:border-zinc-500 focus:outline-hidden resize-y min-h-[260px] leading-relaxed"
+              className="w-full text-xs sm:text-sm p-5 sm:p-6 rounded-2xl bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-300 dark:border-zinc-600 text-zinc-900 dark:text-zinc-100 font-medium focus:border-zinc-500 focus:outline-hidden resize-y min-h-[300px] leading-relaxed font-sans"
               placeholder="Edit content here..."
             />
           ) : (
             <div
               onClick={() => setIsEditing(true)}
-              className="p-5 rounded-2xl bg-zinc-50/70 dark:bg-zinc-800/40 border border-zinc-200/80 dark:border-zinc-800 text-xs sm:text-sm text-zinc-800 dark:text-zinc-200 leading-relaxed whitespace-pre-line cursor-text min-h-[220px]"
+              className={`p-6 sm:p-8 rounded-2xl border text-xs sm:text-sm text-zinc-800 dark:text-zinc-200 leading-relaxed whitespace-pre-line cursor-text min-h-[260px] font-sans ${
+                activeSubTab === "cover-letter"
+                  ? "bg-zinc-50/80 dark:bg-zinc-800/50 border-zinc-200/90 dark:border-zinc-800 shadow-2xs"
+                  : "bg-zinc-50/70 dark:bg-zinc-800/40 border-zinc-200/80 dark:border-zinc-800"
+              }`}
             >
               {currentContent}
             </div>

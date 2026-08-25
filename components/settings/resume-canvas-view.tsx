@@ -345,6 +345,8 @@ interface ResumeCanvasViewProps {
   name: string;
   setName: (v: string) => void;
   email: string;
+  location: string;
+  setLocation: (v: string) => void;
   avatarUrl: string;
   setAvatarUrl: (v: string) => void;
   careerSummary: string;
@@ -372,6 +374,8 @@ export function ResumeCanvasView({
   name,
   setName,
   email,
+  location,
+  setLocation,
   avatarUrl,
   setAvatarUrl,
   careerSummary,
@@ -809,8 +813,8 @@ export function ResumeCanvasView({
 
               {/* Right Column: Full Name, Email, and Links */}
               <div className="flex-1 w-full space-y-5">
-                {/* Row 1: Full Name & Account Email in 2 columns */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Row 1: Full Name, Location & Account Email in responsive grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {/* Full Name */}
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5">
@@ -822,6 +826,21 @@ export function ResumeCanvasView({
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       placeholder="e.g. Alex Rivera"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 text-xs font-semibold text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:bg-white dark:focus:bg-zinc-800 focus:border-zinc-400 dark:focus:border-zinc-500 transition shadow-2xs"
+                    />
+                  </div>
+
+                  {/* Location */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5">
+                      <MapPin className="w-3.5 h-3.5 text-zinc-400" />
+                      Location
+                    </label>
+                    <input
+                      type="text"
+                      value={location}
+                      onChange={(e) => setLocation(e.target.value)}
+                      placeholder="e.g. Cebu, Philippines"
                       className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 text-xs font-semibold text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:bg-white dark:focus:bg-zinc-800 focus:border-zinc-400 dark:focus:border-zinc-500 transition shadow-2xs"
                     />
                   </div>
