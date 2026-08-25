@@ -47,6 +47,7 @@ import { StatusDropdown } from "./status-dropdown";
 import { PlatformIcon } from "./platform-badge";
 import { JobModal } from "./job-modal";
 import { AIMatchPanel } from "./ai-match-panel";
+import { HelpMeApplyModal } from "./help-me-apply-modal";
 import {
   deleteJobAction,
   updateJobStatusAction,
@@ -106,6 +107,7 @@ export function JobDetailPage({ jobId }: JobDetailPageProps) {
   const [loadError, setLoadError] = useState<string | null>(null);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isHelpMeApplyOpen, setIsHelpMeApplyOpen] = useState(false);
   const [copiedDesc, setCopiedDesc] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedContactLink, setCopiedContactLink] = useState(false);
@@ -521,6 +523,7 @@ export function JobDetailPage({ jobId }: JobDetailPageProps) {
                   description={job.description}
                   initialAnalysis={job.aiMatchAnalysis}
                   onOpenEditModal={() => setIsModalOpen(true)}
+                  onOpenHelpMeApply={() => setIsHelpMeApplyOpen(true)}
                 />
               )}
 
@@ -731,6 +734,16 @@ export function JobDetailPage({ jobId }: JobDetailPageProps) {
         onClose={() => setIsModalOpen(false)}
         onSave={handleEditSave}
         initialJob={job}
+      />
+
+      {/* Help Me Apply Modal */}
+      <HelpMeApplyModal
+        isOpen={isHelpMeApplyOpen}
+        onClose={() => setIsHelpMeApplyOpen(false)}
+        jobId={job.id}
+        jobTitle={job.jobTitle}
+        company={job.company}
+        description={job.description}
       />
     </>
   );

@@ -129,6 +129,9 @@ export async function POST(request: Request) {
       })),
     };
 
+    // Clean and cap description to 3500 chars to avoid spending tokens on footers/legal disclaimers
+    const cleanDescription = targetDescription.trim().slice(0, 3500);
+
     const openai = new OpenAI({ apiKey });
 
     const systemPrompt = `You are Kairo's Senior Technical Recruiter and Career Advisor AI.
@@ -139,35 +142,28 @@ IMPORTANT GUIDELINES FOR ACCURACY & RELIABILITY:
 1. SKILLS BREAKDOWN (Source of Truth is CANDIDATE BACKGROUND.skills):
    - "matchedSkills": Required technical skills & tools mentioned in the job that the candidate POSSESSES (account for aliases like PHP/Laravel, Node.js/Node, Redux/Redux Toolkit, GraphQL/Apollo, React/React.js, TypeScript/TS, Postgres/PostgreSQL).
    - "missingSkills": STRICTLY required technical skills that the candidate truly DOES NOT have. DO NOT put skills the candidate has here.
-   - "niceToHave": List optional / bonus / preferred technologies mentioned in the job (e.g., Docker, AWS, GraphQL if listed as nice-to-have or preferred). Separate these from strictly required skills.
+   - "niceToHave": List optional / bonus / preferred technologies mentioned in the job. Separate these from strictly required skills.
 
 2. EXPERIENCE BREAKDOWN:
-   - "matchingExperience": 2 to 4 concrete bullet points highlighting specific roles, projects, or accomplishments from candidate's background that prove capability for this job.
-   - "experienceGaps": 1 to 2 specific domain or scope experience gaps (e.g. "Limited enterprise scale experience", "No prior FinTech domain background"), or empty array [] if none.
+   - "matchingExperience": 2 to 3 concrete bullet points highlighting specific roles, projects, or accomplishments from candidate's background that prove capability for this job.
+   - "experienceGaps": 1 to 2 specific domain or scope experience gaps, or [] if none.
 
 3. REQUIREMENTS GAP ANALYSIS:
-   - "unmetRequirements": ONLY important NON-SKILL requirements that the candidate does NOT meet.
-     Examples:
-     - "5+ years of professional experience required (candidate has ~2 years)"
-     - "Bachelor's degree in Computer Science required"
-     - "Requires US work authorization / on-site in specific location"
-     - "Willing to work night shift / on-call rotation"
-   - DO NOT put technical skills (like PHP, GraphQL, Node, Redux) under "unmetRequirements". If a requirement lists multiple technology options (e.g. "PHP, Node JS, Rails or Python"), it is FULLY MET if the candidate has any of them.
-   - If candidate meets all non-skill requirements, return [].
+   - "unmetRequirements": ONLY important NON-SKILL requirements that the candidate does NOT meet. If candidate meets all non-skill requirements, return [].
 
 4. SENIORITY ASSESSMENT:
    - "seniorityLevel": "Good Match" | "Slight Gap" | "Significant Gap"
-   - "seniorityAssessment": 1-2 sentences assessing how the candidate's years and level of responsibility compare to the target role (Junior, Mid, Senior, Lead, Staff, Principal, Manager, etc.).
+   - "seniorityAssessment": 1-2 sentences assessing seniority alignment.
 
 5. KAIRO'S ASSESSMENT:
-   - "keyStrengths": 2 to 4 bullet points highlighting the candidate's primary competitive advantages for this role.
-   - "potentialGaps": 1 to 3 constructive bullet points highlighting the main weaknesses/risks to prepare for.
+   - "keyStrengths": 2 to 3 bullet points highlighting candidate's competitive advantages.
+   - "potentialGaps": 1 to 2 constructive bullet points highlighting main risks.
 
 6. OVERALL RECOMMENDATION & SCORE:
-   - "matchPercentage": 0 - 100 percentage. Missing nice-to-haves should NOT heavily hurt the score.
+   - "matchPercentage": 0 - 100 percentage.
    - "recommendation": "apply" (>= 75% match), "maybe" (50-74% match), or "skip" (< 50% match).
-   - "recommendationReason": 1-2 sentences explaining why the user should apply, maybe apply, or skip.
-   - "summary": 2-3 sentence executive synthesis of alignment.
+   - "recommendationReason": 1 sentence reason.
+   - "summary": 2 sentence executive synthesis.
 
 Return the response STRICTLY as a JSON object matching this schema:
 {
@@ -189,19 +185,20 @@ Return the response STRICTLY as a JSON object matching this schema:
 }`;
 
     const userPrompt = `CANDIDATE BACKGROUND:
-${JSON.stringify(candidateProfile, null, 2)}
+${JSON.stringify(candidateProfile)}
 
 JOB POSTING:
 Role: ${targetJobTitle || "Not specified"}
 Company: ${targetCompany || "Not specified"}
 Description:
-${targetDescription}
+${cleanDescription}
 
 Evaluate the match thoroughly adhering strictly to the candidate's actual skills and background.`;
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       temperature: 0.1,
+      max_completion_tokens: 700,
       response_format: { type: "json_object" },
       messages: [
         { role: "system", content: systemPrompt },
