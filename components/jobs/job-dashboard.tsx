@@ -51,37 +51,45 @@ type SortOption = "date-desc" | "date-asc" | "company-asc" | "title-asc";
 
 interface JobDashboardProps {
   userEmail?: string;
+  userName?: string;
   initialJobs?: JobApplication[];
 }
 
-export function JobDashboard({ userEmail: initialUserEmail, initialJobs }: JobDashboardProps = {}) {
+export function JobDashboard({
+  userEmail: initialUserEmail,
+  userName: initialUserName,
+  initialJobs,
+}: JobDashboardProps = {}) {
   const router = useRouter();
   const [jobs, setJobs] = useState<JobApplication[]>(initialJobs || []);
   const [userEmail, setUserEmail] = useState<string | undefined>(initialUserEmail);
-  const [userName, setUserName] = useState<string | undefined>();
+  const [userName, setUserName] = useState<string | undefined>(initialUserName);
   const [isLoading, setIsLoading] = useState(!initialJobs || initialJobs.length === 0);
   const fetchedRef = useRef(false);
 
   useEffect(() => {
     const supabase = createClient();
 
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) {
-        if (user.email && !userEmail) {
-          setUserEmail(user.email);
-        }
-        supabase
-          .from("users")
-          .select("name")
-          .eq("id", user.id)
-          .maybeSingle()
-          .then(({ data }) => {
+    if (!userName || !userEmail) {
+      supabase.auth.getUser().then(async ({ data: { user } }) => {
+        if (user) {
+          if (!userEmail && user.email) {
+            setUserEmail(user.email);
+          }
+          if (!userName) {
+            const { data } = await supabase
+              .from("users")
+              .select("name")
+              .eq("id", user.id)
+              .maybeSingle();
+
             if (data?.name) {
               setUserName(data.name);
             }
-          });
-      }
-    });
+          }
+        }
+      });
+    }
 
     if (initialJobs && initialJobs.length > 0) {
       setJobs(initialJobs);
@@ -405,6 +413,7 @@ export function JobDashboard({ userEmail: initialUserEmail, initialJobs }: JobDa
             jobs={jobs}
             userEmail={userEmail}
             userName={userName}
+            isLoading={isLoading}
             onAddNew={() => {
               setEditingJob(null);
               setIsModalOpen(true);

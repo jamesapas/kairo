@@ -91,7 +91,7 @@ export function Navbar({ userEmail: initialEmail }: NavbarProps = {}) {
           <span className="text-zinc-300 dark:text-zinc-700 font-mono select-none">/</span>
 
           <div className="flex items-center gap-2 px-2.5 py-1 rounded-lg bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200/80 dark:border-zinc-700/80 text-xs font-semibold text-zinc-800 dark:text-zinc-200 shadow-2xs">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
             <span>Personal Workspace</span>
             <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-mono font-normal">● Synced</span>
           </div>

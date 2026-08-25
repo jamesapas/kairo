@@ -1237,7 +1237,7 @@ export function ResumeCanvasView({
 
                         {expIsCurrent ? (
                           <div className="px-3.5 py-2 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-800/60 text-xs font-bold text-emerald-700 dark:text-emerald-300 flex items-center gap-2 h-[38px]">
-                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                            <span className="w-2 h-2 rounded-full bg-emerald-500" />
                             <span>Present (Active Role)</span>
                           </div>
                         ) : (
@@ -1830,7 +1830,7 @@ export function ResumeCanvasView({
 
                         {eduIsCurrent ? (
                           <div className="px-3.5 py-2 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-800/60 text-xs font-bold text-emerald-700 dark:text-emerald-300 flex items-center gap-2 h-[38px]">
-                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                            <span className="w-2 h-2 rounded-full bg-emerald-500" />
                             <span>Present (Current Student)</span>
                           </div>
                         ) : (

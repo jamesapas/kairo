@@ -57,7 +57,7 @@ export function calculateJobStats(jobs: JobApplication[]): JobStats {
   const startOfWeekStr = startOfWeek.toISOString().split("T")[0];
   const endOfWeekStr = endOfWeek.toISOString().split("T")[0];
 
-  const thisWeek = appliedJobs.filter(
+  const thisWeek = jobs.filter(
     (j) => j.dateApplied >= startOfWeekStr && j.dateApplied <= endOfWeekStr
   ).length;
 
@@ -70,9 +70,9 @@ export function calculateJobStats(jobs: JobApplication[]): JobStats {
       ? `${startMonth} ${startDay} – ${endDay}`
       : `${startMonth} ${startDay} – ${endMonth} ${endDay}`;
 
-  // Calculate Streak based on submitted applications
+  // Calculate Streak based on all tracked application activity
   const uniqueDates = Array.from(
-    new Set(appliedJobs.map((j) => j.dateApplied).filter(Boolean))
+    new Set(jobs.map((j) => j.dateApplied).filter(Boolean))
   ).sort((a, b) => (a > b ? -1 : 1));
 
   const todayStr = now.toISOString().split("T")[0];
@@ -200,7 +200,7 @@ export function JobStatsOverview({
             <span className="text-zinc-500 dark:text-zinc-400 font-medium truncate flex items-center gap-1.5">
               {stats.isTodayCompleted ? (
                 <>
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                   <span>Applied today 🔥</span>
                 </>
               ) : stats.streak > 0 ? (
