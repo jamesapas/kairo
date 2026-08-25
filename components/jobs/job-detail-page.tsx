@@ -679,11 +679,6 @@ export function JobDetailPage({ jobId }: JobDetailPageProps) {
               >
                 <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
                 <span className="truncate">Help Me Apply</span>
-                {APPLY_CONTENT_KEYS.filter((k) => Boolean(job.aiApplyMaterials?.[k]?.content)).length > 0 && (
-                  <span className="px-1.5 py-0.2 rounded-md bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 text-[10px] font-extrabold shrink-0">
-                    {APPLY_CONTENT_KEYS.filter((k) => Boolean(job.aiApplyMaterials?.[k]?.content)).length}
-                  </span>
-                )}
               </button>
 
               <button
