@@ -23,15 +23,15 @@ export function downloadResumePdf({
   const doc = new jsPDF({
     orientation: "portrait",
     unit: "mm",
-    format: "a4", // 210mm x 297mm
+    format: "letter", // 8.5in x 11in (215.9mm x 279.4mm)
   });
 
-  const pageWidth = 210;
-  const pageHeight = 297;
+  const pageWidth = 215.9;
+  const pageHeight = 279.4;
   const marginX = 20; // 20mm left & right margins for ATS resume layout
   const marginTop = 20;
   const marginBottom = 20;
-  const printableWidth = pageWidth - marginX * 2; // 170mm
+  const printableWidth = pageWidth - marginX * 2; // 175.9mm
   const centerX = pageWidth / 2;
 
   const FONT_FAMILY = "helvetica";

@@ -58,7 +58,7 @@ function renderCoverLetterContent(content: string) {
   const blocks = normalized.split(/\n\s*\n+/);
 
   return (
-    <div className="space-y-4 font-sans text-zinc-900 dark:text-zinc-100 max-w-2xl mx-auto">
+    <div className="space-y-5 font-sans text-zinc-900 dark:text-zinc-100">
       {blocks.map((rawBlock, bIdx) => {
         const block = rawBlock.trim();
         if (!block) return null;
@@ -105,12 +105,12 @@ function renderCoverLetterContent(content: string) {
         ) {
           const signLines = block.split("\n").map((l) => l.trim()).filter(Boolean);
           return (
-            <div key={bIdx} className="space-y-3 pt-1">
-              <p className="text-xs sm:text-[13px] text-zinc-800 dark:text-zinc-200 font-normal">
+            <div key={bIdx} className="space-y-3 pt-2">
+              <p className="text-xs sm:text-sm text-zinc-800 dark:text-zinc-200 font-normal">
                 {signLines[0]}
               </p>
               {signLines.slice(1).map((s, sIdx) => (
-                <p key={sIdx} className="text-xs sm:text-[13px] font-bold text-zinc-950 dark:text-zinc-50">
+                <p key={sIdx} className="text-xs sm:text-sm font-bold text-zinc-950 dark:text-zinc-50">
                   {s}
                 </p>
               ))}
@@ -131,7 +131,7 @@ function renderCoverLetterContent(content: string) {
 
         if (looksLikeDateOrRecipient) {
           return (
-            <div key={bIdx} className="space-y-0.5 text-xs sm:text-[13px] text-zinc-800 dark:text-zinc-200 font-normal">
+            <div key={bIdx} className="space-y-0.5 text-xs sm:text-sm text-zinc-800 dark:text-zinc-200 font-normal">
               {linesInBlock.map((line, lIdx) => (
                 <p key={lIdx}>{line}</p>
               ))}
@@ -141,7 +141,7 @@ function renderCoverLetterContent(content: string) {
 
         // Standard body paragraph or salutation
         return (
-          <p key={bIdx} className="text-xs sm:text-[13px] text-zinc-800 dark:text-zinc-200 leading-relaxed font-normal">
+          <p key={bIdx} className="text-xs sm:text-sm text-zinc-800 dark:text-zinc-200 leading-relaxed font-normal">
             {block}
           </p>
         );
@@ -199,19 +199,19 @@ function renderResumeContent(content: string) {
 
   if (headerLines.length > 0) {
     return (
-      <div className="space-y-6 font-sans text-zinc-900 dark:text-zinc-100 max-w-2xl mx-auto">
+      <div className="space-y-6 font-sans text-zinc-900 dark:text-zinc-100">
         {/* ATS Resume Header */}
-        <div className="text-center space-y-1 pb-1">
-          <h3 className="text-base sm:text-[18px] font-bold tracking-tight uppercase text-zinc-950 dark:text-zinc-50">
+        <div className="text-center space-y-1 pb-2">
+          <h3 className="text-base sm:text-lg font-bold tracking-tight uppercase text-zinc-950 dark:text-zinc-50">
             {headerLines[0]}
           </h3>
           {headerLines[1] && (
-            <p className="text-xs sm:text-[12px] font-normal text-zinc-800 dark:text-zinc-200">
+            <p className="text-xs sm:text-sm font-normal text-zinc-800 dark:text-zinc-200">
               {headerLines[1]}
             </p>
           )}
           {headerLines.slice(2).map((l, i) => (
-            <p key={i} className="text-[10px] sm:text-[11px] font-normal text-zinc-800 dark:text-zinc-200 pt-0.5">
+            <p key={i} className="text-xs sm:text-sm font-normal text-zinc-800 dark:text-zinc-200 pt-0.5">
               {l}
             </p>
           ))}
@@ -219,15 +219,15 @@ function renderResumeContent(content: string) {
 
         {/* Sections */}
         {sections.map((sec, sIdx) => (
-          <div key={sIdx} className="space-y-1.5">
+          <div key={sIdx} className="space-y-2">
             {/* Section Header with Black Horizontal Line */}
-            <div className="border-b border-black dark:border-white pb-0.5">
-              <h4 className="text-[11px] font-bold uppercase tracking-wider text-zinc-950 dark:text-zinc-50">
+            <div className="border-b border-black dark:border-white pb-1">
+              <h4 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-zinc-950 dark:text-zinc-50">
                 {sec.title}
               </h4>
             </div>
-            {/* Body with small subtle space matching PDF */}
-            <div className="text-xs sm:text-[10.5px] leading-relaxed text-zinc-800 dark:text-zinc-200 space-y-1.5 pt-0.5 font-sans">
+            {/* Body with subtle gap */}
+            <div className="text-xs sm:text-sm leading-relaxed text-zinc-800 dark:text-zinc-200 space-y-2 pt-1 font-sans">
               {sec.body.map((p, pIdx) => (
                 <p key={pIdx}>{p}</p>
               ))}
@@ -653,7 +653,7 @@ export function ApplyMaterialsPanel({
             )}
           </div>
 
-          {/* Text Canvas */}
+          {/* Text Canvas / Document Container */}
           {isEditing ? (
             <textarea
               ref={textareaRef}
@@ -667,25 +667,19 @@ export function ApplyMaterialsPanel({
                 el.style.height = `${Math.max(el.scrollHeight, 120)}px`;
                 window.scrollTo(0, scrollY);
               }}
-              className="w-full text-xs sm:text-sm p-5 sm:p-6 rounded-2xl bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-300 dark:border-zinc-600 text-zinc-900 dark:text-zinc-100 font-medium focus:border-zinc-500 focus:outline-hidden resize-none overflow-hidden leading-relaxed font-sans"
+              className="w-full text-xs sm:text-sm p-6 sm:p-8 rounded-2xl bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-300 dark:border-zinc-600 text-zinc-900 dark:text-zinc-100 font-medium focus:border-zinc-500 focus:outline-hidden resize-none overflow-hidden leading-relaxed font-sans"
               placeholder="Edit content here..."
             />
           ) : (
-            <div
-              className={`p-6 sm:p-8 rounded-2xl border text-xs sm:text-sm text-zinc-800 dark:text-zinc-200 leading-relaxed select-text font-sans ${
-                activeSubTab === "cover-letter"
-                  ? "bg-zinc-50/80 dark:bg-zinc-800/50 border-zinc-200/90 dark:border-zinc-800 shadow-2xs whitespace-pre-line"
-                  : activeSubTab === "resume-suggestions"
-                  ? "bg-zinc-50/90 dark:bg-zinc-800/60 border-zinc-200/90 dark:border-zinc-800 shadow-2xs"
-                  : "bg-zinc-50/70 dark:bg-zinc-800/40 border-zinc-200/80 dark:border-zinc-800 whitespace-pre-line"
-              }`}
-            >
+            <div className="w-full p-6 sm:p-8 md:p-10 rounded-2xl bg-zinc-50/70 dark:bg-zinc-800/40 border border-zinc-200/80 dark:border-zinc-800 text-zinc-800 dark:text-zinc-200 select-text transition-all">
               {activeSubTab === "resume-suggestions" ? (
                 renderResumeContent(currentContent)
               ) : activeSubTab === "cover-letter" ? (
                 renderCoverLetterContent(currentContent)
               ) : (
-                currentContent
+                <div className="text-xs sm:text-sm leading-relaxed whitespace-pre-line font-sans">
+                  {currentContent}
+                </div>
               )}
             </div>
           )}

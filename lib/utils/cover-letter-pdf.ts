@@ -25,15 +25,15 @@ export function downloadCoverLetterPdf({
   const doc = new jsPDF({
     orientation: "portrait",
     unit: "mm",
-    format: "a4", // 210mm x 297mm
+    format: "letter", // 8.5in x 11in (215.9mm x 279.4mm)
   });
 
-  const pageWidth = 210;
-  const pageHeight = 297;
+  const pageWidth = 215.9;
+  const pageHeight = 279.4;
   const marginX = 25.4; // Standard 1-inch (25.4mm) left & right margins
   const marginTop = 25.4; // Standard 1-inch (25.4mm) top margin
   const marginBottom = 25.4; // Standard 1-inch (25.4mm) bottom margin
-  const printableWidth = pageWidth - marginX * 2; // 159.2mm exact printable boundary
+  const printableWidth = pageWidth - marginX * 2; // 165.1mm exact printable boundary
 
   // Uniform typography constants
   const FONT_FAMILY = "helvetica";
