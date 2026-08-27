@@ -103,9 +103,11 @@ export function downloadResumePdf({
     cursorY += 5.0; // Space before first section
   }
 
-  // 2. Process Sections & Body (e.g. PROFESSIONAL SUMMARY, TECHNICAL SKILLS, PROFESSIONAL EXPERIENCE, EDUCATION)
+  // 2. Process Sections & Body (e.g. PROFESSIONAL SUMMARY, TECHNICAL SKILLS, PROFESSIONAL EXPERIENCE, PROJECTS, EDUCATION)
   let isFirstSection = true;
   let lastItemWasSectionHeader = false;
+  let currentSection = "";
+
   while (i < lines.length) {
     const line = lines[i].trim();
     if (!line) {
@@ -119,7 +121,7 @@ export function downloadResumePdf({
       continue;
     }
 
-    // Check for Section Header (e.g. "PROFESSIONAL SUMMARY", "TECHNICAL SKILLS", "PROFESSIONAL EXPERIENCE", "EDUCATION")
+    // Check for Section Header (e.g. "PROFESSIONAL SUMMARY", "TECHNICAL SKILLS", "PROFESSIONAL EXPERIENCE", "PROJECTS", "EDUCATION")
     const isSectionHeader =
       line.match(/^[A-Z\s/&-]{3,}$/) &&
       (line.includes("SUMMARY") ||
@@ -134,6 +136,13 @@ export function downloadResumePdf({
       }
       isFirstSection = false;
       lastItemWasSectionHeader = true;
+
+      if (line.includes("SUMMARY")) currentSection = "SUMMARY";
+      else if (line.includes("SKILL")) currentSection = "SKILLS";
+      else if (line.includes("EXPERIENCE")) currentSection = "EXPERIENCE";
+      else if (line.includes("PROJECT")) currentSection = "PROJECTS";
+      else if (line.includes("EDUCATION")) currentSection = "EDUCATION";
+      else currentSection = "";
 
       checkPageBreak(14);
       doc.setFont(FONT_FAMILY, "bold");
@@ -178,34 +187,57 @@ export function downloadResumePdf({
       continue;
     }
 
-    // Check for Job Title / Course | Date Range line (e.g. "Junior Web Developer | July 2025 – July 2026")
+    // Check for Job Title / Course / Project | Date Range or Link line
     const hasPipe = line.includes("|");
     const looksLikeDateLine = /\b(present|\d{4})\b/i.test(line);
+    const looksLikeUrl = /\b(https?:\/\/|www\.)/i.test(line);
 
-    if (hasPipe && looksLikeDateLine && !line.includes(":")) {
+    if (hasPipe && (looksLikeDateLine || looksLikeUrl || currentSection === "PROJECTS") && !line.includes(":")) {
       if (!lastItemWasSectionHeader) {
         cursorY += 2.0; // Inter-item gap between previous entry and this new entry
       }
       lastItemWasSectionHeader = false;
 
-      const [titlePart, datePart] = line.split("|").map((s) => s.trim());
+      const [titlePart, rightPart] = line.split("|").map((s) => s.trim());
       checkPageBreak(LINE_HEIGHT_MM + 2.0);
 
-      // Job Title / Course Title on the left (Bold)
+      // Title on the left (Bold)
       doc.setFont(FONT_FAMILY, "bold");
       doc.setFontSize(BODY_FONT_SIZE);
       doc.setTextColor(0, 0, 0);
       doc.text(titlePart || "", marginX, cursorY);
 
-      // Date Range on the right (Normal font - NOT bold)
-      if (datePart) {
+      // Date Range or URL on the right (Normal font - NOT bold)
+      if (rightPart) {
         doc.setFont(FONT_FAMILY, "normal");
         doc.setFontSize(BODY_FONT_SIZE);
         doc.setTextColor(0, 0, 0);
-        doc.text(datePart, marginX + printableWidth, cursorY, { align: "right" });
+        doc.text(rightPart, marginX + printableWidth, cursorY, { align: "right" });
       }
 
       cursorY += LINE_HEIGHT_MM;
+      i++;
+      continue;
+    }
+
+    // Check for Project Title without a link (under PROJECTS section)
+    if (currentSection === "PROJECTS" && !line.startsWith("•") && !line.startsWith("- ") && !line.includes(":")) {
+      if (!lastItemWasSectionHeader) {
+        cursorY += 2.0;
+      }
+      lastItemWasSectionHeader = false;
+
+      checkPageBreak(LINE_HEIGHT_MM + 2.0);
+      doc.setFont(FONT_FAMILY, "bold");
+      doc.setFontSize(BODY_FONT_SIZE);
+      doc.setTextColor(0, 0, 0);
+
+      const wrapped = doc.splitTextToSize(line, printableWidth);
+      for (const wLine of wrapped) {
+        checkPageBreak(LINE_HEIGHT_MM);
+        doc.text(wLine, marginX, cursorY);
+        cursorY += LINE_HEIGHT_MM;
+      }
       i++;
       continue;
     }

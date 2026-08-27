@@ -286,12 +286,34 @@ function renderResumeContent(content: string) {
                   );
                 }
 
-                // Check for other piped line (e.g. Job Title | Company Name)
-                if (p.includes("|") && !/\b(present|\d{4})\b/i.test(p) && !p.includes(":")) {
+                // Check for Project Title | Link line or other piped project line
+                if (p.includes("|") && (/\b(https?:\/\/|www\.)/i.test(p) || sec.title === "PROJECTS") && !p.includes(":")) {
+                  const [titlePart, linkPart] = p.split("|").map((s) => s.trim());
                   return (
-                    <p key={pIdx} className="font-bold text-zinc-950 dark:text-zinc-50 pt-2 first:pt-0 text-xs">
+                    <div key={pIdx} className="flex items-baseline justify-between gap-4 pt-3 first:pt-0">
+                      <h5 className="font-bold text-zinc-950 dark:text-zinc-50 text-xs">
+                        {titlePart}
+                      </h5>
+                      {linkPart && (
+                        <a
+                          href={linkPart.startsWith("http") ? linkPart : `https://${linkPart}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-[11px] sm:text-xs text-blue-600 dark:text-blue-400 hover:underline font-normal shrink-0 truncate max-w-[200px] sm:max-w-xs"
+                        >
+                          {linkPart}
+                        </a>
+                      )}
+                    </div>
+                  );
+                }
+
+                // Check for Project Title without link (under PROJECTS section)
+                if (sec.title === "PROJECTS" && !p.startsWith("•") && !p.startsWith("-") && !p.includes(":")) {
+                  return (
+                    <h5 key={pIdx} className="font-bold text-zinc-950 dark:text-zinc-50 pt-3 first:pt-0 text-xs">
                       {p}
-                    </p>
+                    </h5>
                   );
                 }
 

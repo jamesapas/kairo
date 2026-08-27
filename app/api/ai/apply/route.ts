@@ -91,7 +91,7 @@ export async function POST(request: Request) {
     }
 
     // Fetch user profile data from Supabase (Source of Truth)
-    const [profileRes, skillsRes, experienceRes, educationRes] =
+    const [profileRes, skillsRes, experienceRes, educationRes, projectsRes] =
       await Promise.all([
         supabase
           .from("users")
@@ -119,12 +119,21 @@ export async function POST(request: Request) {
           .eq("user_id", user.id)
           .order("sort_order", { ascending: true })
           .order("start_year", { ascending: false }),
+        supabase
+          .from("user_projects")
+          .select(
+            "title, live_url, bullets, sort_order"
+          )
+          .eq("user_id", user.id)
+          .order("sort_order", { ascending: true })
+          .order("created_at", { ascending: false }),
       ]);
 
     const profileData = profileRes.data;
     const skillsData = skillsRes.data || [];
     const experienceData = experienceRes.data || [];
     const educationData = educationRes.data || [];
+    const projectsData = projectsRes.data || [];
 
     // Deduplicate candidate skills from DB
     const rawSkillsList = skillsData.map((s) => s.name.trim()).filter(Boolean);
@@ -146,13 +155,20 @@ export async function POST(request: Request) {
       return `- ${exp.job_title} at ${exp.company_name} (${exp.start_year || ""}-${exp.is_current ? "Present" : exp.end_year || ""})${highlights ? `: ${highlights}` : ""}`;
     }).join("\n");
 
+    const compactProjects = projectsData.slice(0, 3).map((proj) => {
+      const highlights = Array.isArray(proj.bullets)
+        ? proj.bullets.filter(Boolean).slice(0, 3).join(" | ")
+        : "";
+      return `- ${proj.title}${proj.live_url ? ` (${proj.live_url})` : ""}${highlights ? `: ${highlights}` : ""}`;
+    }).join("\n");
+
     const compactEducation = educationData.slice(0, 2).map((edu) => {
       return `- ${edu.degree || ""} in ${edu.field_of_study || "General"} from ${edu.school || ""} (${edu.start_year || ""}-${edu.end_year || ""})`;
     }).join("\n");
 
     const candidateProfileText = `Name: ${profileData?.name || "Candidate"}
 ${profileData?.location ? `Location: ${profileData.location}\n` : ""}${profileData?.career_summary ? `Summary: ${profileData.career_summary}\n` : ""}Skills: ${candidateSkillsUnique.join(", ") || "None listed"}
-${compactExperiences ? `Experience:\n${compactExperiences}\n` : ""}${compactEducation ? `Education:\n${compactEducation}` : ""}`.trim();
+${compactExperiences ? `Experience:\n${compactExperiences}\n` : ""}${compactProjects ? `Projects:\n${compactProjects}\n` : ""}${compactEducation ? `Education:\n${compactEducation}` : ""}`.trim();
 
     // Extract key AI match context if available (concise)
     const matchContextText = targetMatchAnalysis
@@ -382,6 +398,37 @@ ${taskInstructions}`;
       const experienceSectionText = `\n\nPROFESSIONAL EXPERIENCE\n-----------------------\n${expBlocks.join("\n\n")}`;
       if (!finalContent.toUpperCase().includes("PROFESSIONAL EXPERIENCE")) {
         finalContent = `${finalContent.trim()}${experienceSectionText}`;
+      }
+    }
+
+    // If generating resume, append verified database PROJECTS directly next to PROFESSIONAL EXPERIENCE (Pure CRUD, no AI hallucination)
+    if (contentType === "resume-suggestions" && projectsData.length > 0) {
+      const sortedProjects = [...projectsData].sort((a, b) => {
+        if (a.sort_order !== undefined && b.sort_order !== undefined && a.sort_order !== b.sort_order) {
+          return a.sort_order - b.sort_order;
+        }
+        return 0;
+      });
+
+      const projBlocks = sortedProjects.map((proj) => {
+        // Line 1: Project Title | Live URL (if provided)
+        const titleLine = proj.live_url?.trim()
+          ? `${proj.title.trim()} | ${proj.live_url.trim()}`
+          : proj.title.trim();
+
+        const bulletLines = Array.isArray(proj.bullets)
+          ? proj.bullets
+              .filter(Boolean)
+              .map((b: string) => `• ${b.trim()}`)
+              .join("\n")
+          : "";
+
+        return [titleLine, bulletLines].filter(Boolean).join("\n");
+      });
+
+      const projectsSectionText = `\n\nPROJECTS\n--------\n${projBlocks.join("\n\n")}`;
+      if (!finalContent.toUpperCase().includes("PROJECTS")) {
+        finalContent = `${finalContent.trim()}${projectsSectionText}`;
       }
     }
 
