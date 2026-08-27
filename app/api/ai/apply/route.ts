@@ -277,10 +277,15 @@ ABSOLUTE STRICT RULES:
 1. ONLY use verified skills, experiences, and career history provided in the candidate context.
 2. DO NOT invent or assume any unlisted companies, tools, metrics, or credentials.
 3. DO NOT write letters, greetings ('Dear...'), or conversational filler.
-4. Auto-detect a clean, professional role title based on the target job (e.g. 'Full-Stack Developer', 'Front-End Developer', 'Full-Stack React Developer', 'Software Engineer', 'Mobile Developer').
-   - STRICT RULE: Do NOT include seniority levels or prefixes (never write 'Mid-Level', 'Junior', 'Senior', 'Entry-Level', 'Lead', 'Principal', etc.).
-   - Example: If the target role is 'Mid-Level Full-stack React JS Developer', output 'Full-Stack Developer' or 'Full-Stack React Developer'.
-5. Generate the tailored Resume Header, 'PROFESSIONAL SUMMARY', and 'TECHNICAL SKILLS' sections.
+4. TARGET ROLE TITLE:
+   - Auto-detect a clean, professional role title directly matching the target job (e.g. 'Web Developer', 'Front-End Developer', 'Full-Stack Developer', 'Software Engineer', 'React Developer', 'Mobile Developer').
+   - STRICT RULE: Do NOT include seniority levels or prefixes in the role title (never write 'Mid-Level', 'Junior', 'Senior', 'Entry-Level', 'Lead', 'Principal', etc.).
+   - Example: If the target role is 'Junior Web Developer', the clean role title is 'Web Developer'.
+   - Example: If the target role is 'Mid-Level Full-stack React JS Developer', the clean role title is 'Full-Stack Developer' or 'Full-Stack React Developer'.
+5. PROFESSIONAL SUMMARY AND ROLE TITLE ALIGNMENT:
+   - CRITICAL REQUIREMENT: The 'PROFESSIONAL SUMMARY' opening MUST EXACTLY match the target role title chosen for the header.
+   - If the target position is 'Web Developer', the summary MUST start by identifying as a Web Developer (e.g. "[Results-driven / Dedicated / Innovative] Web Developer with [X] years of experience in..." or "Web Developer with [X] years of experience...").
+   - NEVER default or revert to 'Full-Stack Developer' unless 'Full-Stack Developer' is the actual target position.
    - The 'PROFESSIONAL SUMMARY' must be concise, punchy, and around 55–60 words, directly tailored to the role using verified experience.
 6. In 'TECHNICAL SKILLS', dynamically generate 3 to 4 natural, well-targeted categories that directly match what the job description is looking for. DO NOT force 5 categories if it causes awkward, redundant, or inaccurate groupings.
    - Strict Domain Categorization Rules:
@@ -304,12 +309,12 @@ Return JSON matching:
 Follow this EXACT layout structure:
 
 ${(profileData?.name || "Candidate").toUpperCase()}
-[Clean Role Title without seniority prefixes, e.g. Full-Stack Developer / Front-End Developer / Software Engineer. Omit 'Mid-Level', 'Junior', 'Senior', etc.]
+[Clean Role Title matching "${targetJobTitle}" without seniority prefixes, e.g. Web Developer / Front-End Developer / Software Engineer / Full-Stack Developer. Omit 'Mid-Level', 'Junior', 'Senior', etc.]
 ${candidateContactRow}
 
 PROFESSIONAL SUMMARY
 --------------------
-[A strong, concise professional summary of around 55–60 words tailored directly to "${targetJobTitle}". Highlight candidate's verified technical experience, key achievements, and direct value to ${targetCompany || "the company"}. Do not invent unverified tools.]
+[A strong, concise professional summary of around 55–60 words. The opening sentence MUST start by matching the target role title (e.g., "[Results-driven / Dedicated] [Clean Role Title matching '${targetJobTitle}'] with [X] years of experience in..."). Highlight candidate's verified technical experience, key achievements, and direct value to ${targetCompany || "the company"}. NEVER use 'Full-Stack Developer' unless the target role is actually Full-Stack Developer.]
 
 TECHNICAL SKILLS
 ----------------
