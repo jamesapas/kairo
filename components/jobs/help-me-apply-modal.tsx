@@ -222,11 +222,38 @@ function renderResumeContent(content: string) {
               {headerLines[1]}
             </p>
           )}
-          {headerLines.slice(2).map((l, i) => (
-            <p key={i} className="text-xs font-normal text-zinc-800 dark:text-zinc-200 pt-0.5">
-              {l}
-            </p>
-          ))}
+          {headerLines.slice(2).map((l, i) => {
+            const parts = l.split("|").map((s) => s.trim()).filter(Boolean);
+            return (
+              <div key={i} className="flex flex-wrap justify-center items-center gap-1.5 text-xs font-normal text-zinc-800 dark:text-zinc-200 pt-0.5">
+                {parts.map((p, pIdx) => {
+                  let href: string | null = null;
+                  if (p.includes("@") && !p.includes("/")) {
+                    href = `https://mail.google.com/mail/u/0/?fs=1&to=${encodeURIComponent(p)}&tf=cm`;
+                  } else if (p.includes(".") || p.startsWith("http")) {
+                    href = p.startsWith("http") ? p : `https://${p}`;
+                  }
+                  return (
+                    <span key={pIdx} className="inline-flex items-center gap-1.5">
+                      {pIdx > 0 && <span className="text-zinc-400 select-none">|</span>}
+                      {href ? (
+                        <a
+                          href={href}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="hover:underline text-blue-600 dark:text-blue-400"
+                        >
+                          {p}
+                        </a>
+                      ) : (
+                        <span>{p}</span>
+                      )}
+                    </span>
+                  );
+                })}
+              </div>
+            );
+          })}
         </div>
 
         {/* Sections */}
@@ -289,6 +316,9 @@ function renderResumeContent(content: string) {
                 // Check for Project Title | Link line or other piped project line
                 if (p.includes("|") && (/\b(https?:\/\/|www\.)/i.test(p) || sec.title === "PROJECTS") && !p.includes(":")) {
                   const [titlePart, linkPart] = p.split("|").map((s) => s.trim());
+                  const displayLink = linkPart ? linkPart.replace(/^https?:\/\//i, "").replace(/\/+$/g, "") : "";
+                  const fullUrl = linkPart ? (linkPart.startsWith("http") ? linkPart : `https://${linkPart}`) : "";
+
                   return (
                     <div key={pIdx} className="flex flex-wrap items-baseline gap-1.5 pt-3 first:pt-0">
                       <h5 className="font-bold text-zinc-950 dark:text-zinc-50 text-xs">
@@ -298,12 +328,12 @@ function renderResumeContent(content: string) {
                         <>
                           <span className="text-zinc-400 text-xs select-none">|</span>
                           <a
-                            href={linkPart.startsWith("http") ? linkPart : `https://${linkPart}`}
+                            href={fullUrl}
                             target="_blank"
                             rel="noreferrer"
                             className="text-[11px] sm:text-xs text-blue-600 dark:text-blue-400 hover:underline font-normal"
                           >
-                            {linkPart}
+                            {displayLink}
                           </a>
                         </>
                       )}

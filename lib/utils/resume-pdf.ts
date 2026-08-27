@@ -90,15 +90,78 @@ export function downloadResumePdf({
       cursorY += 5.0;
     }
 
-    // Line 3+: Contact Info (Centered, 10pt)
+    // Line 3+: Contact Info & Links (Centered, 10pt, Clickable)
     if (headerLines.length > 2) {
       for (let h = 2; h < headerLines.length; h++) {
         const contactLine = headerLines[h];
         doc.setFont(FONT_FAMILY, "normal");
         doc.setFontSize(CONTACT_FONT_SIZE);
         doc.setTextColor(0, 0, 0);
-        doc.text(contactLine, centerX, cursorY, { align: "center" });
-        cursorY += 4.5;
+
+        const rawItems = contactLine.split("|").map((s) => s.trim()).filter(Boolean);
+        if (rawItems.length === 0) continue;
+
+        const items = rawItems.map((text) => {
+          let url: string | null = null;
+          if (text.includes("@") && !text.includes("/")) {
+            url = `https://mail.google.com/mail/u/0/?fs=1&to=${encodeURIComponent(text)}&tf=cm`;
+          } else if (text.includes(".") || text.startsWith("http")) {
+            url = text.startsWith("http") ? text : `https://${text}`;
+          } else if (/^\+?[\d\s\-().]{7,}$/.test(text) && text.replace(/\D/g, "").length >= 7) {
+            url = `tel:${text.replace(/[\s\-().]/g, "")}`;
+          }
+          return {
+            text,
+            url,
+            width: doc.getTextWidth(text),
+          };
+        });
+
+        const sep = " | ";
+        const sepWidth = doc.getTextWidth(sep);
+
+        // Group into rows if it exceeds printableWidth
+        const rows: typeof items[] = [];
+        let currentRow: typeof items = [];
+        let currentWidth = 0;
+
+        for (const item of items) {
+          const needed = currentRow.length === 0 ? item.width : currentWidth + sepWidth + item.width;
+          if (currentRow.length > 0 && needed > printableWidth) {
+            rows.push(currentRow);
+            currentRow = [item];
+            currentWidth = item.width;
+          } else {
+            currentRow.push(item);
+            currentWidth = needed;
+          }
+        }
+        if (currentRow.length > 0) {
+          rows.push(currentRow);
+        }
+
+        for (let r = 0; r < rows.length; r++) {
+          const rowItems = rows[r];
+          const totalRowWidth =
+            rowItems.reduce((acc, it) => acc + it.width, 0) + (rowItems.length - 1) * sepWidth;
+          let startX = centerX - totalRowWidth / 2;
+
+          for (let j = 0; j < rowItems.length; j++) {
+            const it = rowItems[j];
+            if (j > 0) {
+              doc.text(sep, startX, cursorY);
+              startX += sepWidth;
+            }
+            if (it.url) {
+              doc.textWithLink(it.text, startX, cursorY, { url: it.url });
+              doc.link(startX, cursorY - 3.0, it.width, 4.0, { url: it.url });
+            } else {
+              doc.text(it.text, startX, cursorY);
+            }
+            startX += it.width;
+          }
+          cursorY += 4.5;
+        }
       }
     }
 
@@ -215,7 +278,16 @@ export function downloadResumePdf({
           doc.setFont(FONT_FAMILY, "normal");
           const pipeWidth = doc.getTextWidth(pipeStr);
           doc.text(pipeStr, marginX + titleWidth, cursorY);
-          doc.text(linkPart, marginX + titleWidth + pipeWidth, cursorY);
+
+          // Clean display URL (hide https:// or http:// and trailing slash)
+          const displayLink = linkPart.replace(/^https?:\/\//i, "").replace(/\/+$/g, "");
+          const fullUrl = linkPart.startsWith("http") ? linkPart : `https://${linkPart}`;
+
+          const linkX = marginX + titleWidth + pipeWidth;
+          doc.textWithLink(displayLink, linkX, cursorY, { url: fullUrl });
+
+          const linkWidth = doc.getTextWidth(displayLink);
+          doc.link(linkX, cursorY - 3.2, linkWidth, 4.2, { url: fullUrl });
         } else {
           doc.text(titlePart, marginX, cursorY);
         }
