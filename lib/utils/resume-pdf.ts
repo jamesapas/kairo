@@ -149,6 +149,76 @@ export function downloadResumePdf({
       continue;
     }
 
+    // Check for bullet point line (e.g. "• Developed full-stack web applications...")
+    if (line.startsWith("•") || line.startsWith("- ")) {
+      const bulletText = line.replace(/^[•-]\s*/, "");
+      const bulletIndent = 4.0; // mm
+
+      doc.setFont(FONT_FAMILY, "normal");
+      doc.setFontSize(BODY_FONT_SIZE);
+      doc.setTextColor(0, 0, 0);
+
+      const wrappedBullet = doc.splitTextToSize(bulletText, printableWidth - bulletIndent);
+      checkPageBreak(LINE_HEIGHT_MM * wrappedBullet.length);
+
+      // Draw bullet symbol
+      doc.text("•", marginX + 0.5, cursorY);
+
+      // Draw wrapped bullet lines with hanging indent
+      for (let bIdx = 0; bIdx < wrappedBullet.length; bIdx++) {
+        if (bIdx > 0) checkPageBreak(LINE_HEIGHT_MM);
+        doc.text(wrappedBullet[bIdx], marginX + bulletIndent, cursorY);
+        cursorY += LINE_HEIGHT_MM;
+      }
+      i++;
+      continue;
+    }
+
+    // Check for Job Title | Date Range line (e.g. "Junior Web Developer | July 2025 – July 2026")
+    const hasPipe = line.includes("|");
+    const looksLikeDateLine = /\b(present|\d{4})\b/i.test(line);
+
+    if (hasPipe && looksLikeDateLine && !line.includes(":")) {
+      const [titlePart, datePart] = line.split("|").map((s) => s.trim());
+      cursorY += 2.0; // Space between last bullet and next experience entry
+      checkPageBreak(LINE_HEIGHT_MM + 2.0);
+
+      // Job Title on the left (Bold)
+      doc.setFont(FONT_FAMILY, "bold");
+      doc.setFontSize(BODY_FONT_SIZE);
+      doc.setTextColor(0, 0, 0);
+      doc.text(titlePart || "", marginX, cursorY);
+
+      // Date Range on the right (Normal font - NOT bold)
+      if (datePart) {
+        doc.setFont(FONT_FAMILY, "normal");
+        doc.setFontSize(BODY_FONT_SIZE);
+        doc.setTextColor(0, 0, 0);
+        doc.text(datePart, marginX + printableWidth, cursorY, { align: "right" });
+      }
+
+      cursorY += LINE_HEIGHT_MM;
+      i++;
+      continue;
+    }
+
+    // Check for other piped header line (e.g. Job Title | Company Name)
+    if (hasPipe && !looksLikeDateLine && !line.includes(":")) {
+      checkPageBreak(LINE_HEIGHT_MM + 2.0);
+      doc.setFont(FONT_FAMILY, "bold");
+      doc.setFontSize(BODY_FONT_SIZE);
+      doc.setTextColor(0, 0, 0);
+
+      const wrapped = doc.splitTextToSize(line, printableWidth);
+      for (const wLine of wrapped) {
+        checkPageBreak(LINE_HEIGHT_MM);
+        doc.text(wLine, marginX, cursorY);
+        cursorY += LINE_HEIGHT_MM;
+      }
+      i++;
+      continue;
+    }
+
     // Check for categorized line (e.g. "Languages: TypeScript, JavaScript, HTML, CSS")
     const colonMatch = line.match(/^([^:]+:)\s*(.*)$/);
     if (colonMatch) {

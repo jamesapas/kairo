@@ -241,8 +241,9 @@ function renderResumeContent(content: string) {
             {/* Body with subtle gap */}
             <div className="text-xs leading-relaxed text-zinc-800 dark:text-zinc-200 space-y-1.5 pt-0.5 font-sans">
               {sec.body.map((p, pIdx) => {
+                // Check for categorized line (e.g. "Languages: TypeScript, ...")
                 const colonMatch = p.match(/^([^:]+:)\s*(.*)$/);
-                if (colonMatch) {
+                if (colonMatch && !p.startsWith("•") && !p.startsWith("-")) {
                   return (
                     <p key={pIdx}>
                       <strong className="font-bold text-zinc-950 dark:text-zinc-50">
@@ -254,6 +255,61 @@ function renderResumeContent(content: string) {
                     </p>
                   );
                 }
+
+                // Check for bullet points
+                if (p.startsWith("•") || p.startsWith("- ")) {
+                  const bulletText = p.replace(/^[•-]\s*/, "");
+                  return (
+                    <div key={pIdx} className="flex items-start gap-2 pl-1.5">
+                      <span className="text-zinc-900 dark:text-zinc-100 font-bold select-none">•</span>
+                      <span className="font-normal text-zinc-800 dark:text-zinc-200">
+                        {bulletText}
+                      </span>
+                    </div>
+                  );
+                }
+
+                // Check for Job Title | Date Range line (e.g. "Junior Web Developer | July 2025 – July 2026")
+                if (p.includes("|") && /\b(present|\d{4})\b/i.test(p) && !p.includes(":")) {
+                  const [titlePart, datePart] = p.split("|").map((s) => s.trim());
+                  return (
+                    <div key={pIdx} className="flex items-baseline justify-between gap-4 pt-3 first:pt-0">
+                      <h5 className="font-bold text-zinc-950 dark:text-zinc-50 text-xs">
+                        {titlePart}
+                      </h5>
+                      {datePart && (
+                        <span className="text-[11px] sm:text-xs text-zinc-800 dark:text-zinc-200 font-normal shrink-0">
+                          {datePart}
+                        </span>
+                      )}
+                    </div>
+                  );
+                }
+
+                // Check for other piped line (e.g. Job Title | Company Name)
+                if (p.includes("|") && !/\b(present|\d{4})\b/i.test(p) && !p.includes(":")) {
+                  return (
+                    <p key={pIdx} className="font-bold text-zinc-950 dark:text-zinc-50 pt-2 first:pt-0 text-xs">
+                      {p}
+                    </p>
+                  );
+                }
+
+                // Check for Company, Location (Workplace Type) line
+                if (
+                  (p.includes("(") || p.includes(",")) &&
+                  !p.startsWith("•") &&
+                  !p.startsWith("-") &&
+                  !p.includes(":") &&
+                  !p.includes("|")
+                ) {
+                  return (
+                    <p key={pIdx} className="text-[11px] sm:text-xs text-zinc-700 dark:text-zinc-300 font-normal pb-0.5">
+                      {p}
+                    </p>
+                  );
+                }
+
                 return <p key={pIdx}>{p}</p>;
               })}
             </div>

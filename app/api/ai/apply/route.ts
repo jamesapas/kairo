@@ -106,9 +106,10 @@ export async function POST(request: Request) {
         supabase
           .from("user_experiences")
           .select(
-            "job_title, company_name, workplace_type, location, start_month, start_year, end_month, end_year, is_current, bullets"
+            "job_title, company_name, workplace_type, location, start_month, start_year, end_month, end_year, is_current, bullets, sort_order"
           )
           .eq("user_id", user.id)
+          .order("sort_order", { ascending: true })
           .order("start_year", { ascending: false }),
         supabase
           .from("user_educations")
@@ -326,11 +327,45 @@ ${taskInstructions}`;
     }
 
     const parsed = JSON.parse(rawResponse);
+    let finalContent = parsed.content || "";
+
+    // If generating resume, append verified database PROFESSIONAL EXPERIENCE directly without hallucination
+    if (contentType === "resume-suggestions" && experienceData.length > 0) {
+      const expBlocks = experienceData.map((exp) => {
+        const startPart = [exp.start_month, exp.start_year].filter(Boolean).join(" ");
+        const endPart = exp.is_current
+          ? "Present"
+          : [exp.end_month, exp.end_year].filter(Boolean).join(" ");
+        const dateRange = startPart && endPart ? `${startPart} – ${endPart}` : startPart || endPart || "";
+
+        // Line 1: Job Title on the left, Date Range on the right
+        const titleDateLine = dateRange ? `${exp.job_title} | ${dateRange}` : exp.job_title;
+
+        // Line 2: Company, Location (Workplace Type) e.g. "Company Here, Banbridge, UK (Remote)"
+        const locationStr = exp.location?.trim() ? `, ${exp.location.trim()}` : "";
+        const workplaceStr = exp.workplace_type?.trim() ? ` (${exp.workplace_type.trim()})` : "";
+        const companyLine = `${exp.company_name}${locationStr}${workplaceStr}`;
+
+        const bulletLines = Array.isArray(exp.bullets)
+          ? exp.bullets
+              .filter(Boolean)
+              .map((b: string) => `• ${b.trim()}`)
+              .join("\n")
+          : "";
+
+        return [titleDateLine, companyLine, bulletLines].filter(Boolean).join("\n");
+      });
+
+      const experienceSectionText = `\n\nPROFESSIONAL EXPERIENCE\n-----------------------\n${expBlocks.join("\n\n")}`;
+      if (!finalContent.toUpperCase().includes("PROFESSIONAL EXPERIENCE")) {
+        finalContent = `${finalContent.trim()}${experienceSectionText}`;
+      }
+    }
 
     const data: ApplyContentResponse = {
       contentType,
       title: parsed.title || APPLY_CONTENT_TYPES[contentType].title,
-      content: parsed.content || "",
+      content: finalContent,
       keyPointsUsed: Array.isArray(parsed.keyPointsUsed) ? parsed.keyPointsUsed : [],
       generatedAt: new Date().toISOString(),
     };
