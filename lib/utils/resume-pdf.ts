@@ -35,12 +35,12 @@ export function downloadResumePdf({
   const centerX = pageWidth / 2;
 
   const FONT_FAMILY = "helvetica";
-  const NAME_FONT_SIZE = 14; // ~18px
-  const ROLE_FONT_SIZE = 10; // ~12px
-  const CONTACT_FONT_SIZE = 8.5; // ~10px
-  const SECTION_FONT_SIZE = 9.5; // ~11px
-  const BODY_FONT_SIZE = 9.0; // ~10.5px
-  const LINE_HEIGHT_MM = 4.4;
+  const NAME_FONT_SIZE = 18; // 18pt
+  const ROLE_FONT_SIZE = 12; // 12pt
+  const CONTACT_FONT_SIZE = 10; // 10pt
+  const SECTION_FONT_SIZE = 11; // 11pt
+  const BODY_FONT_SIZE = 10.5; // 10.5pt
+  const LINE_HEIGHT_MM = 5.0; // Very small line spacing
 
   let cursorY = marginTop;
 
@@ -70,15 +70,15 @@ export function downloadResumePdf({
   }
 
   if (headerLines.length > 0) {
-    // Line 1: Name (Centered, Bold, 14pt / 18px)
+    // Line 1: Name (Centered, Bold, 18pt)
     const nameLine = headerLines[0];
     doc.setFont(FONT_FAMILY, "bold");
     doc.setFontSize(NAME_FONT_SIZE);
     doc.setTextColor(0, 0, 0);
     doc.text(nameLine, centerX, cursorY, { align: "center" });
-    cursorY += 6.0;
+    cursorY += 6.5;
 
-    // Line 2: Role Title (Centered, Normal, 10pt / 12px - same style and black color as body)
+    // Line 2: Role Title (Centered, Normal, 12pt)
     if (headerLines.length > 1) {
       const roleLine = headerLines[1];
       doc.setFont(FONT_FAMILY, "normal");
@@ -88,7 +88,7 @@ export function downloadResumePdf({
       cursorY += 5.0;
     }
 
-    // Line 3+: Contact Info (Centered, 8.5pt / 10px - same style and black color as body)
+    // Line 3+: Contact Info (Centered, 10pt)
     if (headerLines.length > 2) {
       for (let h = 2; h < headerLines.length; h++) {
         const contactLine = headerLines[h];
@@ -100,7 +100,7 @@ export function downloadResumePdf({
       }
     }
 
-    cursorY += 6.0; // Breathable space before first section
+    cursorY += 5.0; // Space before first section
   }
 
   // 2. Process Sections & Body (e.g. PROFESSIONAL SUMMARY, TECHNICAL SKILLS)
@@ -129,7 +129,7 @@ export function downloadResumePdf({
 
     if (isSectionHeader) {
       if (!isFirstSection) {
-        cursorY += 3.5; // Breathable space between sections
+        cursorY += 3.0; // Compact space between sections
       }
       isFirstSection = false;
 
@@ -138,13 +138,13 @@ export function downloadResumePdf({
       doc.setFontSize(SECTION_FONT_SIZE);
       doc.setTextColor(0, 0, 0);
       doc.text(line.toUpperCase(), marginX, cursorY);
-      cursorY += 1.8;
+      cursorY += 2.0;
 
-      // Draw solid black horizontal line across printable boundary
+      // Draw thin solid black horizontal line across printable boundary
       doc.setDrawColor(0, 0, 0);
-      doc.setLineWidth(0.35);
+      doc.setLineWidth(0.20);
       doc.line(marginX, cursorY, marginX + printableWidth, cursorY);
-      cursorY += 4.5; // Small space after horizontal line for the body text
+      cursorY += 5.5; // Spacing after horizontal line for the body text
       i++;
       continue;
     }
@@ -191,9 +191,9 @@ export function downloadResumePdf({
         const remaining = words.slice(w).join(" ");
         if (remaining) {
           const restLines = doc.splitTextToSize(remaining, printableWidth);
-          for (const rLine of restLines) {
+          for (let rIdx = 0; rIdx < restLines.length; rIdx++) {
             checkPageBreak(LINE_HEIGHT_MM);
-            doc.text(rLine, marginX, cursorY);
+            doc.text(restLines[rIdx], marginX, cursorY);
             cursorY += LINE_HEIGHT_MM;
           }
         }
@@ -213,7 +213,7 @@ export function downloadResumePdf({
       doc.text(wLine, marginX, cursorY);
       cursorY += LINE_HEIGHT_MM;
     }
-    cursorY += 1.5;
+    cursorY += 1.0;
     i++;
   }
 
