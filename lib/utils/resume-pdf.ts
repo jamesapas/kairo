@@ -28,10 +28,10 @@ export function downloadResumePdf({
 
   const pageWidth = 215.9;
   const pageHeight = 279.4;
-  const marginX = 20; // 20mm left & right margins for ATS resume layout
-  const marginTop = 20;
-  const marginBottom = 20;
-  const printableWidth = pageWidth - marginX * 2; // 175.9mm
+  const marginX = 15.24; // 0.6 in (1.524 cm) left & right margins
+  const marginTop = 15.24; // 0.6 in top margin
+  const marginBottom = 15.24; // 0.6 in bottom margin
+  const printableWidth = pageWidth - marginX * 2; // 185.42mm
   const centerX = pageWidth / 2;
 
   const FONT_FAMILY = "helvetica";
@@ -103,8 +103,9 @@ export function downloadResumePdf({
     cursorY += 5.0; // Space before first section
   }
 
-  // 2. Process Sections & Body (e.g. PROFESSIONAL SUMMARY, TECHNICAL SKILLS)
+  // 2. Process Sections & Body (e.g. PROFESSIONAL SUMMARY, TECHNICAL SKILLS, PROFESSIONAL EXPERIENCE, EDUCATION)
   let isFirstSection = true;
+  let lastItemWasSectionHeader = false;
   while (i < lines.length) {
     const line = lines[i].trim();
     if (!line) {
@@ -118,7 +119,7 @@ export function downloadResumePdf({
       continue;
     }
 
-    // Check for Section Header (e.g. "PROFESSIONAL SUMMARY", "TECHNICAL SKILLS")
+    // Check for Section Header (e.g. "PROFESSIONAL SUMMARY", "TECHNICAL SKILLS", "PROFESSIONAL EXPERIENCE", "EDUCATION")
     const isSectionHeader =
       line.match(/^[A-Z\s/&-]{3,}$/) &&
       (line.includes("SUMMARY") ||
@@ -132,6 +133,7 @@ export function downloadResumePdf({
         cursorY += 3.0; // Compact space between sections
       }
       isFirstSection = false;
+      lastItemWasSectionHeader = true;
 
       checkPageBreak(14);
       doc.setFont(FONT_FAMILY, "bold");
@@ -151,6 +153,7 @@ export function downloadResumePdf({
 
     // Check for bullet point line (e.g. "• Developed full-stack web applications...")
     if (line.startsWith("•") || line.startsWith("- ")) {
+      lastItemWasSectionHeader = false;
       const bulletText = line.replace(/^[•-]\s*/, "");
       const bulletIndent = 4.0; // mm
 
@@ -171,35 +174,24 @@ export function downloadResumePdf({
         cursorY += LINE_HEIGHT_MM;
       }
 
-      // If this is the last bullet of an experience and another experience follows, add spacing
-      let nextIsExperience = false;
-      for (let n = i + 1; n < lines.length; n++) {
-        const nextL = lines[n].trim();
-        if (!nextL) continue;
-        if (nextL.match(/^[A-Z\s/&-]{3,}$/)) break; // Section header reached
-        if (nextL.startsWith("•") || nextL.startsWith("-")) break; // Another bullet in same experience
-        if (nextL.includes("|") && /\b(present|\d{4})\b/i.test(nextL) && !nextL.includes(":")) {
-          nextIsExperience = true;
-          break;
-        }
-      }
-      if (nextIsExperience) {
-        cursorY += 2.0; // Spacing after last bullet before next experience
-      }
-
       i++;
       continue;
     }
 
-    // Check for Job Title | Date Range line (e.g. "Junior Web Developer | July 2025 – July 2026")
+    // Check for Job Title / Course | Date Range line (e.g. "Junior Web Developer | July 2025 – July 2026")
     const hasPipe = line.includes("|");
     const looksLikeDateLine = /\b(present|\d{4})\b/i.test(line);
 
     if (hasPipe && looksLikeDateLine && !line.includes(":")) {
+      if (!lastItemWasSectionHeader) {
+        cursorY += 2.0; // Inter-item gap between previous entry and this new entry
+      }
+      lastItemWasSectionHeader = false;
+
       const [titlePart, datePart] = line.split("|").map((s) => s.trim());
       checkPageBreak(LINE_HEIGHT_MM + 2.0);
 
-      // Job Title on the left (Bold)
+      // Job Title / Course Title on the left (Bold)
       doc.setFont(FONT_FAMILY, "bold");
       doc.setFontSize(BODY_FONT_SIZE);
       doc.setTextColor(0, 0, 0);
@@ -289,6 +281,7 @@ export function downloadResumePdf({
     }
 
     // Standard body text paragraph (10.5px / 9pt)
+    lastItemWasSectionHeader = false;
     doc.setFont(FONT_FAMILY, "normal");
     doc.setFontSize(BODY_FONT_SIZE);
     doc.setTextColor(0, 0, 0);
@@ -299,7 +292,6 @@ export function downloadResumePdf({
       doc.text(wLine, marginX, cursorY);
       cursorY += LINE_HEIGHT_MM;
     }
-    cursorY += 1.0;
     i++;
   }
 

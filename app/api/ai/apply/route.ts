@@ -114,9 +114,10 @@ export async function POST(request: Request) {
         supabase
           .from("user_educations")
           .select(
-            "school, degree, field_of_study, start_year, end_year, is_current, honors"
+            "school, degree, field_of_study, start_month, start_year, end_month, end_year, is_current, location, honors, sort_order"
           )
           .eq("user_id", user.id)
+          .order("sort_order", { ascending: true })
           .order("start_year", { ascending: false }),
       ]);
 
@@ -359,6 +360,35 @@ ${taskInstructions}`;
       const experienceSectionText = `\n\nPROFESSIONAL EXPERIENCE\n-----------------------\n${expBlocks.join("\n\n")}`;
       if (!finalContent.toUpperCase().includes("PROFESSIONAL EXPERIENCE")) {
         finalContent = `${finalContent.trim()}${experienceSectionText}`;
+      }
+    }
+
+    // If generating resume, append verified database EDUCATION directly without hallucination
+    if (contentType === "resume-suggestions" && educationData.length > 0) {
+      const eduBlocks = educationData.map((edu) => {
+        // Line 1: Course (Degree + Field of study) | Date Range
+        const courseTitle = edu.field_of_study
+          ? `${edu.degree || ""} in ${edu.field_of_study}`.trim()
+          : edu.degree || "Education";
+        const startPart = [edu.start_month, edu.start_year].filter(Boolean).join(" ");
+        const endPart = edu.is_current
+          ? "Present"
+          : [edu.end_month, edu.end_year].filter(Boolean).join(" ");
+        const dateRange = startPart && endPart ? `${startPart} – ${endPart}` : startPart || endPart || "";
+        const titleDateLine = dateRange ? `${courseTitle} | ${dateRange}` : courseTitle;
+
+        // Line 2: School (with optional location)
+        const schoolLine = edu.school ? `${edu.school}${edu.location ? `, ${edu.location}` : ""}` : "";
+
+        // Line 3: Award / Honors (if any)
+        const awardLine = edu.honors?.trim() || "";
+
+        return [titleDateLine, schoolLine, awardLine].filter(Boolean).join("\n");
+      });
+
+      const educationSectionText = `\n\nEDUCATION\n---------\n${eduBlocks.join("\n\n")}`;
+      if (!finalContent.toUpperCase().includes("EDUCATION")) {
+        finalContent = `${finalContent.trim()}${educationSectionText}`;
       }
     }
 
