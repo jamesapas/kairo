@@ -28,10 +28,10 @@ export function downloadResumePdf({
 
   const pageWidth = 215.9;
   const pageHeight = 279.4;
-  const marginX = 15.24; // 0.6 in (1.524 cm) left & right margins
-  const marginTop = 15.24; // 0.6 in top margin
-  const marginBottom = 15.24; // 0.6 in bottom margin
-  const printableWidth = pageWidth - marginX * 2; // 185.42mm
+  const marginX = 12.7; // 0.5 in (1.27 cm) left & right margins
+  const marginTop = 12.7; // 0.5 in top margin
+  const marginBottom = 12.7; // 0.5 in bottom margin
+  const printableWidth = pageWidth - marginX * 2; // 190.5mm
   const centerX = pageWidth / 2;
 
   const FONT_FAMILY = "helvetica";
@@ -40,7 +40,7 @@ export function downloadResumePdf({
   const CONTACT_FONT_SIZE = 10; // 10pt
   const SECTION_FONT_SIZE = 11; // 11pt
   const BODY_FONT_SIZE = 10.5; // 10.5pt
-  const LINE_HEIGHT_MM = 5.0; // Very small line spacing
+  const LINE_HEIGHT_MM = 4.8; // Compact line spacing
 
   let cursorY = marginTop;
 

@@ -261,7 +261,9 @@ ABSOLUTE STRICT RULES:
 1. ONLY use verified skills, experiences, and career history provided in the candidate context.
 2. DO NOT invent or assume any unlisted companies, tools, metrics, or credentials.
 3. DO NOT write letters, greetings ('Dear...'), or conversational filler.
-4. Auto-detect the best professional role title (e.g. 'Full-Stack Developer', 'Front-End Developer', 'Software Engineer', 'Mobile Developer') based on the job description and candidate's verified skills.
+4. Auto-detect a clean, professional role title based on the target job (e.g. 'Full-Stack Developer', 'Front-End Developer', 'Full-Stack React Developer', 'Software Engineer', 'Mobile Developer').
+   - STRICT RULE: Do NOT include seniority levels or prefixes (never write 'Mid-Level', 'Junior', 'Senior', 'Entry-Level', 'Lead', 'Principal', etc.).
+   - Example: If the target role is 'Mid-Level Full-stack React JS Developer', output 'Full-Stack Developer' or 'Full-Stack React Developer'.
 5. Generate the tailored Resume Header, 'PROFESSIONAL SUMMARY', and 'TECHNICAL SKILLS' sections.
    - The 'PROFESSIONAL SUMMARY' must be concise, punchy, and around 55–60 words, directly tailored to the role using verified experience.
 6. In 'TECHNICAL SKILLS', dynamically generate 3 to 4 natural, well-targeted categories that directly match what the job description is looking for. DO NOT force 5 categories if it causes awkward, redundant, or inaccurate groupings.
@@ -286,7 +288,7 @@ Return JSON matching:
 Follow this EXACT layout structure:
 
 ${(profileData?.name || "Candidate").toUpperCase()}
-[Auto-detected Role Title matching the job, e.g. Full-Stack Developer / Front-End Developer]
+[Clean Role Title without seniority prefixes, e.g. Full-Stack Developer / Front-End Developer / Software Engineer. Omit 'Mid-Level', 'Junior', 'Senior', etc.]
 ${candidateContactRow}
 
 PROFESSIONAL SUMMARY
