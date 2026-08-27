@@ -263,7 +263,7 @@ ABSOLUTE STRICT RULES:
 3. DO NOT write letters, greetings ('Dear...'), or conversational filler.
 4. Auto-detect the best professional role title (e.g. 'Full-Stack Developer', 'Front-End Developer', 'Software Engineer', 'Mobile Developer') based on the job description and candidate's verified skills.
 5. Generate the tailored Resume Header, 'PROFESSIONAL SUMMARY', and 'TECHNICAL SKILLS' sections.
-6. In 'TECHNICAL SKILLS', be smart and dynamically choose 3-5 categories that directly target what the target job is looking for.
+6. In 'TECHNICAL SKILLS', always aim to achieve 5 distinct, well-targeted categories whenever supported by candidate data and relevant to the job (e.g. Languages, Frontend, Backend, Databases, Tools & Practices, UI/UX & Web Standards). If the candidate profile only genuinely supports 3 or 4 categories, use 3 or 4—do NOT force filler or unverified skills.
    - Categories should reflect the role: e.g. for Front-End roles focus on Languages, Frontend Development, UI/UX & Web Standards, Tools (omit AI/LLM or heavy backend unless role asks for it). For Full-Stack roles, include relevant Languages, Frontend, Backend, Databases, Tools.
    - You can include short technical practices and proficiencies where verified (e.g. 'Responsive Web Design', 'REST APIs', 'SEO Best Practices', 'State Management', 'Web Performance') alongside tech stack tools, but keep them concise and relevant without overdoing it.
    - Format each category line as: "Category Name: Skill1, Skill2, Skill3".
@@ -288,7 +288,7 @@ PROFESSIONAL SUMMARY
 
 TECHNICAL SKILLS
 ----------------
-[3-5 dynamically chosen categories tailored to what the job description requires from the candidate's verified background. Examples:
+[Aim to achieve 5 distinct, well-targeted categories whenever candidate data supports it (e.g. Languages, Frontend, Backend, Databases, Tools & Practices). If data only supports 3 or 4 categories, do not force filler. Examples:
 Languages: TypeScript, JavaScript, HTML5, CSS3
 Frontend: Next.js, React, Tailwind CSS, Responsive Web Design
 Backend: Node.js, Express.js, RESTful APIs
