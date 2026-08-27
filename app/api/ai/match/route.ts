@@ -63,7 +63,7 @@ export async function POST(request: Request) {
     }
 
     // Fetch user profile data in parallel from Supabase (Source of Truth)
-    const [profileRes, skillsRes, experienceRes, educationRes] =
+    const [profileRes, skillsRes, experienceRes, educationRes, projectsRes] =
       await Promise.all([
         supabase
           .from("users")
@@ -89,12 +89,19 @@ export async function POST(request: Request) {
           )
           .eq("user_id", user.id)
           .order("start_year", { ascending: false }),
+        supabase
+          .from("user_projects")
+          .select("title, live_url, bullets, sort_order")
+          .eq("user_id", user.id)
+          .order("sort_order", { ascending: true })
+          .order("created_at", { ascending: false }),
       ]);
 
     const profileData = profileRes.data;
     const skillsData = skillsRes.data || [];
     const experienceData = experienceRes.data || [];
     const educationData = educationRes.data || [];
+    const projectsData = projectsRes.data || [];
 
     // Deduplicate candidate skills from DB
     const rawSkillsList = skillsData.map((s) => s.name.trim()).filter(Boolean);
@@ -120,6 +127,11 @@ export async function POST(request: Request) {
         }`,
         highlights: Array.isArray(exp.bullets) ? exp.bullets : [],
       })),
+      projects: projectsData.slice(0, 5).map((proj) => ({
+        title: proj.title,
+        liveUrl: proj.live_url || undefined,
+        highlights: Array.isArray(proj.bullets) ? proj.bullets.filter(Boolean) : [],
+      })),
       education: educationData.map((edu) => ({
         degree: edu.degree,
         school: edu.school,
@@ -139,7 +151,7 @@ Conduct a structured, high-signal, and objective Job Match Analysis comparing th
 
 IMPORTANT GUIDELINES FOR ACCURACY & RELIABILITY:
 
-1. SKILLS BREAKDOWN (Source of Truth is CANDIDATE BACKGROUND.skills):
+1. SKILLS BREAKDOWN (Source of Truth is CANDIDATE BACKGROUND.skills & demonstrated project technologies):
    - "matchedSkills": Required technical skills & tools mentioned in the job that the candidate POSSESSES (account for aliases like PHP/Laravel, Node.js/Node, Redux/Redux Toolkit, GraphQL/Apollo, React/React.js, TypeScript/TS, Postgres/PostgreSQL).
    - "missingSkills": STRICTLY required technical skills that the candidate truly DOES NOT have. DO NOT put skills the candidate has here.
    - "niceToHave": List optional / bonus / preferred technologies mentioned in the job. Separate these from strictly required skills.
@@ -148,19 +160,25 @@ IMPORTANT GUIDELINES FOR ACCURACY & RELIABILITY:
    - "matchingExperience": 2 to 3 concrete bullet points highlighting specific roles, projects, or accomplishments from candidate's background that prove capability for this job.
    - "experienceGaps": 1 to 2 specific domain or scope experience gaps, or [] if none.
 
-3. REQUIREMENTS GAP ANALYSIS:
+3. RELEVANT PROJECTS PORTFOLIO:
+   - "relevantProjects": 1 to 3 projects from the candidate's projects list that prove hands-on capability, architectural experience, or stack proficiency relevant to this job posting.
+     * "projectTitle": Exact title of the project.
+     * "relevanceNote": Concise 1-sentence explanation of why this project is relevant to the target role requirements.
+   - If candidate has no projects or none match the role, return [].
+
+4. REQUIREMENTS GAP ANALYSIS:
    - "unmetRequirements": ONLY important NON-SKILL requirements that the candidate does NOT meet. If candidate meets all non-skill requirements, return [].
 
-4. SENIORITY ASSESSMENT:
+5. SENIORITY ASSESSMENT:
    - "seniorityLevel": "Good Match" | "Slight Gap" | "Significant Gap"
    - "seniorityAssessment": 1-2 sentences assessing seniority alignment.
 
-5. KAIRO'S ASSESSMENT:
-   - "keyStrengths": 2 to 3 bullet points highlighting candidate's competitive advantages.
+6. KAIRO'S ASSESSMENT:
+   - "keyStrengths": 2 to 3 bullet points highlighting candidate's competitive advantages across skills, experience, and projects.
    - "potentialGaps": 1 to 2 constructive bullet points highlighting main risks.
 
-6. OVERALL RECOMMENDATION & SCORE:
-   - "matchPercentage": 0 - 100 percentage.
+7. OVERALL RECOMMENDATION & SCORE:
+   - "matchPercentage": 0 - 100 percentage. Factor in skills match, professional experience, and relevant project portfolio.
    - "recommendation": "apply" (>= 75% match), "maybe" (50-74% match), or "skip" (< 50% match).
    - "recommendationReason": 1 sentence reason.
    - "summary": 2 sentence executive synthesis.
@@ -176,6 +194,12 @@ Return the response STRICTLY as a JSON object matching this schema:
   "missingSkills": string[],
   "matchingExperience": string[],
   "experienceGaps": string[],
+  "relevantProjects": [
+    {
+      "projectTitle": string,
+      "relevanceNote": string
+    }
+  ],
   "unmetRequirements": string[],
   "niceToHave": string[],
   "seniorityLevel": "Good Match" | "Slight Gap" | "Significant Gap",
@@ -193,12 +217,12 @@ Company: ${targetCompany || "Not specified"}
 Description:
 ${cleanDescription}
 
-Evaluate the match thoroughly adhering strictly to the candidate's actual skills and background.`;
+Evaluate the match thoroughly adhering strictly to the candidate's actual skills, experiences, and projects.`;
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       temperature: 0.1,
-      max_completion_tokens: 700,
+      max_completion_tokens: 900,
       response_format: { type: "json_object" },
       messages: [
         { role: "system", content: systemPrompt },
@@ -229,6 +253,7 @@ Evaluate the match thoroughly adhering strictly to the candidate's actual skills
         ? parsed.relevantExperience
         : [],
       rawExperienceGaps: Array.isArray(parsed.experienceGaps) ? parsed.experienceGaps : [],
+      rawRelevantProjects: Array.isArray(parsed.relevantProjects) ? parsed.relevantProjects : [],
       rawSeniorityLevel: parsed.seniorityLevel,
       rawSeniorityAssessment: parsed.seniorityAssessment,
       rawKeyStrengths: Array.isArray(parsed.keyStrengths) ? parsed.keyStrengths : [],
@@ -253,6 +278,7 @@ Evaluate the match thoroughly adhering strictly to the candidate's actual skills
       missingSkills: reconciled.missingSkills,
       matchingExperience: reconciled.matchingExperience,
       experienceGaps: reconciled.experienceGaps,
+      relevantProjects: reconciled.relevantProjects,
       unmetRequirements: reconciled.unmetRequirements,
       niceToHave: reconciled.niceToHave,
       seniorityLevel: reconciled.seniorityLevel,

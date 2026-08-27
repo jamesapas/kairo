@@ -1,4 +1,8 @@
-import { NiceToHaveSkill, SeniorityMatchLevel } from "@/types/ai-match";
+import {
+  NiceToHaveSkill,
+  RelevantProject,
+  SeniorityMatchLevel,
+} from "@/types/ai-match";
 
 /**
  * Deterministic Skill Normalization and Matching Engine
@@ -154,6 +158,7 @@ export interface ReconcileOptions {
   rawNiceToHave: (string | NiceToHaveSkill)[];
   rawMatchingExperience: string[];
   rawExperienceGaps: string[];
+  rawRelevantProjects?: (RelevantProject | any)[];
   rawSeniorityLevel?: string;
   rawSeniorityAssessment?: string;
   rawKeyStrengths: string[];
@@ -168,6 +173,7 @@ export interface ReconciledResult {
   niceToHave: NiceToHaveSkill[];
   matchingExperience: string[];
   experienceGaps: string[];
+  relevantProjects?: RelevantProject[];
   seniorityLevel: SeniorityMatchLevel;
   seniorityAssessment: string;
   keyStrengths: string[];
@@ -186,6 +192,7 @@ export function reconcileJobMatch(options: ReconcileOptions): ReconciledResult {
     rawNiceToHave,
     rawMatchingExperience,
     rawExperienceGaps,
+    rawRelevantProjects,
     rawSeniorityLevel,
     rawSeniorityAssessment,
     rawKeyStrengths,
@@ -253,13 +260,34 @@ export function reconcileJobMatch(options: ReconcileOptions): ReconciledResult {
     reconciledNiceToHave.push({ name, hasSkill });
   }
 
-  // 6. Reconcile unmet requirements: strip out any requirement mentioning candidate's skills
+  // 6. Process Relevant Projects
+  const sanitizedProjects: RelevantProject[] = [];
+  if (Array.isArray(rawRelevantProjects)) {
+    for (const proj of rawRelevantProjects) {
+      if (!proj) continue;
+      if (typeof proj === "string" && proj.trim()) {
+        sanitizedProjects.push({
+          projectTitle: proj.trim(),
+          relevanceNote: "Directly demonstrates technologies and architectural patterns required for this position.",
+        });
+      } else if (typeof proj === "object" && proj.projectTitle) {
+        sanitizedProjects.push({
+          projectTitle: String(proj.projectTitle).trim(),
+          relevanceNote: proj.relevanceNote
+            ? String(proj.relevanceNote).trim()
+            : "Demonstrates practical hands-on capability relevant to the job requirements.",
+        });
+      }
+    }
+  }
+
+  // 7. Reconcile unmet requirements: strip out any requirement mentioning candidate's skills
   const verifiedUnmetRequirements = rawUnmetRequirements
     .map((r) => r.trim())
     .filter(Boolean)
     .filter((req) => !isUnmetRequirementContradictory(req, candidateSkills));
 
-  // 7. Seniority Level Normalization
+  // 8. Seniority Level Normalization
   let seniorityLevel: SeniorityMatchLevel = "Good Match";
   const rawSeniorityLower = (rawSeniorityLevel || "").toLowerCase();
   if (rawSeniorityLower.includes("significant") || rawSeniorityLower.includes("high gap") || rawSeniorityLower.includes("major")) {
@@ -268,7 +296,7 @@ export function reconcileJobMatch(options: ReconcileOptions): ReconciledResult {
     seniorityLevel = "Slight Gap";
   }
 
-  // 8. Recalculate match percentage deterministically
+  // 9. Recalculate match percentage deterministically
   const matchedList = Array.from(matchedSet);
   const missingList = Array.from(missingSet);
 
@@ -277,21 +305,24 @@ export function reconcileJobMatch(options: ReconcileOptions): ReconciledResult {
 
   if (totalRequiredSkills > 0) {
     const skillRatio = matchedList.length / totalRequiredSkills;
-    const baseScore = Math.round(skillRatio * 82);
+    const baseScore = Math.round(skillRatio * 80);
 
     // Add bonus for nice-to-have skills candidate has (max +6%)
     const niceToHaveMatchedCount = reconciledNiceToHave.filter((n) => n.hasSkill).length;
     const niceBonus = Math.min(6, niceToHaveMatchedCount * 2);
 
-    // Add bonus for strong matching experiences
+    // Add bonus for strong matching experiences (max +6%)
     const expBonus = rawMatchingExperience.length >= 2 ? 6 : rawMatchingExperience.length * 3;
 
+    // Add bonus for verified relevant projects directly demonstrating capability (max +8%)
+    const projBonus = Math.min(8, sanitizedProjects.length * 3);
+
     if (missingList.length === 0 && verifiedUnmetRequirements.length === 0) {
-      calculatedPercentage = Math.max(90, baseScore + niceBonus + expBonus);
+      calculatedPercentage = Math.max(90, baseScore + niceBonus + expBonus + projBonus);
     } else if (missingList.length <= 1 && verifiedUnmetRequirements.length === 0) {
-      calculatedPercentage = Math.max(85, baseScore + niceBonus + expBonus);
+      calculatedPercentage = Math.max(85, baseScore + niceBonus + expBonus + projBonus);
     } else {
-      calculatedPercentage = Math.max(baseScore + niceBonus + expBonus, calculatedPercentage);
+      calculatedPercentage = Math.max(baseScore + niceBonus + expBonus + projBonus, calculatedPercentage);
     }
   }
 
@@ -332,6 +363,7 @@ export function reconcileJobMatch(options: ReconcileOptions): ReconciledResult {
     niceToHave: reconciledNiceToHave,
     matchingExperience: rawMatchingExperience.filter(Boolean),
     experienceGaps: rawExperienceGaps.filter(Boolean),
+    relevantProjects: sanitizedProjects,
     seniorityLevel,
     seniorityAssessment: rawSeniorityAssessment || "Seniority aligns with target role.",
     keyStrengths: rawKeyStrengths.filter(Boolean),

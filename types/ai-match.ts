@@ -6,6 +6,11 @@ export interface NiceToHaveSkill {
   hasSkill: boolean;
 }
 
+export interface RelevantProject {
+  projectTitle: string;
+  relevanceNote: string;
+}
+
 export interface JobMatchAnalysis {
   matchPercentage: number;
   matchLabel: string; // e.g. "Strong Match", "Good Match", "Moderate Match", "Low Fit"
@@ -17,9 +22,10 @@ export interface JobMatchAnalysis {
   matchedSkills: string[];
   missingSkills: string[];
 
-  // Experience
+  // Experience & Projects
   matchingExperience: string[];
   experienceGaps: string[];
+  relevantProjects?: RelevantProject[];
 
   // Requirements & Nice-to-Have
   unmetRequirements: string[];

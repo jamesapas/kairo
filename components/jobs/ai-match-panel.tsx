@@ -20,6 +20,7 @@ import {
   ShieldCheck,
   CheckCheck,
   Zap,
+  FolderGit2,
 } from "lucide-react";
 import {
   JobMatchAnalysis,
@@ -93,9 +94,9 @@ export function AIMatchPanel({
       return;
     }
     const steps = [
-      "Benchmarking profile & verified skills...",
+      "Benchmarking profile, skills & project portfolio...",
       "Extracting required vs nice-to-have requirements...",
-      "Evaluating experience, seniority & requirements...",
+      "Evaluating experience, projects & seniority...",
       "Finalizing structured match assessment...",
     ];
     const interval = setInterval(() => {
@@ -301,9 +302,9 @@ export function AIMatchPanel({
     : circumference;
 
   const loadingStepsText = [
-    "Benchmarking profile & verified skills...",
+    "Benchmarking profile, skills & project portfolio...",
     "Extracting required vs nice-to-have requirements...",
-    "Evaluating experience, seniority & requirements...",
+    "Evaluating experience, projects & seniority...",
     "Finalizing structured match assessment...",
   ];
 
@@ -621,6 +622,35 @@ export function AIMatchPanel({
                       </ul>
                     </div>
                   )}
+                </div>
+              )}
+
+              {/* =========================================================================
+                  2.5. RELEVANT PROJECTS GROUP
+                  ========================================================================= */}
+              {analysis.relevantProjects && analysis.relevantProjects.length > 0 && (
+                <div className="space-y-3 p-4 rounded-2xl bg-zinc-50/50 dark:bg-zinc-800/20 border border-zinc-100 dark:border-zinc-800/80">
+                  <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-zinc-900 dark:text-zinc-100">
+                    <FolderGit2 className="w-3.5 h-3.5 text-zinc-500" />
+                    <span>Relevant Projects ({analysis.relevantProjects.length})</span>
+                  </div>
+
+                  <div className="space-y-2">
+                    {analysis.relevantProjects.map((proj, idx) => (
+                      <div
+                        key={idx}
+                        className="p-3 rounded-xl bg-white/70 dark:bg-zinc-800/40 border border-zinc-200/60 dark:border-zinc-700/50 space-y-1"
+                      >
+                        <div className="flex items-center gap-1.5 font-semibold text-[11px] text-zinc-900 dark:text-zinc-100">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                          <span>{proj.projectTitle}</span>
+                        </div>
+                        <p className="text-[11px] text-zinc-600 dark:text-zinc-400 pl-3 leading-relaxed">
+                          {proj.relevanceNote}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
 
