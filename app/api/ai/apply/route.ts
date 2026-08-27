@@ -263,9 +263,16 @@ ABSOLUTE STRICT RULES:
 3. DO NOT write letters, greetings ('Dear...'), or conversational filler.
 4. Auto-detect the best professional role title (e.g. 'Full-Stack Developer', 'Front-End Developer', 'Software Engineer', 'Mobile Developer') based on the job description and candidate's verified skills.
 5. Generate the tailored Resume Header, 'PROFESSIONAL SUMMARY', and 'TECHNICAL SKILLS' sections.
-6. In 'TECHNICAL SKILLS', always aim to achieve 5 distinct, well-targeted categories whenever supported by candidate data and relevant to the job (e.g. Languages, Frontend, Backend, Databases, Tools & Practices, UI/UX & Web Standards). If the candidate profile only genuinely supports 3 or 4 categories, use 3 or 4—do NOT force filler or unverified skills.
-   - Categories should reflect the role: e.g. for Front-End roles focus on Languages, Frontend Development, UI/UX & Web Standards, Tools (omit AI/LLM or heavy backend unless role asks for it). For Full-Stack roles, include relevant Languages, Frontend, Backend, Databases, Tools.
-   - You can include short technical practices and proficiencies where verified (e.g. 'Responsive Web Design', 'REST APIs', 'SEO Best Practices', 'State Management', 'Web Performance') alongside tech stack tools, but keep them concise and relevant without overdoing it.
+   - The 'PROFESSIONAL SUMMARY' must be concise, punchy, and around 55–60 words, directly tailored to the role using verified experience.
+6. In 'TECHNICAL SKILLS', dynamically generate 3 to 4 natural, well-targeted categories that directly match what the job description is looking for. DO NOT force 5 categories if it causes awkward, redundant, or inaccurate groupings.
+   - Strict Domain Categorization Rules:
+     * Databases / BaaS / Backend: Firebase, Supabase, PostgreSQL, MySQL, MongoDB, Node.js, Express, REST APIs. (CRITICAL: Firebase is a Backend-as-a-Service/Database platform, NEVER classify Firebase as a CMS).
+     * CMS: WordPress, Statamic, Strapi, Sanity, Shopify, Contentful.
+     * Frontend: Next.js, React, Tailwind CSS, HTML/CSS, Responsive Web Design.
+     * Languages: TypeScript, JavaScript, HTML5, CSS3, SQL, PHP, Python.
+     * Tools & Practices: Git, GitHub, Cursor, Vite, Web Performance (Lighthouse, Core Web Vitals), SEO Best Practices, Agile Development.
+   - Do NOT create micro-categories with only 1 or 2 items (e.g. do not create a separate 'Performance Optimization' category when Lighthouse/Web Vitals naturally belong under 'Tools & Practices' or 'Frontend').
+   - Keep categories cohesive, accurate, and relevant.
    - Format each category line as: "Category Name: Skill1, Skill2, Skill3".
 
 Return JSON matching:
@@ -284,18 +291,17 @@ ${candidateContactRow}
 
 PROFESSIONAL SUMMARY
 --------------------
-[A strong 3-4 sentence professional summary tailored directly to "${targetJobTitle}". Highlight candidate's verified technical experience, key achievements, and direct value to ${targetCompany || "the company"}. Do not invent unverified tools.]
+[A strong, concise professional summary of around 55–60 words tailored directly to "${targetJobTitle}". Highlight candidate's verified technical experience, key achievements, and direct value to ${targetCompany || "the company"}. Do not invent unverified tools.]
 
 TECHNICAL SKILLS
 ----------------
-[Aim to achieve 5 distinct, well-targeted categories whenever candidate data supports it (e.g. Languages, Frontend, Backend, Databases, Tools & Practices). If data only supports 3 or 4 categories, do not force filler. Examples:
+[3-4 natural, cohesive categories tailored to what the job description requires from the candidate's verified background. Examples:
 Languages: TypeScript, JavaScript, HTML5, CSS3
 Frontend: Next.js, React, Tailwind CSS, Responsive Web Design
-Backend: Node.js, Express.js, RESTful APIs
-Databases: PostgreSQL, Supabase
-Tools & Practices: Git, GitHub, Cursor, Web Performance, SEO Best Practices
+Databases & Backend: Supabase, Firebase, Node.js, RESTful APIs
+Tools & Practices: Git, GitHub, Cursor, Web Performance (Lighthouse, Web Vitals), SEO Best Practices
 
-Only include categories and skills relevant to the specific job and backed by candidate profile. Do not force AI/LLM unless the job requires it.]`;
+Strict accuracy: Firebase belongs in Databases/Backend, NEVER in CMS. Do not force 5 categories if 3 or 4 are more cohesive and accurate.]`;
         break;
     }
 
@@ -332,7 +338,21 @@ ${taskInstructions}`;
 
     // If generating resume, append verified database PROFESSIONAL EXPERIENCE directly without hallucination
     if (contentType === "resume-suggestions" && experienceData.length > 0) {
-      const expBlocks = experienceData.map((exp) => {
+      const sortedExperiences = [...experienceData].sort((a, b) => {
+        if (a.sort_order !== undefined && b.sort_order !== undefined && a.sort_order !== b.sort_order) {
+          return a.sort_order - b.sort_order;
+        }
+        if (a.is_current && !b.is_current) return -1;
+        if (!a.is_current && b.is_current) return 1;
+        const aEnd = parseInt(a.end_year || a.start_year || "0", 10);
+        const bEnd = parseInt(b.end_year || b.start_year || "0", 10);
+        if (aEnd !== bEnd) return bEnd - aEnd;
+        const aStart = parseInt(a.start_year || "0", 10);
+        const bStart = parseInt(b.start_year || "0", 10);
+        return bStart - aStart;
+      });
+
+      const expBlocks = sortedExperiences.map((exp) => {
         const startPart = [exp.start_month, exp.start_year].filter(Boolean).join(" ");
         const endPart = exp.is_current
           ? "Present"
@@ -365,7 +385,21 @@ ${taskInstructions}`;
 
     // If generating resume, append verified database EDUCATION directly without hallucination
     if (contentType === "resume-suggestions" && educationData.length > 0) {
-      const eduBlocks = educationData.map((edu) => {
+      const sortedEducations = [...educationData].sort((a, b) => {
+        if (a.sort_order !== undefined && b.sort_order !== undefined && a.sort_order !== b.sort_order) {
+          return a.sort_order - b.sort_order;
+        }
+        if (a.is_current && !b.is_current) return -1;
+        if (!a.is_current && b.is_current) return 1;
+        const aEnd = parseInt(a.end_year || a.start_year || "0", 10);
+        const bEnd = parseInt(b.end_year || b.start_year || "0", 10);
+        if (aEnd !== bEnd) return bEnd - aEnd;
+        const aStart = parseInt(a.start_year || "0", 10);
+        const bStart = parseInt(b.start_year || "0", 10);
+        return bStart - aStart;
+      });
+
+      const eduBlocks = sortedEducations.map((edu) => {
         // Line 1: Course (Degree + Field of study) | Date Range
         const courseTitle = edu.field_of_study
           ? `${edu.degree || ""} in ${edu.field_of_study}`.trim()
