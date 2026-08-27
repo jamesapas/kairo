@@ -17,6 +17,7 @@ import {
   AlertCircle,
   Download,
   X,
+  MoreHorizontal,
 } from "lucide-react";
 import {
   ApplyContentType,
@@ -407,7 +408,35 @@ export function ApplyMaterialsPanel({
   const [error, setError] = useState<string | null>(null);
   const [isAppliedUpdated, setIsAppliedUpdated] = useState(false);
   const [showRegenerateConfirm, setShowRegenerateConfirm] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+
+  // Close dropdown on outside click or ESC key
+  useEffect(() => {
+    if (!isMenuOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        menuButtonRef.current &&
+        !menuButtonRef.current.contains(e.target as Node) &&
+        menuRef.current &&
+        !menuRef.current.contains(e.target as Node)
+      ) {
+        setIsMenuOpen(false);
+      }
+    };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setIsMenuOpen(false);
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isMenuOpen]);
 
   // Auto-resize textarea to fit content without shifting page scroll position
   useEffect(() => {
@@ -583,10 +612,6 @@ export function ApplyMaterialsPanel({
     };
   }, [isAnyModified]);
 
-  const currentWordCount = currentContent.trim()
-    ? currentContent.trim().split(/\s+/).length
-    : 0;
-
   const hasCurrentContent = Boolean(currentContent.trim());
 
   return (
@@ -678,16 +703,18 @@ export function ApplyMaterialsPanel({
           </div>
         </div>
       ) : hasCurrentContent ? (
-        <div className="space-y-3.5">
-          {/* Action Ribbon */}
-          <div className="flex items-center justify-between text-xs text-zinc-500 gap-2 flex-wrap">
-            <span className="text-[11px] font-medium">
-              {currentWordCount} words {isCurrentModified && "• (Unsaved edits)"}
-            </span>
+        <div className="relative">
+          {/* Floating Controls at Top Right of Preview */}
+          <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-20 flex items-center gap-2">
+            {isCurrentModified && (
+              <span className="text-[10px] font-semibold text-amber-700 dark:text-amber-300 bg-amber-100/90 dark:bg-amber-950/80 border border-amber-300/80 dark:border-amber-700/80 px-2 py-0.5 rounded-md shadow-2xs backdrop-blur-xs">
+                Unsaved edits
+              </span>
+            )}
 
             {isEditing ? (
               /* When Editing: Prominent Cancel & Save Actions */
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1.5 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-xs p-1 rounded-xl border border-zinc-200 dark:border-zinc-700 shadow-sm">
                 {/* Cancel Edit Button */}
                 <button
                   type="button"
@@ -712,76 +739,100 @@ export function ApplyMaterialsPanel({
                 </button>
               </div>
             ) : (
-              /* When Viewing: Standard Toolbar Actions */
-              <div className="flex items-center gap-1.5">
-                {/* Regenerate Button (Opens Confirmation Modal) */}
+              /* When Viewing: 3-Dots Dropdown Menu (Matches Table Behavior) */
+              <div className="relative inline-block text-left" onClick={(e) => e.stopPropagation()}>
                 <button
+                  ref={menuButtonRef}
                   type="button"
-                  onClick={() => setShowRegenerateConfirm(true)}
-                  disabled={isLoading}
-                  title="Regenerate this material"
-                  aria-label="Regenerate"
-                  className="h-7 px-2.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition shadow-2xs active:scale-[0.98]"
-                >
-                  <RefreshCw className="w-3.5 h-3.5 text-zinc-500 dark:text-zinc-400" />
-                  <span>Regenerate</span>
-                </button>
-
-                {/* Download PDF (for Cover Letter or Resume) */}
-                {(activeSubTab === "cover-letter" || activeSubTab === "resume-suggestions") && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (activeSubTab === "cover-letter") {
-                        downloadCoverLetterPdf({
-                          content: currentContent,
-                          companyName: company,
-                          jobTitle: jobTitle,
-                        });
-                      } else {
-                        downloadResumePdf({
-                          content: currentContent,
-                          jobTitle: jobTitle,
-                        });
-                      }
-                    }}
-                    title={
-                      activeSubTab === "cover-letter"
-                        ? "Download Cover Letter as formatted PDF (Arial)"
-                        : "Download ATS Resume as formatted PDF (Arial)"
-                    }
-                    className="h-7 px-2.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition shadow-2xs active:scale-[0.98]"
-                  >
-                    <Download className="w-3.5 h-3.5 text-rose-500" />
-                    <span>PDF</span>
-                  </button>
-                )}
-
-                {/* Edit Button (Icon Only) */}
-                <button
-                  type="button"
-                  onClick={() => setIsEditing(true)}
-                  title="Edit text"
-                  aria-label="Edit text"
-                  className="h-7 w-7 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 flex items-center justify-center cursor-pointer transition shadow-2xs active:scale-[0.98]"
-                >
-                  <Edit3 className="w-3.5 h-3.5" />
-                </button>
-
-                {/* Copy Button (Icon Only) */}
-                <button
-                  type="button"
-                  onClick={handleCopy}
-                  title={copied ? "Copied to clipboard!" : "Copy to clipboard"}
-                  aria-label={copied ? "Copied" : "Copy"}
-                  className={`h-7 w-7 rounded-lg border flex items-center justify-center cursor-pointer transition shadow-2xs active:scale-[0.98] ${
-                    copied
-                      ? "bg-emerald-50 dark:bg-emerald-950/60 border-emerald-300 dark:border-emerald-700 text-emerald-600 dark:text-emerald-400"
-                      : "border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300"
+                  onClick={() => setIsMenuOpen(!isMenuOpen)}
+                  title="Actions"
+                  className={`p-1.5 rounded-lg transition cursor-pointer ${
+                    isMenuOpen
+                      ? "bg-zinc-200 dark:bg-zinc-700 text-zinc-900 dark:text-white"
+                      : "text-zinc-400 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800"
                   }`}
                 >
-                  {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                  <MoreHorizontal className="w-4 h-4" />
                 </button>
+
+                {isMenuOpen && (
+                  <div
+                    ref={menuRef}
+                    className="absolute right-0 top-full mt-1.5 w-44 rounded-2xl bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md border border-zinc-200 dark:border-zinc-800 shadow-2xl py-1.5 animate-fade-in text-xs font-semibold select-none z-30"
+                  >
+                    {/* Copy */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handleCopy();
+                        setIsMenuOpen(false);
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100/80 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-white cursor-pointer transition"
+                    >
+                      {copied ? (
+                        <Check className="w-3.5 h-3.5 text-emerald-500" />
+                      ) : (
+                        <Copy className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-500" />
+                      )}
+                      <span>{copied ? "Copied!" : "Copy"}</span>
+                    </button>
+
+                    {/* Edit */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsEditing(true);
+                        setIsMenuOpen(false);
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100/80 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-white cursor-pointer transition"
+                    >
+                      <Edit3 className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-500" />
+                      <span>Edit</span>
+                    </button>
+
+                    {/* Download PDF (for Cover Letter or Resume) */}
+                    {(activeSubTab === "cover-letter" || activeSubTab === "resume-suggestions") && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsMenuOpen(false);
+                          if (activeSubTab === "cover-letter") {
+                            downloadCoverLetterPdf({
+                              content: currentContent,
+                              companyName: company,
+                              jobTitle: jobTitle,
+                            });
+                          } else {
+                            downloadResumePdf({
+                              content: currentContent,
+                              jobTitle: jobTitle,
+                            });
+                          }
+                        }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100/80 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-white cursor-pointer transition"
+                      >
+                        <Download className="w-3.5 h-3.5 text-rose-500" />
+                        <span>Download PDF</span>
+                      </button>
+                    )}
+
+                    {/* Divider */}
+                    <div className="my-1 border-t border-zinc-100 dark:border-zinc-800" />
+
+                    {/* Regenerate */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsMenuOpen(false);
+                        setShowRegenerateConfirm(true);
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40 cursor-pointer transition"
+                    >
+                      <RefreshCw className="w-3.5 h-3.5 text-amber-500" />
+                      <span>Regenerate</span>
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -800,7 +851,7 @@ export function ApplyMaterialsPanel({
                 el.style.height = `${Math.max(el.scrollHeight, 120)}px`;
                 window.scrollTo(0, scrollY);
               }}
-              className="w-full text-xs sm:text-sm p-6 sm:p-8 rounded-2xl bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-300 dark:border-zinc-600 text-zinc-900 dark:text-zinc-100 font-medium focus:border-zinc-500 focus:outline-hidden resize-none overflow-hidden leading-relaxed font-sans"
+              className="w-full text-xs sm:text-sm p-6 sm:p-8 pt-12 sm:pt-14 rounded-2xl bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-300 dark:border-zinc-600 text-zinc-900 dark:text-zinc-100 font-medium focus:border-zinc-500 focus:outline-hidden resize-none overflow-hidden leading-relaxed font-sans"
               placeholder="Edit content here..."
             />
           ) : (
