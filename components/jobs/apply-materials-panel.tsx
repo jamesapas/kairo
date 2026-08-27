@@ -311,7 +311,7 @@ function renderResumeContent(content: string) {
                 }
 
                 // Check for Project Title | Link line or other piped project line
-                if (p.includes("|") && (/\b(https?:\/\/|www\.)/i.test(p) || sec.title === "PROJECTS") && !p.includes(":")) {
+                if (p.includes("|") && (/\b(https?:\/\/|www\.)/i.test(p) || sec.title.includes("PROJECT")) && !p.includes(":")) {
                   const [titlePart, linkPart] = p.split("|").map((s) => s.trim());
                   const displayLink = linkPart ? linkPart.replace(/^https?:\/\//i, "").replace(/\/+$/g, "") : "";
                   const fullUrl = linkPart ? (linkPart.startsWith("http") ? linkPart : `https://${linkPart}`) : "";
@@ -339,7 +339,7 @@ function renderResumeContent(content: string) {
                 }
 
                 // Check for Project Title without link (under PROJECTS section)
-                if (sec.title === "PROJECTS" && !p.startsWith("•") && !p.startsWith("-") && !p.includes(":")) {
+                if (sec.title.includes("PROJECT") && !p.startsWith("•") && !p.startsWith("-") && !p.includes(":")) {
                   return (
                     <h5 key={pIdx} className="font-bold text-zinc-950 dark:text-zinc-50 pt-3.5 first:pt-0 text-xs sm:text-sm">
                       {p}

@@ -354,123 +354,127 @@ ${taskInstructions}`;
     const parsed = JSON.parse(rawResponse);
     let finalContent = parsed.content || "";
 
-    // If generating resume, append verified database PROFESSIONAL EXPERIENCE directly without hallucination
-    if (contentType === "resume-suggestions" && experienceData.length > 0) {
-      const sortedExperiences = [...experienceData].sort((a, b) => {
-        if (a.sort_order !== undefined && b.sort_order !== undefined && a.sort_order !== b.sort_order) {
-          return a.sort_order - b.sort_order;
-        }
-        if (a.is_current && !b.is_current) return -1;
-        if (!a.is_current && b.is_current) return 1;
-        const aEnd = parseInt(a.end_year || a.start_year || "0", 10);
-        const bEnd = parseInt(b.end_year || b.start_year || "0", 10);
-        if (aEnd !== bEnd) return bEnd - aEnd;
-        const aStart = parseInt(a.start_year || "0", 10);
-        const bStart = parseInt(b.start_year || "0", 10);
-        return bStart - aStart;
-      });
+    // If generating resume, append verified database sections (PROFESSIONAL EXPERIENCE, PROJECTS, EDUCATION)
+    if (contentType === "resume-suggestions") {
+      // Strip any hallucinated sections if the model generated beyond TECHNICAL SKILLS
+      const trailingSectionRegex = /\n+(?:PROFESSIONAL\s+EXPERIENCE|PROJECTS|EDUCATION)\s*(?:\n[-=_\s]*\n|\n|$)/i;
+      const match = finalContent.match(trailingSectionRegex);
+      if (match && match.index !== undefined) {
+        finalContent = finalContent.slice(0, match.index).trim();
+      }
 
-      const expBlocks = sortedExperiences.map((exp) => {
-        const startPart = [exp.start_month, exp.start_year].filter(Boolean).join(" ");
-        const endPart = exp.is_current
-          ? "Present"
-          : [exp.end_month, exp.end_year].filter(Boolean).join(" ");
-        const dateRange = startPart && endPart ? `${startPart} – ${endPart}` : startPart || endPart || "";
+      // 1. Append verified database PROFESSIONAL EXPERIENCE directly without hallucination
+      if (experienceData.length > 0) {
+        const sortedExperiences = [...experienceData].sort((a, b) => {
+          if (a.sort_order !== undefined && b.sort_order !== undefined && a.sort_order !== b.sort_order) {
+            return a.sort_order - b.sort_order;
+          }
+          if (a.is_current && !b.is_current) return -1;
+          if (!a.is_current && b.is_current) return 1;
+          const aEnd = parseInt(a.end_year || a.start_year || "0", 10);
+          const bEnd = parseInt(b.end_year || b.start_year || "0", 10);
+          if (aEnd !== bEnd) return bEnd - aEnd;
+          const aStart = parseInt(a.start_year || "0", 10);
+          const bStart = parseInt(b.start_year || "0", 10);
+          return bStart - aStart;
+        });
 
-        // Line 1: Job Title on the left, Date Range on the right
-        const titleDateLine = dateRange ? `${exp.job_title} | ${dateRange}` : exp.job_title;
+        const expBlocks = sortedExperiences.map((exp) => {
+          const startPart = [exp.start_month, exp.start_year].filter(Boolean).join(" ");
+          const endPart = exp.is_current
+            ? "Present"
+            : [exp.end_month, exp.end_year].filter(Boolean).join(" ");
+          const dateRange = startPart && endPart ? `${startPart} – ${endPart}` : startPart || endPart || "";
 
-        // Line 2: Company, Location (Workplace Type) e.g. "Company Here, Banbridge, UK (Remote)"
-        const locationStr = exp.location?.trim() ? `, ${exp.location.trim()}` : "";
-        const workplaceStr = exp.workplace_type?.trim() ? ` (${exp.workplace_type.trim()})` : "";
-        const companyLine = `${exp.company_name}${locationStr}${workplaceStr}`;
+          // Line 1: Job Title on the left, Date Range on the right
+          const titleDateLine = dateRange ? `${exp.job_title} | ${dateRange}` : exp.job_title;
 
-        const bulletLines = Array.isArray(exp.bullets)
-          ? exp.bullets
-              .filter(Boolean)
-              .map((b: string) => `• ${b.trim()}`)
-              .join("\n")
-          : "";
+          // Line 2: Company, Location (Workplace Type) e.g. "Company Here, Banbridge, UK (Remote)"
+          const locationStr = exp.location?.trim() ? `, ${exp.location.trim()}` : "";
+          const workplaceStr = exp.workplace_type?.trim() ? ` (${exp.workplace_type.trim()})` : "";
+          const companyLine = `${exp.company_name}${locationStr}${workplaceStr}`;
 
-        return [titleDateLine, companyLine, bulletLines].filter(Boolean).join("\n");
-      });
+          const bulletLines = Array.isArray(exp.bullets)
+            ? exp.bullets
+                .filter(Boolean)
+                .map((b: string) => `• ${b.trim()}`)
+                .join("\n")
+            : "";
 
-      const experienceSectionText = `\n\nPROFESSIONAL EXPERIENCE\n-----------------------\n${expBlocks.join("\n\n")}`;
-      if (!finalContent.toUpperCase().includes("PROFESSIONAL EXPERIENCE")) {
+          return [titleDateLine, companyLine, bulletLines].filter(Boolean).join("\n");
+        });
+
+        const experienceSectionText = `\n\nPROFESSIONAL EXPERIENCE\n-----------------------\n${expBlocks.join("\n\n")}`;
         finalContent = `${finalContent.trim()}${experienceSectionText}`;
       }
-    }
 
-    // If generating resume, append verified database PROJECTS directly next to PROFESSIONAL EXPERIENCE (Pure CRUD, no AI hallucination)
-    if (contentType === "resume-suggestions" && projectsData.length > 0) {
-      const sortedProjects = [...projectsData].sort((a, b) => {
-        if (a.sort_order !== undefined && b.sort_order !== undefined && a.sort_order !== b.sort_order) {
-          return a.sort_order - b.sort_order;
-        }
-        return 0;
-      });
+      // 2. Append verified database PROJECTS directly next to PROFESSIONAL EXPERIENCE (Pure CRUD, no AI hallucination)
+      if (projectsData.length > 0) {
+        const sortedProjects = [...projectsData].sort((a, b) => {
+          if (a.sort_order !== undefined && b.sort_order !== undefined && a.sort_order !== b.sort_order) {
+            return a.sort_order - b.sort_order;
+          }
+          return 0;
+        });
 
-      const projBlocks = sortedProjects.map((proj) => {
-        // Line 1: Project Title | Live URL (if provided)
-        const titleLine = proj.live_url?.trim()
-          ? `${proj.title.trim()} | ${proj.live_url.trim()}`
-          : proj.title.trim();
+        const projBlocks = sortedProjects.map((proj) => {
+          // Line 1: Project Title | Live URL (if provided)
+          const titleLine = proj.live_url?.trim()
+            ? `${proj.title.trim()} | ${proj.live_url.trim()}`
+            : proj.title.trim();
 
-        const bulletLines = Array.isArray(proj.bullets)
-          ? proj.bullets
-              .filter(Boolean)
-              .map((b: string) => `• ${b.trim()}`)
-              .join("\n")
-          : "";
+          const bulletLines = Array.isArray(proj.bullets)
+            ? proj.bullets
+                .filter(Boolean)
+                .map((b: string) => `• ${b.trim()}`)
+                .join("\n")
+            : "";
 
-        return [titleLine, bulletLines].filter(Boolean).join("\n");
-      });
+          return [titleLine, bulletLines].filter(Boolean).join("\n");
+        });
 
-      const projectsSectionText = `\n\nPROJECTS\n--------\n${projBlocks.join("\n\n")}`;
-      if (!finalContent.toUpperCase().includes("PROJECTS")) {
+        const projectsSectionText = `\n\nPROJECTS\n--------\n${projBlocks.join("\n\n")}`;
         finalContent = `${finalContent.trim()}${projectsSectionText}`;
       }
-    }
 
-    // If generating resume, append verified database EDUCATION directly without hallucination
-    if (contentType === "resume-suggestions" && educationData.length > 0) {
-      const sortedEducations = [...educationData].sort((a, b) => {
-        if (a.sort_order !== undefined && b.sort_order !== undefined && a.sort_order !== b.sort_order) {
-          return a.sort_order - b.sort_order;
-        }
-        if (a.is_current && !b.is_current) return -1;
-        if (!a.is_current && b.is_current) return 1;
-        const aEnd = parseInt(a.end_year || a.start_year || "0", 10);
-        const bEnd = parseInt(b.end_year || b.start_year || "0", 10);
-        if (aEnd !== bEnd) return bEnd - aEnd;
-        const aStart = parseInt(a.start_year || "0", 10);
-        const bStart = parseInt(b.start_year || "0", 10);
-        return bStart - aStart;
-      });
+      // 3. Append verified database EDUCATION directly without hallucination
+      if (educationData.length > 0) {
+        const sortedEducations = [...educationData].sort((a, b) => {
+          if (a.sort_order !== undefined && b.sort_order !== undefined && a.sort_order !== b.sort_order) {
+            return a.sort_order - b.sort_order;
+          }
+          if (a.is_current && !b.is_current) return -1;
+          if (!a.is_current && b.is_current) return 1;
+          const aEnd = parseInt(a.end_year || a.start_year || "0", 10);
+          const bEnd = parseInt(b.end_year || b.start_year || "0", 10);
+          if (aEnd !== bEnd) return bEnd - aEnd;
+          const aStart = parseInt(a.start_year || "0", 10);
+          const bStart = parseInt(b.start_year || "0", 10);
+          return bStart - aStart;
+        });
 
-      const eduBlocks = sortedEducations.map((edu) => {
-        // Line 1: Course (Degree + Field of study) | Date Range
-        const courseTitle = edu.field_of_study
-          ? `${edu.degree || ""} in ${edu.field_of_study}`.trim()
-          : edu.degree || "Education";
-        const startPart = [edu.start_month, edu.start_year].filter(Boolean).join(" ");
-        const endPart = edu.is_current
-          ? "Present"
-          : [edu.end_month, edu.end_year].filter(Boolean).join(" ");
-        const dateRange = startPart && endPart ? `${startPart} – ${endPart}` : startPart || endPart || "";
-        const titleDateLine = dateRange ? `${courseTitle} | ${dateRange}` : courseTitle;
+        const eduBlocks = sortedEducations.map((edu) => {
+          // Line 1: Course (Degree + Field of study) | Date Range
+          const courseTitle = edu.field_of_study
+            ? `${edu.degree || ""} in ${edu.field_of_study}`.trim()
+            : edu.degree || "Education";
+          const startPart = [edu.start_month, edu.start_year].filter(Boolean).join(" ");
+          const endPart = edu.is_current
+            ? "Present"
+            : [edu.end_month, edu.end_year].filter(Boolean).join(" ");
+          const dateRange = startPart && endPart ? `${startPart} – ${endPart}` : startPart || endPart || "";
+          const titleDateLine = dateRange ? `${courseTitle} | ${dateRange}` : courseTitle;
 
-        // Line 2: School (with optional location)
-        const schoolLine = edu.school ? `${edu.school}${edu.location ? `, ${edu.location}` : ""}` : "";
+          // Line 2: School (with optional location)
+          const schoolLine = edu.school ? `${edu.school}${edu.location ? `, ${edu.location}` : ""}` : "";
 
-        // Line 3: Award / Honors (if any)
-        const awardLine = edu.honors?.trim() || "";
+          // Line 3: Award / Honors (if any)
+          const awardLine = edu.honors?.trim() || "";
 
-        return [titleDateLine, schoolLine, awardLine].filter(Boolean).join("\n");
-      });
+          return [titleDateLine, schoolLine, awardLine].filter(Boolean).join("\n");
+        });
 
-      const educationSectionText = `\n\nEDUCATION\n---------\n${eduBlocks.join("\n\n")}`;
-      if (!finalContent.toUpperCase().includes("EDUCATION")) {
+        const educationSectionText = `\n\nEDUCATION\n---------\n${eduBlocks.join("\n\n")}`;
         finalContent = `${finalContent.trim()}${educationSectionText}`;
       }
     }
