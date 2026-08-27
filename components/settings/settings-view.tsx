@@ -6,10 +6,12 @@ import { ChevronRight, Loader2, UserCheck } from "lucide-react";
 import { getProfileAction, updateProfileAction } from "@/lib/actions/profile";
 import { getExperiencesAction } from "@/lib/actions/experience";
 import { getEducationsAction } from "@/lib/actions/education";
+import { getProjectsAction } from "@/lib/actions/project";
 import { getSkillsAction } from "@/lib/actions/skill";
 import { ProfileLink } from "@/types/profile";
 import { UserExperience } from "@/types/experience";
 import { UserEducation } from "@/types/education";
+import { UserProject } from "@/types/project";
 import { UserSkill } from "@/types/skill";
 import { ResumeCanvasView } from "./resume-canvas-view";
 
@@ -18,6 +20,7 @@ export function SettingsView() {
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [loadingExp, setLoadingExp] = useState(true);
   const [loadingEdu, setLoadingEdu] = useState(true);
+  const [loadingProjects, setLoadingProjects] = useState(true);
   const [loadingSkills, setLoadingSkills] = useState(true);
 
   const [saving, setSaving] = useState(false);
@@ -32,6 +35,7 @@ export function SettingsView() {
   const [links, setLinks] = useState<ProfileLink[]>([]);
   const [experiences, setExperiences] = useState<UserExperience[]>([]);
   const [educations, setEducations] = useState<UserEducation[]>([]);
+  const [projects, setProjects] = useState<UserProject[]>([]);
   const [skills, setSkills] = useState<UserSkill[]>([]);
 
   const [savedSnapshot, setSavedSnapshot] = useState<string>("");
@@ -85,7 +89,15 @@ export function SettingsView() {
       setLoadingEdu(false);
     });
 
-    // 4. Fetch Skills independently
+    // 4. Fetch Projects independently
+    getProjectsAction().then((projRes) => {
+      if (projRes.success && projRes.data) {
+        setProjects(projRes.data);
+      }
+      setLoadingProjects(false);
+    });
+
+    // 5. Fetch Skills independently
     getSkillsAction().then((skillRes) => {
       if (skillRes.success && skillRes.data) {
         setSkills(skillRes.data);
@@ -192,11 +204,14 @@ export function SettingsView() {
         setExperiences={setExperiences}
         educations={educations}
         setEducations={setEducations}
+        projects={projects}
+        setProjects={setProjects}
         skills={skills}
         setSkills={setSkills}
         loadingProfile={loadingProfile}
         loadingExp={loadingExp}
         loadingEdu={loadingEdu}
+        loadingProjects={loadingProjects}
         loadingSkills={loadingSkills}
         saving={saving}
         errorMsg={errorMsg}

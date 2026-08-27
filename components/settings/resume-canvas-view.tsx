@@ -37,6 +37,7 @@ import {
 import { ProfileLink } from "@/types/profile";
 import { UserExperience, WorkplaceType } from "@/types/experience";
 import { UserEducation } from "@/types/education";
+import { UserProject } from "@/types/project";
 import { UserSkill } from "@/types/skill";
 import { uploadAvatarAction } from "@/lib/actions/profile";
 import {
@@ -49,6 +50,11 @@ import {
   updateEducationAction,
   deleteEducationAction,
 } from "@/lib/actions/education";
+import {
+  createProjectAction,
+  updateProjectAction,
+  deleteProjectAction,
+} from "@/lib/actions/project";
 import {
   createSkillAction,
   deleteSkillAction,
@@ -64,6 +70,7 @@ import {
   ExperienceSectionSkeleton,
   SkillsSectionSkeleton,
   EducationSectionSkeleton,
+  ProjectsSectionSkeleton,
 } from "./settings-skeleton";
 
 export interface EducationItem {
@@ -357,11 +364,14 @@ interface ResumeCanvasViewProps {
   setExperiences: React.Dispatch<React.SetStateAction<UserExperience[]>>;
   educations: UserEducation[];
   setEducations: React.Dispatch<React.SetStateAction<UserEducation[]>>;
+  projects: UserProject[];
+  setProjects: React.Dispatch<React.SetStateAction<UserProject[]>>;
   skills: UserSkill[];
   setSkills: React.Dispatch<React.SetStateAction<UserSkill[]>>;
   loadingProfile?: boolean;
   loadingExp?: boolean;
   loadingEdu?: boolean;
+  loadingProjects?: boolean;
   loadingSkills?: boolean;
   saving: boolean;
   errorMsg: string;
@@ -386,11 +396,14 @@ export function ResumeCanvasView({
   setExperiences,
   educations,
   setEducations,
+  projects,
+  setProjects,
   skills,
   setSkills,
   loadingProfile = false,
   loadingExp = false,
   loadingEdu = false,
+  loadingProjects = false,
   loadingSkills = false,
   saving,
   errorMsg,
@@ -630,6 +643,81 @@ export function ResumeCanvasView({
   const handleDeleteEducation = async (id: string) => {
     setEducations((prev) => prev.filter((item) => item.id !== id));
     await deleteEducationAction(id);
+  };
+
+  // Project Form State
+  const [isAddingProj, setIsAddingProj] = useState(false);
+  const [editingProjId, setEditingProjId] = useState<string | null>(null);
+  const [projTitle, setProjTitle] = useState("");
+  const [projLiveUrl, setProjLiveUrl] = useState("");
+  const [projBullets, setProjBullets] = useState<string[]>([]);
+  const [newProjBulletInput, setNewProjBulletInput] = useState("");
+  const [savingProj, setSavingProj] = useState(false);
+
+  const handleStartAddProject = () => {
+    setEditingProjId(null);
+    setProjTitle("");
+    setProjLiveUrl("");
+    setProjBullets([]);
+    setNewProjBulletInput("");
+    setIsAddingProj(true);
+  };
+
+  const handleStartEditProject = (proj: UserProject) => {
+    setEditingProjId(proj.id);
+    setProjTitle(proj.title);
+    setProjLiveUrl(proj.liveUrl || "");
+    setProjBullets(Array.isArray(proj.bullets) ? [...proj.bullets] : []);
+    setNewProjBulletInput("");
+    setIsAddingProj(true);
+  };
+
+  const handleAddProjBullet = () => {
+    const trimmed = newProjBulletInput.trim();
+    if (!trimmed) return;
+    setProjBullets((prev) => [...prev, trimmed]);
+    setNewProjBulletInput("");
+  };
+
+  const handleRemoveProjBullet = (index: number) => {
+    setProjBullets((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleSaveProject = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!projTitle.trim()) return;
+
+    setSavingProj(true);
+
+    const payload = {
+      title: projTitle.trim(),
+      liveUrl: projLiveUrl.trim() || undefined,
+      bullets: projBullets,
+    };
+
+    if (editingProjId) {
+      const res = await updateProjectAction(editingProjId, payload);
+      if (res.success && res.data) {
+        setProjects((prev) =>
+          prev.map((item) => (item.id === editingProjId ? res.data! : item))
+        );
+        setIsAddingProj(false);
+        setEditingProjId(null);
+      }
+    } else {
+      const res = await createProjectAction(payload);
+      if (res.success && res.data) {
+        setProjects((prev) => [res.data!, ...prev]);
+        setIsAddingProj(false);
+        setEditingProjId(null);
+      }
+    }
+    setSavingProj(false);
+  };
+
+  const handleDeleteProject = async (id: string) => {
+    setProjects((prev) => prev.filter((item) => item.id !== id));
+    await deleteProjectAction(id);
   };
 
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
@@ -2000,6 +2088,260 @@ export function ResumeCanvasView({
                     <GraduationCap className="w-4 h-4" />
                   </div>
                   <span>+ Add your education history</span>
+                </button>
+              )
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          SECTION 5: PROJECTS & PORTFOLIO BUILDS
+          ========================================================================= */}
+      {loadingProjects ? (
+        <ProjectsSectionSkeleton />
+      ) : (
+        <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200/90 dark:border-zinc-800 shadow-xs overflow-hidden">
+          <div className="px-6 sm:px-8 py-4 border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-800/30 flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-lg bg-zinc-100 dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 flex items-center justify-center">
+                <Code2 className="w-3.5 h-3.5" />
+              </div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-zinc-100">
+                  Projects
+                </h2>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-zinc-100 dark:bg-zinc-800 border border-zinc-200/70 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300">
+                  {projects.length}
+                </span>
+              </div>
+            </div>
+
+            {!isAddingProj && (
+              <button
+                type="button"
+                onClick={handleStartAddProject}
+                className="px-3.5 py-1.5 rounded-xl bg-zinc-100 hover:bg-zinc-200/80 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 border border-zinc-200/80 dark:border-zinc-700 text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer shadow-2xs active:scale-[0.98]"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Add Project</span>
+              </button>
+            )}
+          </div>
+
+          <div className="p-6 sm:p-8 space-y-6">
+            {/* Add / Edit Project Inline Form */}
+            {isAddingProj && (
+              <div className="p-5 sm:p-6 rounded-2xl bg-zinc-50/80 dark:bg-zinc-850/40 border border-zinc-200/90 dark:border-zinc-750/90 space-y-5 animate-in fade-in duration-150 shadow-xs">
+                <div className="flex items-center justify-between border-b border-zinc-200/70 dark:border-zinc-700/70 pb-3">
+                  <div className="flex items-center gap-2">
+                    <Code2 className="w-4 h-4 text-zinc-700 dark:text-zinc-300" />
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-zinc-100">
+                      {editingProjId ? "Edit Project" : "Add Project"}
+                    </h3>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsAddingProj(false);
+                      setEditingProjId(null);
+                    }}
+                    className="p-1 rounded-lg text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-200/60 dark:hover:bg-zinc-700 transition cursor-pointer"
+                    title="Close"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div className="space-y-4">
+                  {/* Row 1: Title & Project Link */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-zinc-800 dark:text-zinc-200 flex items-center gap-1">
+                        Project Name <span className="text-rose-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={projTitle}
+                        onChange={(e) => setProjTitle(e.target.value)}
+                        placeholder="e.g. Kairo - AI Job Application Copilot"
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-xs font-semibold text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:border-zinc-400 transition"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5">
+                        <Globe className="w-3.5 h-3.5 text-zinc-400" />
+                        <span>Project / Demo Link <span className="text-zinc-400 font-normal text-[11px]">(optional)</span></span>
+                      </label>
+                      <input
+                        type="url"
+                        value={projLiveUrl}
+                        onChange={(e) => setProjLiveUrl(e.target.value)}
+                        placeholder="https://kairo.app"
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-xs font-semibold text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:border-zinc-400 transition"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Row 2: Key Highlights & Features (Bullets) */}
+                  <div className="space-y-2 pt-1">
+                    <label className="text-xs font-bold text-zinc-800 dark:text-zinc-200">
+                      Key Highlights & Features <span className="text-zinc-400 font-normal text-[11px]">(recommended 2–3 bullets)</span>
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={newProjBulletInput}
+                        onChange={(e) => setNewProjBulletInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            handleAddProjBullet();
+                          }
+                        }}
+                        placeholder="e.g. Architected real-time matching system with sub-100ms latency..."
+                        className="flex-1 px-3.5 py-2 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-xs font-semibold text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:border-zinc-400 transition"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleAddProjBullet}
+                        disabled={!newProjBulletInput.trim()}
+                        className="px-4 py-2 rounded-xl bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-xs font-bold transition disabled:opacity-40 flex items-center gap-1 cursor-pointer shrink-0"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Add Bullet</span>
+                      </button>
+                    </div>
+
+                    {/* Active Bullet List */}
+                    {projBullets.length > 0 && (
+                      <div className="space-y-2 pt-1">
+                        {projBullets.map((bullet, idx) => (
+                          <div
+                            key={idx}
+                            className="flex items-start justify-between gap-3 p-3 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-750 text-xs text-zinc-700 dark:text-zinc-300 shadow-2xs"
+                          >
+                            <div className="flex items-start gap-2 min-w-0 flex-1">
+                              <span className="text-zinc-400 font-bold mt-0.5">•</span>
+                              <span className="leading-relaxed break-words">{bullet}</span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveProjBullet(idx)}
+                              className="text-zinc-400 hover:text-rose-500 transition p-1 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer shrink-0"
+                              title="Remove Bullet"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Form Actions */}
+                <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-zinc-200/70 dark:border-zinc-700/70">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsAddingProj(false);
+                      setEditingProjId(null);
+                    }}
+                    className="px-4 py-2 rounded-xl text-xs font-bold text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSaveProject}
+                    disabled={savingProj || !projTitle.trim()}
+                    className="px-5 py-2 rounded-xl bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-xs font-bold transition hover:bg-zinc-800 dark:hover:bg-white disabled:opacity-50 flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                  >
+                    {savingProj ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                    <span>{editingProjId ? "Update Project" : "Save Project"}</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Render Project Cards */}
+            {projects.length > 0 ? (
+              <div className="grid grid-cols-1 gap-4">
+                {projects.map((proj) => (
+                  <div
+                    key={proj.id}
+                    className="group relative p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 shadow-2xs hover:border-zinc-300 dark:hover:border-zinc-700 transition space-y-2.5"
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex flex-wrap items-center gap-2.5 min-w-0 flex-1">
+                        <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
+                          {proj.title}
+                        </h3>
+
+                        {/* Project Link */}
+                        {proj.liveUrl && (
+                          <a
+                            href={proj.liveUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200/70 dark:border-emerald-800/60 hover:bg-emerald-100 transition cursor-pointer"
+                          >
+                            <ExternalLink className="w-3 h-3" />
+                            <span>Link</span>
+                          </a>
+                        )}
+                      </div>
+
+                      {/* Action buttons on hover */}
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition shrink-0 self-start">
+                        <button
+                          type="button"
+                          onClick={() => handleStartEditProject(proj)}
+                          className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition cursor-pointer"
+                          title="Edit Project"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteProject(proj.id)}
+                          className="p-1.5 rounded-lg text-zinc-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition cursor-pointer"
+                          title="Delete Project"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Bullets */}
+                    {proj.bullets && proj.bullets.length > 0 && (
+                      <ul className="space-y-1.5 pt-0.5 text-xs text-zinc-600 dark:text-zinc-300 pl-1">
+                        {proj.bullets.map((bullet, idx) => (
+                          <li key={idx} className="flex items-start gap-2">
+                            <span className="text-zinc-400 dark:text-zinc-500 font-bold select-none leading-relaxed">
+                              •
+                            </span>
+                            <span className="leading-relaxed">{bullet}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              !isAddingProj && (
+                <button
+                  type="button"
+                  onClick={handleStartAddProject}
+                  className="w-full py-8 rounded-2xl border border-dashed border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 bg-zinc-50/40 dark:bg-zinc-850/20 text-xs font-semibold text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 transition flex flex-col items-center justify-center gap-2 cursor-pointer shadow-2xs"
+                >
+                  <div className="w-8 h-8 rounded-xl bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center text-zinc-400">
+                    <Code2 className="w-4 h-4" />
+                  </div>
+                  <span>+ Add your key projects & builds</span>
                 </button>
               )
             )}

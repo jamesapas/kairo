@@ -1,5 +1,5 @@
 import React from "react";
-import { User, Briefcase, Wrench, GraduationCap, Link2 } from "lucide-react";
+import { User, Briefcase, Wrench, GraduationCap, Link2, Code2 } from "lucide-react";
 
 export function ProfileSectionSkeleton() {
   return (
@@ -185,6 +185,43 @@ export function EducationSectionSkeleton() {
               <div className="w-32 h-6 rounded-lg bg-zinc-200/70 dark:bg-zinc-800/70 pt-1" />
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function ProjectsSectionSkeleton() {
+  return (
+    <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200/90 dark:border-zinc-800 shadow-xs overflow-hidden animate-pulse">
+      <div className="px-6 sm:px-8 py-4 border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-800/30 flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          <div className="w-7 h-7 rounded-lg bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center">
+            <Code2 className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-600" />
+          </div>
+          <div className="w-20 h-4 rounded bg-zinc-200 dark:bg-zinc-800" />
+        </div>
+        <div className="w-28 h-7 rounded-xl bg-zinc-200 dark:bg-zinc-800" />
+      </div>
+
+      <div className="p-6 sm:p-8 space-y-6">
+        <div className="grid grid-cols-1 gap-4">
+          {[1, 2].map((i) => (
+            <div
+              key={i}
+              className="p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 shadow-2xs space-y-2.5"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-48 h-4 rounded bg-zinc-200 dark:bg-zinc-800" />
+                  <div className="w-14 h-5 rounded-md bg-zinc-100 dark:bg-zinc-800" />
+                </div>
+                <div className="w-14 h-6 rounded-lg bg-zinc-200 dark:bg-zinc-800" />
+              </div>
+              <div className="w-full h-3 rounded bg-zinc-100 dark:bg-zinc-800/70" />
+              <div className="w-4/5 h-3 rounded bg-zinc-100 dark:bg-zinc-800/60" />
+            </div>
+          ))}
         </div>
       </div>
     </div>
