@@ -406,6 +406,7 @@ export function ApplyMaterialsPanel({
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isAppliedUpdated, setIsAppliedUpdated] = useState(false);
+  const [showRegenerateConfirm, setShowRegenerateConfirm] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Auto-resize textarea to fit content without shifting page scroll position
@@ -713,10 +714,10 @@ export function ApplyMaterialsPanel({
             ) : (
               /* When Viewing: Standard Toolbar Actions */
               <div className="flex items-center gap-1.5">
-                {/* Regenerate Button (With Label) */}
+                {/* Regenerate Button (Opens Confirmation Modal) */}
                 <button
                   type="button"
-                  onClick={() => handleGenerateMaterial(activeSubTab)}
+                  onClick={() => setShowRegenerateConfirm(true)}
                   disabled={isLoading}
                   title="Regenerate this material"
                   aria-label="Regenerate"
@@ -878,6 +879,50 @@ export function ApplyMaterialsPanel({
               </>
             )}
           </button>
+        </div>
+      )}
+
+      {/* Confirmation Modal for Single Material Regeneration */}
+      {showRegenerateConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-xs animate-fade-in"
+            onClick={() => setShowRegenerateConfirm(false)}
+          />
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="relative z-10 bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-2xl max-w-sm w-full p-6 space-y-4 animate-modal text-center"
+          >
+            <div className="space-y-1.5 pt-1">
+              <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-100 leading-tight">
+                Regenerate {APPLY_CONTENT_TYPES[activeSubTab].title}?
+              </h3>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                This will overwrite your current {APPLY_CONTENT_TYPES[activeSubTab].title.toLowerCase()} with a newly generated version.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowRegenerateConfirm(false)}
+                className="flex-1 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-semibold text-xs transition cursor-pointer shadow-2xs"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowRegenerateConfirm(false);
+                  handleGenerateMaterial(activeSubTab);
+                }}
+                className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 hover:from-amber-400 hover:to-rose-400 text-white shadow-[0_4px_20px_rgba(249,115,22,0.45)] text-xs font-bold transition cursor-pointer"
+              >
+                Regenerate
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
