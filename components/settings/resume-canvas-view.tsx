@@ -516,6 +516,10 @@ export function ResumeCanvasView({
     setExpBullets((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const handleUpdateBullet = (index: number, value: string) => {
+    setExpBullets((prev) => prev.map((b, i) => (i === index ? value : b)));
+  };
+
   const handleSaveExperience = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!expJobTitle.trim() || !expCompanyName.trim()) return;
@@ -681,6 +685,10 @@ export function ResumeCanvasView({
 
   const handleRemoveProjBullet = (index: number) => {
     setProjBullets((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleUpdateProjBullet = (index: number, value: string) => {
+    setProjBullets((prev) => prev.map((b, i) => (i === index ? value : b)));
   };
 
   const handleSaveProject = async (e: React.FormEvent) => {
@@ -1394,19 +1402,23 @@ export function ResumeCanvasView({
                         {expBullets.map((bullet, idx) => (
                           <div
                             key={idx}
-                            className="flex items-start gap-2.5 p-3 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-700/80 text-xs shadow-2xs group hover:border-zinc-300 dark:hover:border-zinc-600 transition"
+                            className="flex items-start gap-2.5 p-2.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-700/80 focus-within:border-zinc-400 dark:focus-within:border-zinc-600 transition shadow-2xs group"
                           >
-                            <span className="text-zinc-400 font-bold mt-0.5">•</span>
-                            <span className="flex-1 text-zinc-800 dark:text-zinc-200 leading-relaxed font-medium">
-                              {bullet}
-                            </span>
+                            <span className="text-zinc-400 font-bold select-none mt-1 pl-0.5 text-xs">•</span>
+                            <textarea
+                              rows={2}
+                              value={bullet}
+                              onChange={(e) => handleUpdateBullet(idx, e.target.value)}
+                              placeholder="Describe your achievement, metric, or responsibility..."
+                              className="flex-1 bg-transparent text-xs text-zinc-800 dark:text-zinc-200 leading-relaxed resize-none focus:outline-none placeholder:text-zinc-400 font-medium"
+                            />
                             <button
                               type="button"
                               onClick={() => handleRemoveBullet(idx)}
-                              className="p-1 rounded-lg text-zinc-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition cursor-pointer shrink-0"
+                              className="p-1.5 rounded-lg text-zinc-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition cursor-pointer shrink-0 self-start"
                               title="Remove bullet"
                             >
-                              <Trash2 className="w-3 h-3" />
+                              <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </div>
                         ))}
@@ -2220,19 +2232,23 @@ export function ResumeCanvasView({
                         {projBullets.map((bullet, idx) => (
                           <div
                             key={idx}
-                            className="flex items-start justify-between gap-3 p-3 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-750 text-xs text-zinc-700 dark:text-zinc-300 shadow-2xs"
+                            className="flex items-start gap-2.5 p-2.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-700/80 focus-within:border-zinc-400 dark:focus-within:border-zinc-600 transition shadow-2xs group"
                           >
-                            <div className="flex items-start gap-2 min-w-0 flex-1">
-                              <span className="text-zinc-400 font-bold mt-0.5">•</span>
-                              <span className="leading-relaxed break-words">{bullet}</span>
-                            </div>
+                            <span className="text-zinc-400 font-bold select-none mt-1 pl-0.5 text-xs">•</span>
+                            <textarea
+                              rows={2}
+                              value={bullet}
+                              onChange={(e) => handleUpdateProjBullet(idx, e.target.value)}
+                              placeholder="Describe an achievement, architecture, or key feature..."
+                              className="flex-1 bg-transparent text-xs text-zinc-800 dark:text-zinc-200 leading-relaxed resize-none focus:outline-none placeholder:text-zinc-400 font-medium"
+                            />
                             <button
                               type="button"
                               onClick={() => handleRemoveProjBullet(idx)}
-                              className="text-zinc-400 hover:text-rose-500 transition p-1 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer shrink-0"
+                              className="p-1.5 rounded-lg text-zinc-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition cursor-pointer shrink-0 self-start"
                               title="Remove Bullet"
                             >
-                              <X className="w-3.5 h-3.5" />
+                              <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </div>
                         ))}
