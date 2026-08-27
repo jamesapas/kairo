@@ -41,6 +41,8 @@ export function downloadResumePdf({
   const SECTION_FONT_SIZE = 11; // 11pt
   const BODY_FONT_SIZE = 10.5; // 10.5pt
   const LINE_HEIGHT_MM = 4.8; // Compact line spacing
+  const EXPERIENCE_GAP_MM = 2.0; // Inter-experience gap (2.0mm)
+  const PROJECT_GAP_MM = 2.0; // Inter-project gap matching experience (2.0mm)
 
   let cursorY = marginTop;
 
@@ -187,32 +189,34 @@ export function downloadResumePdf({
       continue;
     }
 
-    // Check for Job Title / Course / Project | Date Range or Link line
-    const hasPipe = line.includes("|");
-    const looksLikeDateLine = /\b(present|\d{4})\b/i.test(line);
-    const looksLikeUrl = /\b(https?:\/\/|www\.)/i.test(line);
-
-    if (hasPipe && (looksLikeDateLine || looksLikeUrl || currentSection === "PROJECTS") && !line.includes(":")) {
+    // Check for Project Entry (under PROJECTS section)
+    if (currentSection === "PROJECTS") {
       if (!lastItemWasSectionHeader) {
-        cursorY += 2.0; // Inter-item gap between previous entry and this new entry
+        cursorY += PROJECT_GAP_MM; // Dedicated gap between Project 1 and Project 2
       }
       lastItemWasSectionHeader = false;
 
-      const [titlePart, rightPart] = line.split("|").map((s) => s.trim());
-      checkPageBreak(LINE_HEIGHT_MM + 2.0);
-
-      // Title on the left (Bold)
+      checkPageBreak(LINE_HEIGHT_MM + PROJECT_GAP_MM);
       doc.setFont(FONT_FAMILY, "bold");
       doc.setFontSize(BODY_FONT_SIZE);
       doc.setTextColor(0, 0, 0);
-      doc.text(titlePart || "", marginX, cursorY);
 
-      // Date Range or URL on the right (Normal font - NOT bold)
-      if (rightPart) {
-        doc.setFont(FONT_FAMILY, "normal");
-        doc.setFontSize(BODY_FONT_SIZE);
-        doc.setTextColor(0, 0, 0);
-        doc.text(rightPart, marginX + printableWidth, cursorY, { align: "right" });
+      if (line.includes("|")) {
+        const [titlePart, linkPart] = line.split("|").map((s) => s.trim());
+        doc.text(titlePart || "", marginX, cursorY);
+
+        if (linkPart) {
+          doc.setFont(FONT_FAMILY, "normal");
+          doc.setFontSize(BODY_FONT_SIZE);
+          doc.setTextColor(0, 0, 0);
+          doc.text(linkPart, marginX + printableWidth, cursorY, { align: "right" });
+        }
+      } else {
+        const wrapped = doc.splitTextToSize(line, printableWidth);
+        for (const wLine of wrapped) {
+          checkPageBreak(LINE_HEIGHT_MM);
+          doc.text(wLine, marginX, cursorY);
+        }
       }
 
       cursorY += LINE_HEIGHT_MM;
@@ -220,47 +224,41 @@ export function downloadResumePdf({
       continue;
     }
 
-    // Check for Project Title without a link (under PROJECTS section)
-    if (currentSection === "PROJECTS" && !line.startsWith("•") && !line.startsWith("- ") && !line.includes(":")) {
-      if (!lastItemWasSectionHeader) {
-        cursorY += 2.0;
+    // Check for Experience / Education / Other Piped Header Line (e.g. Job Title | Date Range)
+    const hasPipe = line.includes("|");
+    if (hasPipe) {
+      const looksLikeDateLine = /\b(present|\d{4})\b/i.test(line);
+      const gapToUse = currentSection === "EXPERIENCE" ? EXPERIENCE_GAP_MM : 2.0;
+
+      if (!lastItemWasSectionHeader && looksLikeDateLine) {
+        cursorY += gapToUse; // Restored Experience gap
       }
       lastItemWasSectionHeader = false;
 
-      checkPageBreak(LINE_HEIGHT_MM + 2.0);
+      const [titlePart, datePart] = line.split("|").map((s) => s.trim());
+      checkPageBreak(LINE_HEIGHT_MM + gapToUse);
+
+      // Title on the left (Bold)
       doc.setFont(FONT_FAMILY, "bold");
       doc.setFontSize(BODY_FONT_SIZE);
       doc.setTextColor(0, 0, 0);
+      doc.text(titlePart || "", marginX, cursorY);
 
-      const wrapped = doc.splitTextToSize(line, printableWidth);
-      for (const wLine of wrapped) {
-        checkPageBreak(LINE_HEIGHT_MM);
-        doc.text(wLine, marginX, cursorY);
-        cursorY += LINE_HEIGHT_MM;
+      // Date Range on the right (Normal font)
+      if (datePart) {
+        doc.setFont(FONT_FAMILY, "normal");
+        doc.setFontSize(BODY_FONT_SIZE);
+        doc.setTextColor(0, 0, 0);
+        doc.text(datePart, marginX + printableWidth, cursorY, { align: "right" });
       }
+
+      cursorY += LINE_HEIGHT_MM;
       i++;
       continue;
     }
 
-    // Check for other piped header line (e.g. Job Title | Company Name)
-    if (hasPipe && !looksLikeDateLine && !line.includes(":")) {
-      checkPageBreak(LINE_HEIGHT_MM + 2.0);
-      doc.setFont(FONT_FAMILY, "bold");
-      doc.setFontSize(BODY_FONT_SIZE);
-      doc.setTextColor(0, 0, 0);
-
-      const wrapped = doc.splitTextToSize(line, printableWidth);
-      for (const wLine of wrapped) {
-        checkPageBreak(LINE_HEIGHT_MM);
-        doc.text(wLine, marginX, cursorY);
-        cursorY += LINE_HEIGHT_MM;
-      }
-      i++;
-      continue;
-    }
-
-    // Check for categorized line (e.g. "Languages: TypeScript, JavaScript, HTML, CSS")
-    const colonMatch = line.match(/^([^:]+:)\s*(.*)$/);
+    // Check for categorized skill line (e.g. "Languages: TypeScript, JavaScript, HTML, CSS")
+    const colonMatch = !hasPipe && line.match(/^([^:]+:)\s*(.*)$/);
     if (colonMatch) {
       const categoryLabel = colonMatch[1] + " ";
       const skillsContent = colonMatch[2];
