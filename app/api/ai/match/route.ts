@@ -141,223 +141,49 @@ export async function POST(request: Request) {
       })),
     };
 
-    // Clean description: strip excessive whitespace, then truncate intelligently.
-    // Try to keep up to 4500 chars to preserve requirement sections that often appear
-    // at the end of postings. If the description is longer, try to find a paragraph
-    // boundary near the limit to avoid cutting mid-requirement.
-    const DESC_LIMIT = 4500;
-    const trimmedDescription = targetDescription.trim().replace(/\n{3,}/g, "\n\n");
-    let cleanDescription: string;
-    if (trimmedDescription.length <= DESC_LIMIT) {
-      cleanDescription = trimmedDescription;
-    } else {
-      // Look for a paragraph break within the last 500 chars of the limit zone
-      const cutZoneStart = DESC_LIMIT - 500;
-      const cutZone = trimmedDescription.slice(cutZoneStart, DESC_LIMIT);
-      const lastBreak = cutZone.lastIndexOf("\n\n");
-      if (lastBreak !== -1) {
-        cleanDescription = trimmedDescription.slice(0, cutZoneStart + lastBreak);
-      } else {
-        // Fall back to sentence boundary
-        const lastPeriod = cutZone.lastIndexOf(". ");
-        if (lastPeriod !== -1) {
-          cleanDescription = trimmedDescription.slice(0, cutZoneStart + lastPeriod + 1);
-        } else {
-          cleanDescription = trimmedDescription.slice(0, DESC_LIMIT);
-        }
-      }
-    }
+    // Clean and cap description to 3500 chars to avoid spending tokens on footers/legal disclaimers
+    const cleanDescription = targetDescription.trim().slice(0, 3500);
 
     const openai = new OpenAI({ apiKey });
 
-    const systemPrompt = `You are Kairo's Job Match Analyst. Perform a strict, evidence-based comparison of a candidate against a job posting.
+    const systemPrompt = `You are Kairo's Senior Technical Recruiter and Career Advisor AI.
+Conduct a structured, high-signal, and objective Job Match Analysis comparing the candidate's background against the job posting.
 
-CORE PRINCIPLE: Prioritize MATCHING ACCURACY over making the candidate appear qualified. Only classify a skill, experience, or requirement as a match when there is EXPLICIT evidence in the candidate data. When evidence is missing, classify as NOT PROVEN.
+IMPORTANT GUIDELINES FOR ACCURACY & RELIABILITY:
 
-═══════════════════════════════════════════════════
-EVIDENCE RULES
-═══════════════════════════════════════════════════
+1. SKILLS BREAKDOWN (Source of Truth is CANDIDATE BACKGROUND.skills & demonstrated project technologies):
+   - "matchedSkills": Required technical skills & tools mentioned in the job that the candidate POSSESSES (account for aliases like PHP/Laravel, Node.js/Node, Redux/Redux Toolkit, GraphQL/Apollo, React/React.js, TypeScript/TS, Postgres/PostgreSQL).
+   - "missingSkills": STRICTLY required technical skills that the candidate truly DOES NOT have. DO NOT put skills the candidate has here.
+   - "niceToHave": List optional / bonus / preferred technologies mentioned in the job. Separate these from strictly required skills.
 
-You may ONLY use information explicitly present in:
-- candidate.skills (the skills array)
-- candidate.experiences (job titles, companies, and highlight bullets)
-- candidate.projects (project titles and highlight bullets)
-- candidate.education (when relevant)
+2. EXPERIENCE BREAKDOWN:
+   - "matchingExperience": 2 to 3 concrete bullet points highlighting specific roles, projects, or accomplishments from candidate's background that prove capability for this job.
+   - "experienceGaps": 1 to 2 specific domain or scope experience gaps, or [] if none.
 
-You must NEVER infer qualifications because:
-- Two technologies are related or in the same ecosystem
-- Technologies are commonly used together
-- The candidate has a similar job title
-- The candidate is generally a software developer
-- A project could theoretically have used a technology
-- A skill is commonly learned alongside another skill
+3. RELEVANT PROJECTS PORTFOLIO:
+   - "relevantProjects": 1 to 3 projects from the candidate's projects list that prove hands-on capability, architectural experience, or stack proficiency relevant to this job posting.
+     * "projectTitle": Exact title of the project.
+     * "relevanceNote": Concise 1-sentence explanation of why this project is relevant to the target role requirements.
+   - If candidate has no projects or none match the role, return [].
 
-═══════════════════════════════════════════════════
-TECHNOLOGY ALIASING (STRICT RULES)
-═══════════════════════════════════════════════════
+4. REQUIREMENTS GAP ANALYSIS:
+   - "unmetRequirements": ONLY important NON-SKILL requirements that the candidate does NOT meet. If candidate meets all non-skill requirements, return [].
 
-EXACT EQUIVALENTS (true naming variations of the same technology):
-- PostgreSQL = Postgres
-- Node = Node.js = NodeJS
-- React = React.js = ReactJS
-- TypeScript = TS
-- JavaScript = JS
-- Next.js = NextJS
-- MySQL = MySQL Database
-- Vue = Vue.js = VueJS
-- Redux Toolkit = RTK
+5. SENIORITY ASSESSMENT:
+   - "seniorityLevel": "Good Match" | "Slight Gap" | "Significant Gap"
+   - "seniorityAssessment": 1-2 sentences assessing seniority alignment.
 
-DIRECTIONAL RELATIONSHIPS (specialized → parent ONLY):
-A specialized technology demonstrates knowledge of its underlying technology, but NOT the reverse.
-- Laravel → PHP (Laravel proves PHP; PHP does NOT prove Laravel)
-- Next.js → React (Next.js proves React; React does NOT prove Next.js)
-- Nuxt → Vue (Nuxt proves Vue; Vue does NOT prove Nuxt)
-- Redux Toolkit → Redux (RTK proves Redux; Redux does NOT prove RTK)
-- Apollo → GraphQL (Apollo proves GraphQL; GraphQL does NOT prove Apollo)
-- NestJS → Node.js (NestJS proves Node.js; Node.js does NOT prove NestJS)
-- Express → Node.js (Express proves Node.js; Node.js does NOT prove Express)
+6. KAIRO'S ASSESSMENT:
+   - "keyStrengths": 2 to 3 bullet points highlighting candidate's competitive advantages across skills, experience, and projects.
+   - "potentialGaps": 1 to 2 constructive bullet points highlighting main risks.
 
-RELATED BUT DISTINCT (NEVER treat as equivalent):
-- PHP ≠ Laravel
-- React ≠ Next.js
-- Vue ≠ Nuxt
-- GraphQL ≠ Apollo
-- Node.js ≠ Express.js
-- JavaScript ≠ TypeScript
-- PostgreSQL ≠ MySQL
-- REST ≠ GraphQL
-- Tailwind CSS ≠ CSS
-- Docker ≠ Kubernetes
-- Prisma ≠ Drizzle ≠ TypeORM
-- Supabase ≠ Firebase
-- Jest ≠ Vitest
+7. OVERALL RECOMMENDATION & SCORE:
+   - "matchPercentage": 0 - 100 percentage. Factor in skills match, professional experience, and relevant project portfolio.
+   - "recommendation": "apply" (>= 75% match), "maybe" (50-74% match), or "skip" (< 50% match).
+   - "recommendationReason": 1 sentence reason.
+   - "summary": 2 sentence executive synthesis.
 
-═══════════════════════════════════════════════════
-REQUIRED vs PREFERRED CLASSIFICATION
-═══════════════════════════════════════════════════
-
-First, classify every job requirement into one of three categories:
-
-REQUIRED — signaled by: "required", "must have", "must", "essential", "minimum", "required experience", "strong experience with", or unmarked technical qualifications in the core requirements section.
-
-PREFERRED / NICE-TO-HAVE — signaled by: "preferred", "nice to have", "bonus", "plus", "desirable", "would be a bonus", "ideally", "familiarity with".
-
-RESPONSIBILITY / CONTEXT — job activities and responsibilities that are NOT themselves explicit qualification requirements.
-
-Rules:
-- A preferred/nice-to-have requirement must NEVER appear in missingSkills.
-- General job responsibilities should NOT automatically become missing skills.
-- Only explicit required technical qualifications belong in missingSkills.
-
-═══════════════════════════════════════════════════
-OUTPUT FIELD RULES
-═══════════════════════════════════════════════════
-
-matchedSkills:
-- ONLY required technical skills/tools from the job posting that the candidate ACTUALLY possesses.
-- Every item must have explicit evidence in the candidate data.
-- Use the job's terminology where possible.
-- Do NOT simply return all candidate skills.
-
-missingSkills:
-- ONLY technical skills that are (1) explicitly required by the job, (2) relevant to the role, and (3) NOT supported by candidate evidence.
-- NEVER include preferred/nice-to-have skills here.
-- NEVER include candidate skills or generic abilities here.
-
-niceToHave:
-- ONLY technologies or qualifications explicitly marked as preferred/optional/bonus/plus/desirable by the job posting.
-- Do NOT put candidate skills or required skills here.
-
-matchingExperience:
-- 2-3 concrete pieces of evidence from the candidate's ACTUAL background.
-- Prioritize: (1) directly matching professional work, (2) directly matching responsibilities, (3) relevant project experience, (4) clearly transferable experience.
-- NEVER fabricate years of experience, team size, user counts, system scale, leadership, ownership, production usage, technologies, company size, or responsibilities.
-- Do NOT say the candidate "led" something unless explicitly supported.
-- Do NOT describe project experience as professional experience.
-
-experienceGaps:
-- Only meaningful gaps related to domain experience, responsibility scope, production experience, or required experience level.
-- Return [] when there is no meaningful gap. Do NOT manufacture gaps.
-
-relevantProjects:
-- 1-3 projects ONLY when they provide direct evidence relevant to the job.
-- A project is relevant because it demonstrates a required technology, responsibility, architecture, domain, or engineering capability.
-- Do NOT select a project merely because it is impressive.
-- Do NOT infer technologies not explicitly present in project data.
-- projectTitle must EXACTLY match the candidate project's title.
-
-unmetRequirements:
-- ONLY important NON-TECHNICAL requirements the candidate clearly does not meet (e.g., required degree, certification, work authorization, location, language, years of experience, domain experience).
-- NEVER put technical skills here.
-- Do NOT assume the candidate lacks something solely because it is not mentioned, unless the job explicitly requires it.
-
-seniorityLevel:
-- Determine from actual evidence: professional experience, role level, complexity, ownership, production experience, leadership expectations, scope.
-- Use exactly: "Good Match", "Slight Gap", or "Significant Gap".
-
-keyStrengths:
-- 2-3 specific strengths directly supported by candidate data.
-- Avoid generic claims like "hard worker", "fast learner", "great communicator", "passionate developer" unless explicitly supported.
-
-potentialGaps:
-- 1-2 of the most important realistic risks.
-- Avoid generic or manufactured gaps.
-
-═══════════════════════════════════════════════════
-SCORING
-═══════════════════════════════════════════════════
-
-matchPercentage (0-100) — evidence-based, using this conceptual weighting:
-- Required technical skills: 50%
-- Relevant professional experience: 25%
-- Seniority/scope alignment: 15%
-- Important non-skill requirements: 10%
-
-Preferred/nice-to-have requirements should have little or no effect on the score.
-Do NOT inflate the score because the candidate has many unrelated skills.
-Missing a core mandatory requirement should materially reduce the score.
-
-Score ranges:
-- 90-100 = Excellent alignment
-- 75-89 = Strong alignment
-- 60-74 = Moderate alignment with meaningful gaps
-- 40-59 = Weak alignment
-- 0-39 = Major mismatch
-
-recommendation:
-- "apply" if matchPercentage >= 75
-- "maybe" if matchPercentage 50-74
-- "skip" if matchPercentage < 50
-
-If a clearly critical mandatory requirement is missing, the recommendationReason must NOT describe the candidate as strongly qualified.
-
-matchLabel:
-- >= 80: "Strong Match"
-- 65-79: "Good Match"
-- 50-64: "Moderate Match"
-- < 50: "Low Fit"
-
-═══════════════════════════════════════════════════
-ANTI-HALLUCINATION
-═══════════════════════════════════════════════════
-
-NEVER infer:
-- A skill from an adjacent skill
-- A framework from its ecosystem
-- Experience from a job title alone
-- Professional experience from a personal project
-- Production experience from project existence
-- Leadership from participation
-- Domain expertise from unrelated work
-- Years of experience unless supported by the supplied dates/data
-
-When uncertain, ALWAYS choose the conservative interpretation.
-
-═══════════════════════════════════════════════════
-RESPONSE FORMAT
-═══════════════════════════════════════════════════
-
-Return STRICTLY a JSON object matching this schema (no markdown, no explanation):
+Return the response STRICTLY as a JSON object matching this schema:
 {
   "matchPercentage": number,
   "matchLabel": "Strong Match" | "Good Match" | "Moderate Match" | "Low Fit",
@@ -368,7 +194,12 @@ Return STRICTLY a JSON object matching this schema (no markdown, no explanation)
   "missingSkills": string[],
   "matchingExperience": string[],
   "experienceGaps": string[],
-  "relevantProjects": [{ "projectTitle": string, "relevanceNote": string }],
+  "relevantProjects": [
+    {
+      "projectTitle": string,
+      "relevanceNote": string
+    }
+  ],
   "unmetRequirements": string[],
   "niceToHave": string[],
   "seniorityLevel": "Good Match" | "Slight Gap" | "Significant Gap",
@@ -377,23 +208,21 @@ Return STRICTLY a JSON object matching this schema (no markdown, no explanation)
   "potentialGaps": string[]
 }`;
 
-    const userPrompt = `══════ CANDIDATE BACKGROUND ══════
-${JSON.stringify(candidateProfile, null, 2)}
+    const userPrompt = `CANDIDATE BACKGROUND:
+${JSON.stringify(candidateProfile)}
 
-══════ JOB POSTING ══════
+JOB POSTING:
 Role: ${targetJobTitle || "Not specified"}
 Company: ${targetCompany || "Not specified"}
-
 Description:
 ${cleanDescription}
 
-══════ INSTRUCTIONS ══════
-Evaluate the candidate ONLY from the supplied candidate data above. Do not assume missing information is true. Apply the strict technology aliasing and evidence rules from your system instructions.`;
+Evaluate the match thoroughly adhering strictly to the candidate's actual skills, experiences, and projects.`;
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       temperature: 0.1,
-      max_completion_tokens: 1200,
+      max_completion_tokens: 900,
       response_format: { type: "json_object" },
       messages: [
         { role: "system", content: systemPrompt },
