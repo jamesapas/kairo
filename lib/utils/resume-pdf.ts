@@ -203,13 +203,21 @@ export function downloadResumePdf({
 
       if (line.includes("|")) {
         const [titlePart, linkPart] = line.split("|").map((s) => s.trim());
-        doc.text(titlePart || "", marginX, cursorY);
+        doc.setFont(FONT_FAMILY, "bold");
+        doc.setFontSize(BODY_FONT_SIZE);
+        doc.setTextColor(0, 0, 0);
 
         if (linkPart) {
+          const titleWidth = doc.getTextWidth(titlePart);
+          doc.text(titlePart, marginX, cursorY);
+
+          const pipeStr = " | ";
           doc.setFont(FONT_FAMILY, "normal");
-          doc.setFontSize(BODY_FONT_SIZE);
-          doc.setTextColor(0, 0, 0);
-          doc.text(linkPart, marginX + printableWidth, cursorY, { align: "right" });
+          const pipeWidth = doc.getTextWidth(pipeStr);
+          doc.text(pipeStr, marginX + titleWidth, cursorY);
+          doc.text(linkPart, marginX + titleWidth + pipeWidth, cursorY);
+        } else {
+          doc.text(titlePart, marginX, cursorY);
         }
       } else {
         const wrapped = doc.splitTextToSize(line, printableWidth);

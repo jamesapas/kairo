@@ -290,19 +290,22 @@ function renderResumeContent(content: string) {
                 if (p.includes("|") && (/\b(https?:\/\/|www\.)/i.test(p) || sec.title === "PROJECTS") && !p.includes(":")) {
                   const [titlePart, linkPart] = p.split("|").map((s) => s.trim());
                   return (
-                    <div key={pIdx} className="flex items-baseline justify-between gap-4 pt-3 first:pt-0">
+                    <div key={pIdx} className="flex flex-wrap items-baseline gap-1.5 pt-3 first:pt-0">
                       <h5 className="font-bold text-zinc-950 dark:text-zinc-50 text-xs">
                         {titlePart}
                       </h5>
                       {linkPart && (
-                        <a
-                          href={linkPart.startsWith("http") ? linkPart : `https://${linkPart}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-[11px] sm:text-xs text-blue-600 dark:text-blue-400 hover:underline font-normal shrink-0 truncate max-w-[200px] sm:max-w-xs"
-                        >
-                          {linkPart}
-                        </a>
+                        <>
+                          <span className="text-zinc-400 text-xs select-none">|</span>
+                          <a
+                            href={linkPart.startsWith("http") ? linkPart : `https://${linkPart}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-[11px] sm:text-xs text-blue-600 dark:text-blue-400 hover:underline font-normal"
+                          >
+                            {linkPart}
+                          </a>
+                        </>
                       )}
                     </div>
                   );
