@@ -170,6 +170,23 @@ export function downloadResumePdf({
         doc.text(wrappedBullet[bIdx], marginX + bulletIndent, cursorY);
         cursorY += LINE_HEIGHT_MM;
       }
+
+      // If this is the last bullet of an experience and another experience follows, add spacing
+      let nextIsExperience = false;
+      for (let n = i + 1; n < lines.length; n++) {
+        const nextL = lines[n].trim();
+        if (!nextL) continue;
+        if (nextL.match(/^[A-Z\s/&-]{3,}$/)) break; // Section header reached
+        if (nextL.startsWith("•") || nextL.startsWith("-")) break; // Another bullet in same experience
+        if (nextL.includes("|") && /\b(present|\d{4})\b/i.test(nextL) && !nextL.includes(":")) {
+          nextIsExperience = true;
+          break;
+        }
+      }
+      if (nextIsExperience) {
+        cursorY += 2.0; // Spacing after last bullet before next experience
+      }
+
       i++;
       continue;
     }
@@ -180,7 +197,6 @@ export function downloadResumePdf({
 
     if (hasPipe && looksLikeDateLine && !line.includes(":")) {
       const [titlePart, datePart] = line.split("|").map((s) => s.trim());
-      cursorY += 2.0; // Space between last bullet and next experience entry
       checkPageBreak(LINE_HEIGHT_MM + 2.0);
 
       // Job Title on the left (Bold)
