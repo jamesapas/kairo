@@ -423,15 +423,53 @@ export function downloadResumePdf({
   }
 
   // Generate safe filename and trigger download
+  const toTitleCase = (str: string) => {
+    if (str === str.toUpperCase() && str !== str.toLowerCase()) {
+      return str
+        .toLowerCase()
+        .replace(/\b([a-z])/g, (_, c) => c.toUpperCase());
+    }
+    return str;
+  };
+
+  const cleanRoleTitle = (rawTitle: string) =>
+    rawTitle
+      .replace(/\s*[\(\[].*?[\)\]]/g, "")
+      .replace(/\s*-\s*(remote|full-time|part-time|contract|hybrid).*$/i, "")
+      .replace(/^(junior|jr\.?|senior|sr\.?|mid-level|mid|entry-level|lead|principal)\s+/i, "")
+      .trim();
+
   const sanitize = (s: string) =>
     s
       .replace(/[^a-zA-Z0-9_-]/g, "_")
       .replace(/_+/g, "_")
+      .replace(/^_+|_+$/g, "")
       .trim();
 
-  const safeCandidate = sanitize(candidateName || "Candidate");
-  const safeJob = sanitize(jobTitle || "Resume");
-  const defaultFileName = `${safeCandidate}_Resume_${safeJob}.pdf`;
+  // Extract clean candidate name (from options or resume header line 1)
+  const rawCandidate =
+    candidateName || (headerLines.length > 0 ? headerLines[0] : "Candidate");
+  const safeCandidate = sanitize(toTitleCase(rawCandidate)) || "Candidate";
+
+  // Extract clean position / role title from resume header line 2 or cleaned jobTitle
+  let detectedRole = "";
+  if (headerLines.length > 1) {
+    const candidateRole = headerLines[1].trim();
+    if (
+      !candidateRole.includes("@") &&
+      !candidateRole.includes("http") &&
+      !candidateRole.includes("|")
+    ) {
+      detectedRole = candidateRole;
+    }
+  }
+
+  const roleToUse = detectedRole || (jobTitle ? cleanRoleTitle(jobTitle) : "");
+  const safePosition = sanitize(roleToUse);
+
+  const defaultFileName = safePosition
+    ? `${safeCandidate}_${safePosition}_Resume.pdf`
+    : `${safeCandidate}_Resume.pdf`;
 
   const finalName = fileName || defaultFileName;
   doc.save(finalName);

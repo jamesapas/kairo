@@ -796,16 +796,38 @@ export function ApplyMaterialsPanel({
                         type="button"
                         onClick={() => {
                           setIsMenuOpen(false);
+                          const resumeText =
+                            editedContents["resume-suggestions"] ??
+                            materialsMap["resume-suggestions"]?.content;
+                          let cleanPosition = "";
+                          if (resumeText) {
+                            const rLines = resumeText
+                              .replace(/\r\n/g, "\n")
+                              .replace(/\r/g, "\n")
+                              .split("\n")
+                              .map((l) => l.trim())
+                              .filter(Boolean);
+                            if (
+                              rLines.length > 1 &&
+                              !rLines[1].includes("@") &&
+                              !rLines[1].includes("http") &&
+                              !rLines[1].includes("|") &&
+                              !/^professional\s+summary/i.test(rLines[1])
+                            ) {
+                              cleanPosition = rLines[1];
+                            }
+                          }
+
                           if (activeSubTab === "cover-letter") {
                             downloadCoverLetterPdf({
                               content: currentContent,
                               companyName: company,
-                              jobTitle: jobTitle,
+                              jobTitle: cleanPosition || jobTitle,
                             });
                           } else {
                             downloadResumePdf({
                               content: currentContent,
-                              jobTitle: jobTitle,
+                              jobTitle: cleanPosition || jobTitle,
                             });
                           }
                         }}

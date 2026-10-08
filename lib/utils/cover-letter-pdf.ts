@@ -174,15 +174,43 @@ export function downloadCoverLetterPdf({
   }
 
   // Generate safe filename and trigger download
+  const toTitleCase = (str: string) => {
+    if (str === str.toUpperCase() && str !== str.toLowerCase()) {
+      return str
+        .toLowerCase()
+        .replace(/\b([a-z])/g, (_, c) => c.toUpperCase());
+    }
+    return str;
+  };
+
+  const cleanRoleTitle = (rawTitle: string) =>
+    rawTitle
+      .replace(/\s*[\(\[].*?[\)\]]/g, "")
+      .replace(/\s*-\s*(remote|full-time|part-time|contract|hybrid).*$/i, "")
+      .replace(/^(junior|jr\.?|senior|sr\.?|mid-level|mid|entry-level|lead|principal)\s+/i, "")
+      .trim();
+
   const sanitize = (s: string) =>
     s
       .replace(/[^a-zA-Z0-9_-]/g, "_")
       .replace(/_+/g, "_")
+      .replace(/^_+|_+$/g, "")
       .trim();
 
-  const safeCandidate = sanitize(candidateName || "Candidate");
-  const safeCompany = sanitize(companyName || jobTitle || "Application");
-  const defaultFileName = `${safeCandidate}_Cover_Letter_${safeCompany}.pdf`;
+  // Extract candidate name from props or first block
+  const firstBlockLines =
+    blocks.length > 0
+      ? blocks[0].split("\n").map((l) => l.trim()).filter(Boolean)
+      : [];
+  const rawCandidate = candidateName || firstBlockLines[0] || "Candidate";
+  const safeCandidate = sanitize(toTitleCase(rawCandidate)) || "Candidate";
+
+  const roleToUse = jobTitle ? cleanRoleTitle(jobTitle) : "";
+  const safePosition = sanitize(roleToUse);
+
+  const defaultFileName = safePosition
+    ? `${safeCandidate}_${safePosition}_Cover_Letter.pdf`
+    : `${safeCandidate}_Cover_Letter.pdf`;
 
   const finalName = fileName || defaultFileName;
   doc.save(finalName);
