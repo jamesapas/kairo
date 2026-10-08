@@ -28,10 +28,10 @@ export function downloadResumePdf({
 
   const pageWidth = 215.9;
   const pageHeight = 279.4;
-  const marginX = 12.7; // 0.5 in (1.27 cm) left & right margins
-  const marginTop = 12.7; // 0.5 in top margin
-  const marginBottom = 12.7; // 0.5 in bottom margin
-  const printableWidth = pageWidth - marginX * 2; // 190.5mm
+  const marginX = 15.5; // ~0.59 in (15.5mm) left & right margins
+  const marginTop = 15.5; // ~0.59 in top margin
+  const marginBottom = 15.5; // ~0.59 in bottom margin
+  const printableWidth = pageWidth - marginX * 2; // 185.9mm
   const centerX = pageWidth / 2;
 
   const FONT_FAMILY = "helvetica";
@@ -46,11 +46,13 @@ export function downloadResumePdf({
 
   let cursorY = marginTop;
 
-  const checkPageBreak = (neededHeight: number) => {
+  const checkPageBreak = (neededHeight: number = 0): boolean => {
     if (cursorY + neededHeight > pageHeight - marginBottom) {
       doc.addPage();
       cursorY = marginTop;
+      return true;
     }
+    return false;
   };
 
   const normalizedContent = content
@@ -196,9 +198,7 @@ export function downloadResumePdf({
         line.includes("PROJECT"));
 
     if (isSectionHeader) {
-      if (!isFirstSection) {
-        cursorY += 3.0; // Compact space between sections
-      }
+      const sectionGap = !isFirstSection ? 3.0 : 0;
       isFirstSection = false;
       lastItemWasSectionHeader = true;
 
@@ -209,7 +209,15 @@ export function downloadResumePdf({
       else if (line.includes("EDUCATION")) currentSection = "EDUCATION";
       else currentSection = "";
 
-      checkPageBreak(14);
+      // Section header needs: text + 2.0mm rule gap + 5.5mm body gap = 7.5mm
+      // Plus at least 1 line of content (4.8mm) to avoid an orphan header
+      if (cursorY + sectionGap + 7.5 + LINE_HEIGHT_MM > pageHeight - marginBottom) {
+        doc.addPage();
+        cursorY = marginTop;
+      } else {
+        cursorY += sectionGap;
+      }
+
       doc.setFont(FONT_FAMILY, "bold");
       doc.setFontSize(SECTION_FONT_SIZE);
       doc.setTextColor(0, 0, 0);
@@ -236,14 +244,13 @@ export function downloadResumePdf({
       doc.setTextColor(0, 0, 0);
 
       const wrappedBullet = doc.splitTextToSize(bulletText, printableWidth - bulletIndent);
-      checkPageBreak(LINE_HEIGHT_MM * wrappedBullet.length);
 
-      // Draw bullet symbol
-      doc.text("•", marginX + 0.5, cursorY);
-
-      // Draw wrapped bullet lines with hanging indent
+      // Draw wrapped bullet lines with hanging indent, paginating line-by-line
       for (let bIdx = 0; bIdx < wrappedBullet.length; bIdx++) {
-        if (bIdx > 0) checkPageBreak(LINE_HEIGHT_MM);
+        checkPageBreak(0);
+        if (bIdx === 0) {
+          doc.text("•", marginX + 0.5, cursorY);
+        }
         doc.text(wrappedBullet[bIdx], marginX + bulletIndent, cursorY);
         cursorY += LINE_HEIGHT_MM;
       }
@@ -254,12 +261,17 @@ export function downloadResumePdf({
 
     // Check for Project Entry (under PROJECTS section)
     if (currentSection === "PROJECTS") {
-      if (!lastItemWasSectionHeader) {
-        cursorY += PROJECT_GAP_MM; // Dedicated gap between Project 1 and Project 2
-      }
+      const gap = !lastItemWasSectionHeader ? PROJECT_GAP_MM : 0;
       lastItemWasSectionHeader = false;
 
-      checkPageBreak(LINE_HEIGHT_MM + PROJECT_GAP_MM);
+      // Check if project entry header fits (with at least 1 line of content)
+      if (cursorY + gap + LINE_HEIGHT_MM > pageHeight - marginBottom) {
+        doc.addPage();
+        cursorY = marginTop;
+      } else {
+        cursorY += gap;
+      }
+
       doc.setFont(FONT_FAMILY, "bold");
       doc.setFontSize(BODY_FONT_SIZE);
       doc.setTextColor(0, 0, 0);
@@ -291,15 +303,16 @@ export function downloadResumePdf({
         } else {
           doc.text(titlePart, marginX, cursorY);
         }
+        cursorY += LINE_HEIGHT_MM;
       } else {
         const wrapped = doc.splitTextToSize(line, printableWidth);
         for (const wLine of wrapped) {
-          checkPageBreak(LINE_HEIGHT_MM);
+          checkPageBreak(0);
           doc.text(wLine, marginX, cursorY);
+          cursorY += LINE_HEIGHT_MM;
         }
       }
 
-      cursorY += LINE_HEIGHT_MM;
       i++;
       continue;
     }
@@ -309,14 +322,18 @@ export function downloadResumePdf({
     if (hasPipe) {
       const looksLikeDateLine = /\b(present|\d{4})\b/i.test(line);
       const gapToUse = currentSection === "EXPERIENCE" ? EXPERIENCE_GAP_MM : 2.0;
-
-      if (!lastItemWasSectionHeader && looksLikeDateLine) {
-        cursorY += gapToUse; // Restored Experience gap
-      }
+      const gap = !lastItemWasSectionHeader && looksLikeDateLine ? gapToUse : 0;
       lastItemWasSectionHeader = false;
 
+      // Check if entry header fits (with at least 1 line of content)
+      if (cursorY + gap + LINE_HEIGHT_MM > pageHeight - marginBottom) {
+        doc.addPage();
+        cursorY = marginTop;
+      } else {
+        cursorY += gap;
+      }
+
       const [titlePart, datePart] = line.split("|").map((s) => s.trim());
-      checkPageBreak(LINE_HEIGHT_MM + gapToUse);
 
       // Title on the left (Bold)
       doc.setFont(FONT_FAMILY, "bold");
@@ -352,14 +369,14 @@ export function downloadResumePdf({
       const contentWidth = doc.getTextWidth(skillsContent);
 
       if (labelWidth + contentWidth <= printableWidth) {
-        checkPageBreak(LINE_HEIGHT_MM);
+        checkPageBreak(0);
         doc.setFont(FONT_FAMILY, "bold");
         doc.text(categoryLabel, marginX, cursorY);
         doc.setFont(FONT_FAMILY, "normal");
         doc.text(skillsContent, marginX + labelWidth, cursorY);
         cursorY += LINE_HEIGHT_MM;
       } else {
-        checkPageBreak(LINE_HEIGHT_MM);
+        checkPageBreak(0);
         doc.setFont(FONT_FAMILY, "bold");
         doc.text(categoryLabel, marginX, cursorY);
         doc.setFont(FONT_FAMILY, "normal");
@@ -380,7 +397,7 @@ export function downloadResumePdf({
         if (remaining) {
           const restLines = doc.splitTextToSize(remaining, printableWidth);
           for (let rIdx = 0; rIdx < restLines.length; rIdx++) {
-            checkPageBreak(LINE_HEIGHT_MM);
+            checkPageBreak(0);
             doc.text(restLines[rIdx], marginX, cursorY);
             cursorY += LINE_HEIGHT_MM;
           }
@@ -398,7 +415,7 @@ export function downloadResumePdf({
 
     const wrappedLines = doc.splitTextToSize(line, printableWidth);
     for (const wLine of wrappedLines) {
-      checkPageBreak(LINE_HEIGHT_MM);
+      checkPageBreak(0);
       doc.text(wLine, marginX, cursorY);
       cursorY += LINE_HEIGHT_MM;
     }

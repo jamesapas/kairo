@@ -228,7 +228,7 @@ Return JSON matching:
 Follow this EXACT layout structure:
 
 ${(profileData?.name || "Candidate").toUpperCase()}
-${candidateLocation ? `${candidateLocation}\n` : ""}${candidateContactRow}
+${candidateContactRow}
 
 ${formattedDate}
 

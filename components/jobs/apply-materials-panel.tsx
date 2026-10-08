@@ -208,7 +208,7 @@ function renderResumeContent(content: string) {
 
   if (headerLines.length > 0) {
     return (
-      <div className="space-y-6 font-sans text-zinc-900 dark:text-zinc-100">
+      <div className="space-y-6 font-sans text-zinc-900 dark:text-zinc-100 px-1 sm:px-2">
         {/* ATS Resume Header */}
         <div className="text-center space-y-1 pb-2">
           <h3 className="text-base sm:text-lg font-bold tracking-tight uppercase text-zinc-950 dark:text-zinc-50">
