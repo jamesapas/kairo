@@ -125,7 +125,12 @@ export const PLATFORM_OPTIONS = [
   "LinkedIn",
   "Indeed",
   "JobStreet",
+  "Mynimo",
+  "Jobslin",
+  "OnlineJobs.ph",
+  "Upwork",
   "Company Website",
+  "Others",
 ] as const;
 
 export type PlatformOption = (typeof PLATFORM_OPTIONS)[number];
