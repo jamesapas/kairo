@@ -736,6 +736,7 @@ export function JobDetailPage({ jobId }: JobDetailPageProps) {
                   description={job.description}
                   currentStatus={job.status}
                   initialMaterials={job.aiApplyMaterials}
+                  matchAnalysis={job.aiMatchAnalysis}
                   onOpenHelpMeApply={() => setIsHelpMeApplyOpen(true)}
                   onMarkApplied={() => handleStatusChange("applied")}
                   onMaterialsUpdated={(updatedMap) =>

@@ -10,6 +10,7 @@ import {
   Check,
   Edit3,
   Eye,
+  EyeOff,
   RefreshCw,
   Save,
   CheckCircle2,
@@ -18,6 +19,7 @@ import {
   Download,
   X,
   MoreHorizontal,
+  Plus,
 } from "lucide-react";
 import {
   ApplyContentType,
@@ -27,9 +29,21 @@ import {
   JobApplyMaterialsMap,
 } from "@/types/ai-apply";
 import { JobStatus } from "@/types/job";
+import { JobMatchAnalysis } from "@/types/ai-match";
 import { saveApplyMaterialAction } from "@/lib/actions/jobs";
 import { downloadCoverLetterPdf } from "@/lib/utils/cover-letter-pdf";
 import { downloadResumePdf } from "@/lib/utils/resume-pdf";
+import {
+  updateResumeSummary,
+  addResumeSkill,
+  removeResumeSkill,
+  changeResumeProjectType,
+  hideResumeProject,
+  restoreResumeProject,
+  autoDetectResumeProjectTypes,
+  getRecommendedSkillsForJob,
+  ParsedProject,
+} from "@/lib/utils/resume-editor";
 
 interface ApplyMaterialsPanelProps {
   jobId: string;
@@ -38,6 +52,7 @@ interface ApplyMaterialsPanelProps {
   description?: string;
   currentStatus?: JobStatus;
   initialMaterials?: JobApplyMaterialsMap | null;
+  matchAnalysis?: JobMatchAnalysis | null;
   onOpenHelpMeApply?: () => void;
   onMarkApplied?: () => void;
   onMaterialsUpdated?: (updatedMap: JobApplyMaterialsMap) => void;
@@ -151,7 +166,174 @@ function renderCoverLetterContent(content: string) {
   );
 }
 
-function renderResumeContent(content: string) {
+function InlineAddSkillInput({ onAdd }: { onAdd: (skill: string) => void }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [value, setValue] = useState("");
+
+  if (!isOpen) {
+    return (
+      <button
+        type="button"
+        onClick={() => setIsOpen(true)}
+        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-200/50 dark:hover:bg-zinc-700/50 transition cursor-pointer"
+        title="Add skill to this category"
+      >
+        <Plus className="w-2.5 h-2.5" />
+        <span>Add</span>
+      </button>
+    );
+  }
+
+  const handleCommit = () => {
+    const trimmed = value.trim();
+    if (trimmed) {
+      onAdd(trimmed);
+    }
+    setValue("");
+    setIsOpen(false);
+  };
+
+  return (
+    <span className="inline-flex items-center gap-1">
+      <input
+        type="text"
+        autoFocus
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            handleCommit();
+          } else if (e.key === "Escape") {
+            setValue("");
+            setIsOpen(false);
+          }
+        }}
+        placeholder="Type skill & press Enter"
+        className="h-5 px-1.5 text-xs rounded border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-amber-500 w-36"
+      />
+      <button
+        type="button"
+        onClick={handleCommit}
+        className="text-[11px] text-emerald-600 hover:text-emerald-700 font-bold px-1 cursor-pointer"
+      >
+        OK
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          setValue("");
+          setIsOpen(false);
+        }}
+        className="text-zinc-400 hover:text-zinc-600 p-0.5 cursor-pointer"
+      >
+        <X className="w-2.5 h-2.5" />
+      </button>
+    </span>
+  );
+}
+
+function chooseCategoryForSkill(skill: string, availableCategories: string[]): string {
+  if (availableCategories.length === 0) return "Technical Skills";
+  const s = skill.toLowerCase();
+  for (const rawCat of availableCategories) {
+    const cat = rawCat.replace(/:$/, "").trim();
+    const c = cat.toLowerCase();
+    if (
+      (s.includes("react") ||
+        s.includes("css") ||
+        s.includes("html") ||
+        s.includes("tailwind") ||
+        s.includes("vue") ||
+        s.includes("next") ||
+        s.includes("angular") ||
+        s.includes("ui") ||
+        s.includes("frontend")) &&
+      c.includes("front")
+    ) {
+      return cat;
+    }
+    if (
+      (s.includes("node") ||
+        s.includes("express") ||
+        s.includes("nest") ||
+        s.includes("django") ||
+        s.includes("flask") ||
+        s.includes("spring") ||
+        s.includes("backend") ||
+        s.includes("api") ||
+        s.includes("fastapi")) &&
+      c.includes("back")
+    ) {
+      return cat;
+    }
+    if (
+      (s.includes("sql") ||
+        s.includes("postgres") ||
+        s.includes("mongo") ||
+        s.includes("supabase") ||
+        s.includes("firebase") ||
+        s.includes("redis") ||
+        s.includes("database") ||
+        s.includes("prisma")) &&
+      (c.includes("data") || c.includes("storage") || c.includes("db"))
+    ) {
+      return cat;
+    }
+    if (
+      (s.includes("git") ||
+        s.includes("docker") ||
+        s.includes("aws") ||
+        s.includes("ci/cd") ||
+        s.includes("github") ||
+        s.includes("jira") ||
+        s.includes("linux")) &&
+      (c.includes("tool") || c.includes("devops") || c.includes("version"))
+    ) {
+      return cat;
+    }
+    if (
+      (s.includes("python") ||
+        s.includes("javascript") ||
+        s.includes("typescript") ||
+        s.includes("java") ||
+        s.includes("go") ||
+        s.includes("c++") ||
+        s.includes("c#") ||
+        s.includes("rust") ||
+        s.includes("ruby") ||
+        s.includes("php")) &&
+      (c.includes("lang") || c.includes("technol"))
+    ) {
+      return cat;
+    }
+  }
+  return availableCategories[0].replace(/:$/, "").trim();
+}
+
+interface ResumeDocumentViewProps {
+  content: string;
+  isEditing?: boolean;
+  jobTitle?: string;
+  description?: string;
+  matchAnalysis?: JobMatchAnalysis | null;
+  hiddenProjects?: ParsedProject[];
+  onContentChange?: (newContent: string) => void;
+  onHideProject?: (project: ParsedProject) => void;
+  onRestoreProject?: (project: ParsedProject) => void;
+}
+
+function ResumeDocumentView({
+  content,
+  isEditing = false,
+  jobTitle,
+  description,
+  matchAnalysis,
+  hiddenProjects = [],
+  onContentChange,
+  onHideProject,
+  onRestoreProject,
+}: ResumeDocumentViewProps) {
   const normalized = content.replace(/\r\n/g, "\n").replace(/\r/g, "\n").trim();
   if (!normalized) return null;
   const lines = normalized.split("\n");
@@ -255,119 +437,362 @@ function renderResumeContent(content: string) {
         </div>
 
         {/* Sections */}
-        {sections.map((sec, sIdx) => (
-          <div key={sIdx} className="space-y-2">
-            {/* Section Header with Black Horizontal Line */}
-            <div className="border-b border-black dark:border-white pb-1">
-              <h4 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-zinc-950 dark:text-zinc-50">
-                {sec.title}
-              </h4>
+        {sections.map((sec, sIdx) => {
+          const isSummary = sec.title.includes("SUMMARY");
+          const isSkills = sec.title.includes("SKILL");
+          const isProjects = sec.title.includes("PROJECT") || sec.title.includes("CAPSTONE");
+
+          const projectSectionType: "key" | "side" | "capstone" = sec.title.includes("SIDE")
+            ? "side"
+            : sec.title.includes("CAPSTONE")
+            ? "capstone"
+            : "key";
+
+          return (
+            <div key={sIdx} className="space-y-2">
+              {/* Section Header with Black Horizontal Line */}
+              <div className="border-b border-black dark:border-white pb-1">
+                <h4 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-zinc-950 dark:text-zinc-50">
+                  {sec.title}
+                </h4>
+              </div>
+
+              {/* Body with subtle gap */}
+              <div className="text-xs sm:text-sm leading-relaxed text-zinc-800 dark:text-zinc-200 space-y-1.5 pt-1 font-sans">
+                {/* 1. PROFESSIONAL SUMMARY SECTION */}
+                {isSummary ? (
+                  isEditing ? (
+                    <div className="space-y-1.5 pt-1">
+                      <textarea
+                        value={sec.body.join("\n\n")}
+                        onChange={(e) => {
+                          const updated = updateResumeSummary(content, e.target.value);
+                          onContentChange?.(updated);
+                        }}
+                        rows={Math.max(3, Math.min(8, sec.body.join("\n").split("\n").length + 2))}
+                        placeholder="Write your professional summary tailored to this position..."
+                        className="w-full text-xs sm:text-sm leading-relaxed p-2.5 rounded-lg border border-dashed border-zinc-300 dark:border-zinc-700 bg-white/70 dark:bg-zinc-900/60 text-zinc-900 dark:text-zinc-100 font-sans focus:outline-hidden focus:ring-1 focus:ring-amber-500/50 resize-y"
+                      />
+                      <div className="flex justify-between items-center text-[10px] text-zinc-500 dark:text-zinc-400">
+                        <span>Directly tailored for {jobTitle || "this position"}</span>
+                        <span>{sec.body.join(" ").trim().split(/\s+/).filter(Boolean).length} words</span>
+                      </div>
+                    </div>
+                  ) : (
+                    sec.body.map((p, pIdx) => <p key={pIdx}>{p}</p>)
+                  )
+                ) : isSkills ? (
+                  /* 2. TECHNICAL SKILLS SECTION */
+                  (() => {
+                    const allCurrentSkills: string[] = [];
+                    const categoryNames: string[] = [];
+                    sec.body.forEach((line) => {
+                      const colonMatch = line.match(/^([^:]+:)\s*(.*)$/);
+                      if (colonMatch && !line.startsWith("•") && !line.startsWith("-")) {
+                        categoryNames.push(colonMatch[1].replace(/:$/, "").trim());
+                        const sks = colonMatch[2].split(",").map((s) => s.trim()).filter(Boolean);
+                        allCurrentSkills.push(...sks);
+                      }
+                    });
+
+                    const recommendedSkills = getRecommendedSkillsForJob(
+                      description,
+                      matchAnalysis,
+                      allCurrentSkills
+                    );
+
+                    return (
+                      <div className="space-y-2">
+                        {sec.body.map((p, pIdx) => {
+                          const colonMatch = p.match(/^([^:]+:)\s*(.*)$/);
+                          if (colonMatch && !p.startsWith("•") && !p.startsWith("-")) {
+                            const catName = colonMatch[1].replace(/:$/, "").trim();
+                            const skills = colonMatch[2]
+                              .split(",")
+                              .map((s) => s.trim())
+                              .filter(Boolean);
+
+                            if (isEditing) {
+                              const categoryRecs = recommendedSkills.filter(
+                                (rec) =>
+                                  chooseCategoryForSkill(rec, categoryNames).toLowerCase() ===
+                                  catName.toLowerCase()
+                              );
+
+                              return (
+                                <div key={pIdx} className="space-y-1.5 py-1">
+                                  <div className="flex flex-wrap items-center gap-1.5">
+                                    <strong className="font-bold text-zinc-950 dark:text-zinc-50 text-xs sm:text-sm mr-1">
+                                      {colonMatch[1]}
+                                    </strong>
+                                    {skills.map((skill, sIdx) => (
+                                      <span
+                                        key={sIdx}
+                                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-zinc-200/80 dark:bg-zinc-700/60 text-zinc-800 dark:text-zinc-200 text-xs font-medium"
+                                      >
+                                        <span>{skill}</span>
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            const updated = removeResumeSkill(content, catName, skill);
+                                            onContentChange?.(updated);
+                                          }}
+                                          className="text-zinc-400 hover:text-rose-500 cursor-pointer transition p-0.5 -mr-0.5"
+                                          title={`Remove ${skill}`}
+                                        >
+                                          <X className="w-2.5 h-2.5" />
+                                        </button>
+                                      </span>
+                                    ))}
+
+                                    {/* Recommended Skills for this category */}
+                                    {categoryRecs.map((rec) => (
+                                      <button
+                                        key={rec}
+                                        type="button"
+                                        onClick={() => {
+                                          const updated = addResumeSkill(content, catName, rec);
+                                          onContentChange?.(updated);
+                                        }}
+                                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md border border-dashed border-amber-400/80 dark:border-amber-600/70 bg-amber-50/70 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/50 text-xs font-medium transition cursor-pointer group shadow-2xs"
+                                        title={`Recommended: Click to add ${rec}`}
+                                      >
+                                        <Plus className="w-2.5 h-2.5 text-amber-600 dark:text-amber-400 group-hover:scale-110 transition-transform" />
+                                        <span>{rec}</span>
+                                      </button>
+                                    ))}
+
+                                    {/* Inline Add Skill to this Category */}
+                                    <InlineAddSkillInput
+                                      onAdd={(newSkill) => {
+                                        const updated = addResumeSkill(content, catName, newSkill);
+                                        onContentChange?.(updated);
+                                      }}
+                                    />
+                                  </div>
+                                </div>
+                              );
+                            }
+
+                            return (
+                              <p key={pIdx}>
+                                <strong className="font-bold text-zinc-950 dark:text-zinc-50">
+                                  {colonMatch[1]}
+                                </strong>{" "}
+                                <span className="font-normal text-zinc-800 dark:text-zinc-200">
+                                  {colonMatch[2]}
+                                </span>
+                              </p>
+                            );
+                          }
+
+                          return <p key={pIdx}>{p}</p>;
+                        })}
+                      </div>
+                    );
+                  })()
+                ) : isProjects ? (
+                  /* 3. ALL PROJECTS (KEY, SIDE, CAPSTONE, ETC.) */
+                  sec.body.map((p, pIdx) => {
+                    // Check for bullet points
+                    if (p.startsWith("•") || p.startsWith("- ")) {
+                      const bulletText = p.replace(/^[•-]\s*/, "");
+                      return (
+                        <div key={pIdx} className="flex items-start gap-2 pl-1.5">
+                          <span className="text-zinc-900 dark:text-zinc-100 font-bold select-none">•</span>
+                          <span className="font-normal text-zinc-800 dark:text-zinc-200">
+                            {bulletText}
+                          </span>
+                        </div>
+                      );
+                    }
+
+                    // Project header line (Title | Link | Date, or Title | Link, or Title)
+                    const parts = p.split("|").map((s) => s.trim()).filter(Boolean);
+                    const titlePart = parts[0] || p;
+                    const remainingParts = parts.slice(1);
+
+                    return (
+                      <div key={pIdx} className="flex flex-wrap items-center justify-between gap-2 pt-3.5 first:pt-0">
+                        {/* Project Title and Links / Dates */}
+                        <div className="flex flex-wrap items-baseline gap-1.5">
+                          <h5 className="font-bold text-zinc-950 dark:text-zinc-50 text-xs sm:text-sm">
+                            {titlePart}
+                          </h5>
+                          {remainingParts.map((part, partIdx) => {
+                            const isUrl = part.includes(".") || part.startsWith("http");
+                            const displayUrl = part.replace(/^https?:\/\//i, "").replace(/\/+$/g, "");
+                            const fullUrl = part.startsWith("http") ? part : `https://${part}`;
+                            return (
+                              <React.Fragment key={partIdx}>
+                                <span className="text-zinc-400 text-xs select-none">|</span>
+                                {isUrl ? (
+                                  <a
+                                    href={fullUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="text-xs sm:text-sm text-blue-600 dark:text-blue-400 hover:underline font-normal"
+                                  >
+                                    {displayUrl}
+                                  </a>
+                                ) : (
+                                  <span className="text-xs sm:text-sm text-zinc-700 dark:text-zinc-300 font-normal">
+                                    {part}
+                                  </span>
+                                )}
+                              </React.Fragment>
+                            );
+                          })}
+                        </div>
+
+                        {/* When Editing: Compact & Clean Controls Right Next to Project Title */}
+                        {isEditing && (
+                          <div className="flex items-center gap-1.5 select-none shrink-0">
+                            <div className="inline-flex items-center rounded-md bg-zinc-200/80 dark:bg-zinc-800 p-0.5 text-[10px] font-semibold">
+                              {(["key", "side", "capstone"] as const).map((t) => {
+                                const label = t === "key" ? "Key" : t === "side" ? "Side" : "Capstone";
+                                const isSelected = projectSectionType === t;
+                                return (
+                                  <button
+                                    key={t}
+                                    type="button"
+                                    onClick={() => {
+                                      const updated = changeResumeProjectType(content, titlePart, t);
+                                      onContentChange?.(updated);
+                                    }}
+                                    className={`px-2 py-0.5 rounded transition cursor-pointer ${
+                                      isSelected
+                                        ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 shadow-2xs font-bold"
+                                        : "text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200"
+                                    }`}
+                                  >
+                                    {label}
+                                  </button>
+                                );
+                              })}
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const { updatedContent, hiddenProject } = hideResumeProject(content, titlePart);
+                                if (hiddenProject) {
+                                  onHideProject?.(hiddenProject);
+                                }
+                                onContentChange?.(updatedContent);
+                              }}
+                              className="p-1 rounded-md text-zinc-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition cursor-pointer"
+                              title={`Hide ${titlePart} from this resume`}
+                            >
+                              <EyeOff className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })
+                ) : (
+                  /* 4. EXPERIENCE, EDUCATION, OTHER SECTIONS */
+                  sec.body.map((p, pIdx) => {
+                    // Check for categorized line (e.g. "Languages: TypeScript, ...")
+                    const colonMatch = p.match(/^([^:]+:)\s*(.*)$/);
+                    if (colonMatch && !p.startsWith("•") && !p.startsWith("-")) {
+                      return (
+                        <p key={pIdx}>
+                          <strong className="font-bold text-zinc-950 dark:text-zinc-50">
+                            {colonMatch[1]}
+                          </strong>{" "}
+                          <span className="font-normal text-zinc-800 dark:text-zinc-200">
+                            {colonMatch[2]}
+                          </span>
+                        </p>
+                      );
+                    }
+
+                    // Check for bullet points
+                    if (p.startsWith("•") || p.startsWith("- ")) {
+                      const bulletText = p.replace(/^[•-]\s*/, "");
+                      return (
+                        <div key={pIdx} className="flex items-start gap-2 pl-1.5">
+                          <span className="text-zinc-900 dark:text-zinc-100 font-bold select-none">•</span>
+                          <span className="font-normal text-zinc-800 dark:text-zinc-200">
+                            {bulletText}
+                          </span>
+                        </div>
+                      );
+                    }
+
+                    // Check for Job Title | Date Range line
+                    if (p.includes("|") && /\b(present|\d{4})\b/i.test(p) && !p.includes(":")) {
+                      const [titlePart, datePart] = p.split("|").map((s) => s.trim());
+                      return (
+                        <div key={pIdx} className="flex items-baseline justify-between gap-4 pt-3.5 first:pt-0">
+                          <h5 className="font-bold text-zinc-950 dark:text-zinc-50 text-xs sm:text-sm">
+                            {titlePart}
+                          </h5>
+                          {datePart && (
+                            <span className="text-xs sm:text-sm text-zinc-800 dark:text-zinc-200 font-normal shrink-0">
+                              {datePart}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    }
+
+                    // Check for Company, Location (Workplace Type) line
+                    if (
+                      (p.includes("(") || p.includes(",")) &&
+                      !p.startsWith("•") &&
+                      !p.startsWith("-") &&
+                      !p.includes(":") &&
+                      !p.includes("|")
+                    ) {
+                      return (
+                        <p key={pIdx} className="text-xs sm:text-sm text-zinc-700 dark:text-zinc-300 font-normal pb-0.5">
+                          {p}
+                        </p>
+                      );
+                    }
+
+                    return <p key={pIdx}>{p}</p>;
+                  })
+                )}
+              </div>
             </div>
-            {/* Body with subtle gap */}
-            <div className="text-xs sm:text-sm leading-relaxed text-zinc-800 dark:text-zinc-200 space-y-1.5 pt-1 font-sans">
-              {sec.body.map((p, pIdx) => {
-                // Check for categorized line (e.g. "Languages: TypeScript, ...")
-                const colonMatch = p.match(/^([^:]+:)\s*(.*)$/);
-                if (colonMatch && !p.startsWith("•") && !p.startsWith("-")) {
-                  return (
-                    <p key={pIdx}>
-                      <strong className="font-bold text-zinc-950 dark:text-zinc-50">
-                        {colonMatch[1]}
-                      </strong>{" "}
-                      <span className="font-normal text-zinc-800 dark:text-zinc-200">
-                        {colonMatch[2]}
-                      </span>
-                    </p>
-                  );
-                }
+          );
+        })}
 
-                // Check for bullet points
-                if (p.startsWith("•") || p.startsWith("- ")) {
-                  const bulletText = p.replace(/^[•-]\s*/, "");
-                  return (
-                    <div key={pIdx} className="flex items-start gap-2 pl-1.5">
-                      <span className="text-zinc-900 dark:text-zinc-100 font-bold select-none">•</span>
-                      <span className="font-normal text-zinc-800 dark:text-zinc-200">
-                        {bulletText}
-                      </span>
-                    </div>
-                  );
-                }
-
-                // Check for Job Title | Date Range line (e.g. "Junior Web Developer | July 2025 – July 2026")
-                if (p.includes("|") && /\b(present|\d{4})\b/i.test(p) && !p.includes(":")) {
-                  const [titlePart, datePart] = p.split("|").map((s) => s.trim());
-                  return (
-                    <div key={pIdx} className="flex items-baseline justify-between gap-4 pt-3.5 first:pt-0">
-                      <h5 className="font-bold text-zinc-950 dark:text-zinc-50 text-xs sm:text-sm">
-                        {titlePart}
-                      </h5>
-                      {datePart && (
-                        <span className="text-xs sm:text-sm text-zinc-800 dark:text-zinc-200 font-normal shrink-0">
-                          {datePart}
-                        </span>
-                      )}
-                    </div>
-                  );
-                }
-
-                // Check for Project Title | Link line or other piped project line
-                if (p.includes("|") && (/\b(https?:\/\/|www\.)/i.test(p) || sec.title.includes("PROJECT") || sec.title.includes("CAPSTONE")) && !p.includes(":")) {
-                  const [titlePart, linkPart] = p.split("|").map((s) => s.trim());
-                  const displayLink = linkPart ? linkPart.replace(/^https?:\/\//i, "").replace(/\/+$/g, "") : "";
-                  const fullUrl = linkPart ? (linkPart.startsWith("http") ? linkPart : `https://${linkPart}`) : "";
-
-                  return (
-                    <div key={pIdx} className="flex flex-wrap items-baseline gap-1.5 pt-3.5 first:pt-0">
-                      <h5 className="font-bold text-zinc-950 dark:text-zinc-50 text-xs sm:text-sm">
-                        {titlePart}
-                      </h5>
-                      {linkPart && (
-                        <>
-                          <span className="text-zinc-400 text-xs select-none">|</span>
-                          <a
-                            href={fullUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-xs sm:text-sm text-blue-600 dark:text-blue-400 hover:underline font-normal"
-                          >
-                            {displayLink}
-                          </a>
-                        </>
-                      )}
-                    </div>
-                  );
-                }
-
-                // Check for Project Title without link (under PROJECTS section)
-                if ((sec.title.includes("PROJECT") || sec.title.includes("CAPSTONE")) && !p.startsWith("•") && !p.startsWith("-") && !p.includes(":")) {
-                  return (
-                    <h5 key={pIdx} className="font-bold text-zinc-950 dark:text-zinc-50 pt-3.5 first:pt-0 text-xs sm:text-sm">
-                      {p}
-                    </h5>
-                  );
-                }
-
-                // Check for Company, Location (Workplace Type) line
-                if (
-                  (p.includes("(") || p.includes(",")) &&
-                  !p.startsWith("•") &&
-                  !p.startsWith("-") &&
-                  !p.includes(":") &&
-                  !p.includes("|")
-                ) {
-                  return (
-                    <p key={pIdx} className="text-xs sm:text-sm text-zinc-700 dark:text-zinc-300 font-normal pb-0.5">
-                      {p}
-                    </p>
-                  );
-                }
-
-                return <p key={pIdx}>{p}</p>;
-              })}
+        {/* Hidden Projects Box at the Bottom of the Resume (When Editing) */}
+        {isEditing && hiddenProjects && hiddenProjects.length > 0 && (
+          <div className="mt-6 p-3.5 rounded-xl border border-dashed border-zinc-300 dark:border-zinc-700 bg-zinc-100/60 dark:bg-zinc-800/40 text-xs space-y-2">
+            <div className="flex items-center gap-1.5 text-zinc-600 dark:text-zinc-400 font-semibold">
+              <EyeOff className="w-3.5 h-3.5" />
+              <span>Hidden from this resume ({hiddenProjects.length}):</span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {hiddenProjects.map((hp) => (
+                <div
+                  key={hp.title}
+                  className="inline-flex items-center gap-2 px-2.5 py-1 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-zinc-800 dark:text-zinc-200 shadow-2xs"
+                >
+                  <span className="font-medium">{hp.title}</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const updated = restoreResumeProject(content, hp);
+                      onRestoreProject?.(hp);
+                      onContentChange?.(updated);
+                    }}
+                    className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer"
+                  >
+                    <Plus className="w-3 h-3" />
+                    <span>Restore</span>
+                  </button>
+                </div>
+              ))}
             </div>
           </div>
-        ))}
+        )}
       </div>
     );
   }
@@ -379,6 +804,10 @@ function renderResumeContent(content: string) {
   );
 }
 
+function renderResumeContent(content: string) {
+  return <ResumeDocumentView content={content} isEditing={false} />;
+}
+
 export function ApplyMaterialsPanel({
   jobId,
   jobTitle,
@@ -386,6 +815,7 @@ export function ApplyMaterialsPanel({
   description,
   currentStatus,
   initialMaterials,
+  matchAnalysis,
   onOpenHelpMeApply,
   onMarkApplied,
   onMaterialsUpdated,
@@ -402,6 +832,7 @@ export function ApplyMaterialsPanel({
   });
   const [editedContents, setEditedContents] = useState<Partial<Record<ApplyContentType, string>>>({});
   const [isEditing, setIsEditing] = useState(false);
+  const [hiddenProjects, setHiddenProjects] = useState<ParsedProject[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
@@ -715,7 +1146,7 @@ export function ApplyMaterialsPanel({
 
             {isEditing ? (
               /* When Editing: Prominent Cancel & Save Actions */
-              <div className="flex items-center gap-1.5 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-xs p-1 rounded-xl border border-zinc-200 dark:border-zinc-700 shadow-sm">
+              <div className="flex items-center gap-1.5 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xs p-1 rounded-xl border border-zinc-200 dark:border-zinc-700 shadow-sm">
                 {/* Cancel Edit Button */}
                 <button
                   type="button"
@@ -740,56 +1171,68 @@ export function ApplyMaterialsPanel({
                 </button>
               </div>
             ) : (
-              /* When Viewing: 3-Dots Dropdown Menu (Matches Table Behavior) */
-              <div className="relative inline-block text-left" onClick={(e) => e.stopPropagation()}>
-                <button
-                  ref={menuButtonRef}
-                  type="button"
-                  onClick={() => setIsMenuOpen(!isMenuOpen)}
-                  title="Actions"
-                  className={`p-1.5 rounded-lg transition cursor-pointer ${
-                    isMenuOpen
-                      ? "bg-zinc-200 dark:bg-zinc-700 text-zinc-900 dark:text-white"
-                      : "text-zinc-400 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                  }`}
-                >
-                  <MoreHorizontal className="w-4 h-4" />
-                </button>
-
-                {isMenuOpen && (
-                  <div
-                    ref={menuRef}
-                    className="absolute right-0 top-full mt-1.5 w-44 rounded-2xl bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md border border-zinc-200 dark:border-zinc-800 shadow-2xl py-1.5 animate-fade-in text-xs font-semibold select-none z-30"
+              <div className="flex items-center gap-1.5">
+                {activeSubTab === "resume-suggestions" && hasCurrentContent && (
+                  <button
+                    type="button"
+                    onClick={() => setIsEditing(true)}
+                    className="h-7 px-2.5 rounded-lg bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 hover:from-amber-400 hover:to-rose-400 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-2xs hover:shadow-xs active:scale-[0.98] cursor-pointer"
                   >
-                    {/* Copy */}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        handleCopy();
-                        setIsMenuOpen(false);
-                      }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100/80 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-white cursor-pointer transition"
-                    >
-                      {copied ? (
-                        <Check className="w-3.5 h-3.5 text-emerald-500" />
-                      ) : (
-                        <Copy className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-500" />
-                      )}
-                      <span>{copied ? "Copied!" : "Copy"}</span>
-                    </button>
+                    <Edit3 className="w-3.5 h-3.5" />
+                    <span>Edit Resume</span>
+                  </button>
+                )}
 
-                    {/* Edit */}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsEditing(true);
-                        setIsMenuOpen(false);
-                      }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100/80 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-white cursor-pointer transition"
+                {/* When Viewing: 3-Dots Dropdown Menu (Matches Table Behavior) */}
+                <div className="relative inline-block text-left" onClick={(e) => e.stopPropagation()}>
+                  <button
+                    ref={menuButtonRef}
+                    type="button"
+                    onClick={() => setIsMenuOpen(!isMenuOpen)}
+                    title="Actions"
+                    className={`p-1.5 rounded-lg transition cursor-pointer ${
+                      isMenuOpen
+                        ? "bg-zinc-200 dark:bg-zinc-700 text-zinc-900 dark:text-white"
+                        : "text-zinc-400 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                    }`}
+                  >
+                    <MoreHorizontal className="w-4 h-4" />
+                  </button>
+
+                  {isMenuOpen && (
+                    <div
+                      ref={menuRef}
+                      className="absolute right-0 top-full mt-1.5 w-48 rounded-2xl bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md border border-zinc-200 dark:border-zinc-800 shadow-2xl py-1.5 animate-fade-in text-xs font-semibold select-none z-30"
                     >
-                      <Edit3 className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-500" />
-                      <span>Edit</span>
-                    </button>
+                      {/* Copy */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          handleCopy();
+                          setIsMenuOpen(false);
+                        }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100/80 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-white cursor-pointer transition"
+                      >
+                        {copied ? (
+                          <Check className="w-3.5 h-3.5 text-emerald-500" />
+                        ) : (
+                          <Copy className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-500" />
+                        )}
+                        <span>{copied ? "Copied!" : "Copy"}</span>
+                      </button>
+
+                      {/* Edit */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsEditing(true);
+                          setIsMenuOpen(false);
+                        }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100/80 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-white cursor-pointer transition"
+                      >
+                        <Edit3 className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-500" />
+                        <span>{activeSubTab === "resume-suggestions" ? "Edit Resume" : "Edit Text"}</span>
+                      </button>
 
                     {/* Download PDF (for Cover Letter or Resume) */}
                     {(activeSubTab === "cover-letter" || activeSubTab === "resume-suggestions") && (
@@ -857,11 +1300,12 @@ export function ApplyMaterialsPanel({
                   </div>
                 )}
               </div>
-            )}
-          </div>
+            </div>
+          )}
+        </div>
 
           {/* Text Canvas / Document Container */}
-          {isEditing ? (
+          {isEditing && activeSubTab !== "resume-suggestions" ? (
             <textarea
               ref={textareaRef}
               value={editedContents[activeSubTab] ?? ""}
@@ -880,7 +1324,31 @@ export function ApplyMaterialsPanel({
           ) : (
             <div className="w-full p-6 sm:p-8 md:p-10 rounded-2xl bg-zinc-50/70 dark:bg-zinc-800/40 border border-zinc-200/80 dark:border-zinc-800 text-zinc-800 dark:text-zinc-200 select-text transition-all">
               {activeSubTab === "resume-suggestions" ? (
-                renderResumeContent(currentContent)
+                <ResumeDocumentView
+                  content={currentContent}
+                  isEditing={isEditing}
+                  jobTitle={jobTitle}
+                  description={description}
+                  matchAnalysis={matchAnalysis}
+                  hiddenProjects={hiddenProjects}
+                  onContentChange={(newContent) => {
+                    setEditedContents((prev) => ({
+                      ...prev,
+                      "resume-suggestions": newContent,
+                    }));
+                  }}
+                  onHideProject={(p) => {
+                    setHiddenProjects((prev) => [
+                      ...prev.filter((item) => item.title.toLowerCase() !== p.title.toLowerCase()),
+                      p,
+                    ]);
+                  }}
+                  onRestoreProject={(p) => {
+                    setHiddenProjects((prev) =>
+                      prev.filter((item) => item.title.toLowerCase() !== p.title.toLowerCase())
+                    );
+                  }}
+                />
               ) : activeSubTab === "cover-letter" ? (
                 renderCoverLetterContent(currentContent)
               ) : (
@@ -999,6 +1467,7 @@ export function ApplyMaterialsPanel({
           </div>
         </div>
       )}
+
     </div>
   );
 }
