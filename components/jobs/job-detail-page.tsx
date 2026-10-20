@@ -13,7 +13,6 @@ import {
   Laptop,
   Building,
   ArrowUpRight,
-  Link2,
   CheckCircle2,
   ChevronRight,
   AlertCircle,
@@ -363,24 +362,33 @@ export function JobDetailPage({ jobId }: JobDetailPageProps) {
           </div>
         </div>
 
-        {/* Two-Column Split Layout: 5 cols Left (Unified Job Box) / 7 cols Right (AI Workspace) */}
+        {/* Two-Column Split Layout: 5 cols Left (Unified Job Box, Sticky) / 7 cols Right (AI Workspace) */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* LEFT COLUMN: Unified Job Context Box (5 cols) */}
-          <div className="lg:col-span-5 space-y-6">
-            <div className="bg-white dark:bg-zinc-900 rounded-3xl p-5 sm:p-6 border border-zinc-200/90 dark:border-zinc-800 shadow-xs space-y-5">
-              {/* Header: Company, Date, Title, Badges & Links */}
-              <div className="space-y-2 min-w-0">
-                <div className="flex items-center gap-2 text-xs font-semibold text-zinc-500 dark:text-zinc-400">
-                  <Building2 className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
-                  <span className="font-bold text-zinc-800 dark:text-zinc-200">{job.company}</span>
-                  <span>•</span>
-                  <span className="truncate">
-                    {job.status === "saved"
-                      ? `Saved on ${formatDateWords(job.dateApplied)}`
-                      : `Applied on ${formatDateWords(job.dateApplied)} (${formatRelativeDate(job.dateApplied)})`}
+          {/* LEFT COLUMN: Unified Job Context Box (Sticky on Desktop below navbar) */}
+          <div className="lg:col-span-5 xl:col-span-4 lg:sticky lg:top-[5.25rem] lg:self-start z-10">
+            <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200/90 dark:border-zinc-800 shadow-xs flex flex-col lg:max-h-[calc(100vh-6.75rem)] overflow-hidden">
+              {/* Header: Company, Date, Title, Badges & Links (Pinned in card) */}
+              <div className="p-5 sm:p-6 pb-5 space-y-3.5 shrink-0">
+                {/* Top Row: Company & Date Applied (Separated with breathing room) */}
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="w-7 h-7 rounded-xl bg-zinc-100 dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700/80 flex items-center justify-center shrink-0">
+                      <Building2 className="w-3.5 h-3.5 text-zinc-500 dark:text-zinc-400" />
+                    </div>
+                    <span className="font-bold text-sm text-zinc-900 dark:text-zinc-100 truncate">
+                      {job.company}
+                    </span>
+                  </div>
+
+                  <span
+                    className="text-xs text-zinc-400 dark:text-zinc-500 font-normal shrink-0"
+                    title={job.dateApplied ? `Applied on ${formatDateWords(job.dateApplied)}` : undefined}
+                  >
+                    {job.status === "saved" ? "Saved" : "Applied"} {formatRelativeDate(job.dateApplied)}
                   </span>
                 </div>
 
+                {/* Role Title */}
                 <h1 className="text-xl sm:text-2xl font-extrabold text-zinc-900 dark:text-zinc-100 tracking-tight leading-snug">
                   {job.jobUrl ? (
                     <a
@@ -398,39 +406,30 @@ export function JobDetailPage({ jobId }: JobDetailPageProps) {
                   )}
                 </h1>
 
+                {/* Metadata: Platform, Workplace, Salary, Recruiter */}
                 <div className="flex items-center gap-2 pt-0.5 flex-wrap text-xs text-zinc-600 dark:text-zinc-400 font-medium">
                   <div className="inline-flex items-center gap-1.5 font-semibold text-zinc-800 dark:text-zinc-200">
                     <PlatformIcon platform={job.appliedOn} className="w-3.5 h-3.5" />
                     <span>{job.appliedOn}</span>
                   </div>
+
                   <span className="text-zinc-300 dark:text-zinc-700">•</span>
+
                   <WorkplaceBadge type={job.workplaceType} />
+
                   {job.salary && (
                     <>
                       <span className="text-zinc-300 dark:text-zinc-700">•</span>
-                      <span>{formatSalaryDisplay(job.salary)}</span>
-                    </>
-                  )}
-                  {job.contactUrl && (
-                    <>
-                      <span className="text-zinc-300 dark:text-zinc-700">•</span>
-                      <a
-                        href={job.contactUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        title={`Contact / Recruiter: ${job.contactUrl}`}
-                        className="inline-flex items-center gap-1 text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:underline transition"
-                      >
-                        <Link2 className="w-3.5 h-3.5" />
-                        <span>Recruiter</span>
-                      </a>
+                      <span className="font-semibold text-zinc-800 dark:text-zinc-200">
+                        {formatSalaryDisplay(job.salary)}
+                      </span>
                     </>
                   )}
                 </div>
               </div>
 
-              {/* Job Description */}
-              <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800 space-y-3">
+              {/* Job Description (Scrolls internally inside card) */}
+              <div className="flex-1 overflow-y-auto p-5 sm:p-6 pt-4 border-t border-zinc-100 dark:border-zinc-800 space-y-3">
                 <h2 className="text-xs uppercase font-bold tracking-wider text-zinc-500 dark:text-zinc-400">
                   Job Description
                 </h2>
@@ -456,8 +455,8 @@ export function JobDetailPage({ jobId }: JobDetailPageProps) {
             </div>
           </div>
 
-          {/* RIGHT COLUMN: AI Copilot & Materials Workspace (7 cols) */}
-          <div className="lg:col-span-7 space-y-6">
+          {/* RIGHT COLUMN: AI Copilot & Materials Workspace */}
+          <div className="lg:col-span-7 xl:col-span-8 space-y-6">
             {/* Segmented Workspace Tabs Bar */}
             <div className="flex items-center gap-1.5 p-1 bg-zinc-100/90 dark:bg-zinc-800/70 border border-zinc-200/80 dark:border-zinc-700/80 rounded-2xl">
               <button
