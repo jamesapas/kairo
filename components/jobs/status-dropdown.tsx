@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import {
   Bookmark,
@@ -66,25 +66,44 @@ export function StatusDropdown({
   const buttonRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (!isOpen) return;
-
+  const updateCoords = useCallback(() => {
     if (buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
+      if (rect.bottom < 0 || rect.top > window.innerHeight) {
+        setIsOpen(false);
+        return;
+      }
+
       const dropdownHeight = 265;
       const spaceBelow = window.innerHeight - rect.bottom;
       const openUpward = spaceBelow < dropdownHeight && rect.top > dropdownHeight;
+      const targetWidth = size === "md" ? rect.width : 180;
+      const left = Math.max(8, Math.min(rect.left, window.innerWidth - targetWidth - 8));
 
       setCoords({
-        top: openUpward ? rect.top - dropdownHeight - 6 : rect.bottom + 6,
-        left: Math.min(rect.left, window.innerWidth - 190),
+        top: openUpward ? Math.max(8, rect.top - dropdownHeight - 6) : rect.bottom + 6,
+        left,
         width: size === "md" ? rect.width : undefined,
       });
     }
+  }, [size]);
 
-    const handleScroll = () => {
-      setIsOpen(false);
+  useEffect(() => {
+    if (!isOpen) return;
+
+    updateCoords();
+
+    const handleScroll = (event: Event) => {
+      if (
+        dropdownRef.current &&
+        (dropdownRef.current === event.target ||
+          dropdownRef.current.contains(event.target as Node))
+      ) {
+        return;
+      }
+      updateCoords();
     };
+
     const handleClickOutside = (event: MouseEvent) => {
       if (
         buttonRef.current &&
@@ -95,22 +114,26 @@ export function StatusDropdown({
         setIsOpen(false);
       }
     };
+
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
+        event.stopPropagation();
         setIsOpen(false);
       }
     };
 
     window.addEventListener("scroll", handleScroll, true);
+    window.addEventListener("resize", updateCoords);
     document.addEventListener("mousedown", handleClickOutside);
     window.addEventListener("keydown", handleKeyDown);
 
     return () => {
       window.removeEventListener("scroll", handleScroll, true);
+      window.removeEventListener("resize", updateCoords);
       document.removeEventListener("mousedown", handleClickOutside);
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isOpen, size]);
+  }, [isOpen, updateCoords]);
 
   const currentConfig = JOB_STATUS_CONFIG[value] || JOB_STATUS_CONFIG.applied;
   const statuses = Object.keys(JOB_STATUS_CONFIG) as JobStatus[];
@@ -155,8 +178,9 @@ export function StatusDropdown({
               left: `${coords.left}px`,
               width: coords.width ? `${coords.width}px` : "180px",
               zIndex: 9999,
+              maxHeight: "280px",
             }}
-            className="rounded-2xl bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md border border-zinc-200 dark:border-zinc-800 shadow-2xl py-1.5 animate-fade-in"
+            className="rounded-2xl bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md border border-zinc-200 dark:border-zinc-800 shadow-2xl py-1.5 overflow-y-auto overscroll-contain animate-fade-in"
           >
             {statuses.map((st) => {
               const config = JOB_STATUS_CONFIG[st];

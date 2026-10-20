@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useMemo } from "react";
+import React, { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
 import {
@@ -142,23 +142,41 @@ function JobRowActionMenu({
   const buttonRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (!isOpen) return;
-
+  const updateCoords = useCallback(() => {
     if (buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
+      if (rect.bottom < 0 || rect.top > window.innerHeight) {
+        setIsOpen(false);
+        return;
+      }
+
       const menuHeight = 200;
       const menuWidth = 145;
       const spaceBelow = window.innerHeight - rect.bottom;
       const openUpward = spaceBelow < menuHeight && rect.top > menuHeight;
 
       setCoords({
-        top: openUpward ? rect.top - menuHeight - 6 : rect.bottom + 6,
+        top: openUpward ? Math.max(8, rect.top - menuHeight - 6) : rect.bottom + 6,
         left: Math.max(12, Math.min(rect.right - menuWidth, window.innerWidth - menuWidth - 12)),
       });
     }
+  }, []);
 
-    const handleScroll = () => setIsOpen(false);
+  useEffect(() => {
+    if (!isOpen) return;
+
+    updateCoords();
+
+    const handleScroll = (e: Event) => {
+      if (
+        menuRef.current &&
+        (menuRef.current === e.target || menuRef.current.contains(e.target as Node))
+      ) {
+        return;
+      }
+      updateCoords();
+    };
+
     const handleClickOutside = (e: MouseEvent) => {
       if (
         buttonRef.current &&
@@ -169,20 +187,26 @@ function JobRowActionMenu({
         setIsOpen(false);
       }
     };
+
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setIsOpen(false);
+      if (e.key === "Escape") {
+        e.stopPropagation();
+        setIsOpen(false);
+      }
     };
 
     window.addEventListener("scroll", handleScroll, true);
+    window.addEventListener("resize", updateCoords);
     document.addEventListener("mousedown", handleClickOutside);
     window.addEventListener("keydown", handleKeyDown);
 
     return () => {
       window.removeEventListener("scroll", handleScroll, true);
+      window.removeEventListener("resize", updateCoords);
       document.removeEventListener("mousedown", handleClickOutside);
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isOpen]);
+  }, [isOpen, updateCoords]);
 
   const handleCopyLink = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -228,7 +252,7 @@ function JobRowActionMenu({
               width: "145px",
               zIndex: 9999,
             }}
-            className="rounded-2xl bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md border border-zinc-200 dark:border-zinc-800 shadow-2xl py-1.5 animate-fade-in text-xs font-semibold select-none"
+            className="rounded-2xl bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md border border-zinc-200 dark:border-zinc-800 shadow-2xl py-1.5 overscroll-contain animate-fade-in text-xs font-semibold select-none"
           >
             {/* Pin / Unpin */}
             <button

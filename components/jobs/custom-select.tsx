@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { ChevronDown, Check } from "lucide-react";
 
@@ -39,25 +39,53 @@ export function CustomSelect<T extends string = string>({
 
   const selectedOption = options.find((opt) => opt.value === value);
 
-  useEffect(() => {
-    if (!isOpen) return;
-
+  const updateCoords = useCallback(() => {
     if (buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
+      if (rect.bottom < 0 || rect.top > window.innerHeight) {
+        setIsOpen(false);
+        return;
+      }
+
       const dropdownHeight = Math.min(options.length * 38 + 16, 260);
       const spaceBelow = window.innerHeight - rect.bottom;
       const openUpward = spaceBelow < dropdownHeight && rect.top > dropdownHeight;
 
+      let parsedWidth = rect.width;
+      if (width) {
+        const match = width.match(/^(\d+)/);
+        if (match) {
+          parsedWidth = parseInt(match[1], 10);
+        }
+      }
+
+      const left = Math.max(8, Math.min(rect.left, window.innerWidth - parsedWidth - 8));
+
       setCoords({
-        top: openUpward ? rect.top - dropdownHeight - 6 : rect.bottom + 6,
-        left: rect.left,
+        top: openUpward ? Math.max(8, rect.top - dropdownHeight - 6) : rect.bottom + 6,
+        left,
         width: rect.width,
       });
     }
+  }, [options.length, width]);
 
-    const handleScroll = () => {
-      setIsOpen(false);
+  useEffect(() => {
+    if (!isOpen) return;
+
+    updateCoords();
+
+    const handleScroll = (event: Event) => {
+      // Do not close when scrolling inside the dropdown itself
+      if (
+        dropdownRef.current &&
+        (dropdownRef.current === event.target ||
+          dropdownRef.current.contains(event.target as Node))
+      ) {
+        return;
+      }
+      updateCoords();
     };
+
     const handleClickOutside = (event: MouseEvent) => {
       if (
         buttonRef.current &&
@@ -68,22 +96,26 @@ export function CustomSelect<T extends string = string>({
         setIsOpen(false);
       }
     };
+
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
+        event.stopPropagation();
         setIsOpen(false);
       }
     };
 
     window.addEventListener("scroll", handleScroll, true);
+    window.addEventListener("resize", updateCoords);
     document.addEventListener("mousedown", handleClickOutside);
     window.addEventListener("keydown", handleKeyDown);
 
     return () => {
       window.removeEventListener("scroll", handleScroll, true);
+      window.removeEventListener("resize", updateCoords);
       document.removeEventListener("mousedown", handleClickOutside);
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isOpen, options.length]);
+  }, [isOpen, updateCoords]);
 
   const isFullWidth = className.includes("w-full");
 
@@ -129,7 +161,7 @@ export function CustomSelect<T extends string = string>({
               zIndex: 9999,
               maxHeight: "260px",
             }}
-            className="rounded-2xl bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md border border-zinc-200 dark:border-zinc-800 shadow-2xl py-1.5 overflow-y-auto animate-fade-in"
+            className="rounded-2xl bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md border border-zinc-200 dark:border-zinc-800 shadow-2xl py-1.5 overflow-y-auto overscroll-contain animate-fade-in"
           >
             {options.map((option) => {
               const isSelected = option.value === value;
