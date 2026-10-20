@@ -91,7 +91,7 @@ export async function POST(request: Request) {
           .order("start_year", { ascending: false }),
         supabase
           .from("user_projects")
-          .select("title, live_url, bullets, sort_order")
+          .select("title, project_type, live_url, bullets, sort_order")
           .eq("user_id", user.id)
           .order("sort_order", { ascending: true })
           .order("created_at", { ascending: false }),
@@ -127,11 +127,31 @@ export async function POST(request: Request) {
         }`,
         highlights: Array.isArray(exp.bullets) ? exp.bullets : [],
       })),
-      projects: projectsData.slice(0, 5).map((proj) => ({
-        title: proj.title,
-        liveUrl: proj.live_url || undefined,
-        highlights: Array.isArray(proj.bullets) ? proj.bullets.filter(Boolean) : [],
-      })),
+      projects: [...projectsData]
+        .sort((a, b) => {
+          const typePrio: Record<string, number> = { key: 1, side: 2, capstone: 3 };
+          const aType = a.project_type || "key";
+          const bType = b.project_type || "key";
+          const prioA = typePrio[aType] ?? 99;
+          const prioB = typePrio[bType] ?? 99;
+          if (prioA !== prioB) return prioA - prioB;
+          if (a.sort_order !== undefined && b.sort_order !== undefined && a.sort_order !== b.sort_order) {
+            return a.sort_order - b.sort_order;
+          }
+          return 0;
+        })
+        .slice(0, 6)
+        .map((proj) => ({
+          title: proj.title,
+          projectType:
+            proj.project_type === "capstone" || proj.project_type === "capstone_project"
+              ? "Capstone Project"
+              : proj.project_type === "side" || proj.project_type === "side_project"
+              ? "Side Project"
+              : "Key Project",
+          liveUrl: proj.live_url || undefined,
+          highlights: Array.isArray(proj.bullets) ? proj.bullets.filter(Boolean) : [],
+        })),
       education: educationData.map((edu) => ({
         degree: edu.degree,
         school: edu.school,

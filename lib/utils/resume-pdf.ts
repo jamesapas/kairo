@@ -191,14 +191,15 @@ export function downloadResumePdf({
       continue;
     }
 
-    // Check for Section Header (e.g. "PROFESSIONAL SUMMARY", "TECHNICAL SKILLS", "PROFESSIONAL EXPERIENCE", "PROJECTS", "EDUCATION")
+    // Check for Section Header (e.g. "PROFESSIONAL SUMMARY", "TECHNICAL SKILLS", "PROFESSIONAL EXPERIENCE", "KEY PROJECTS", "CAPSTONE PROJECT", "SIDE PROJECTS", "EDUCATION")
     const isSectionHeader =
       line.match(/^[A-Z\s/&-]{3,}$/) &&
       (line.includes("SUMMARY") ||
         line.includes("SKILL") ||
         line.includes("EXPERIENCE") ||
         line.includes("EDUCATION") ||
-        line.includes("PROJECT"));
+        line.includes("PROJECT") ||
+        line.includes("CAPSTONE"));
 
     if (isSectionHeader) {
       const sectionGap = !isFirstSection ? SECTION_GAP_MM : 0;
@@ -208,7 +209,7 @@ export function downloadResumePdf({
       if (line.includes("SUMMARY")) currentSection = "SUMMARY";
       else if (line.includes("SKILL")) currentSection = "SKILLS";
       else if (line.includes("EXPERIENCE")) currentSection = "EXPERIENCE";
-      else if (line.includes("PROJECT")) currentSection = "PROJECTS";
+      else if (line.includes("PROJECT") || line.includes("CAPSTONE")) currentSection = "PROJECTS";
       else if (line.includes("EDUCATION")) currentSection = "EDUCATION";
       else currentSection = "";
 

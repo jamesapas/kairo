@@ -6,6 +6,7 @@ import {
   UserProject,
   UserProjectRow,
   mapRowToProject,
+  sortProjectsByType,
 } from "@/types/project";
 
 export async function getProjectsAction(): Promise<{
@@ -36,9 +37,11 @@ export async function getProjectsAction(): Promise<{
       return { success: false, error: error.message };
     }
 
+    const mapped = (data || []).map((row) => mapRowToProject(row as UserProjectRow));
+
     return {
       success: true,
-      data: (data || []).map((row) => mapRowToProject(row as UserProjectRow)),
+      data: sortProjectsByType(mapped),
     };
   } catch (err: unknown) {
     console.error("Unexpected error fetching projects:", err);
@@ -67,6 +70,7 @@ export async function createProjectAction(
     const newRow = {
       user_id: user.id,
       title: payload.title.trim(),
+      project_type: payload.projectType || "key",
       live_url: payload.liveUrl?.trim() || null,
       bullets: Array.isArray(payload.bullets) ? payload.bullets.filter(Boolean) : [],
       sort_order: payload.sortOrder ?? 0,
@@ -115,6 +119,7 @@ export async function updateProjectAction(
     };
 
     if (payload.title !== undefined) updateFields.title = payload.title.trim();
+    if (payload.projectType !== undefined) updateFields.project_type = payload.projectType;
     if (payload.liveUrl !== undefined) updateFields.live_url = payload.liveUrl?.trim() || null;
     if (payload.bullets !== undefined) {
       updateFields.bullets = Array.isArray(payload.bullets) ? payload.bullets.filter(Boolean) : [];

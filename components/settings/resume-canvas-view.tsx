@@ -37,7 +37,8 @@ import {
 import { ProfileLink } from "@/types/profile";
 import { UserExperience, WorkplaceType } from "@/types/experience";
 import { UserEducation } from "@/types/education";
-import { UserProject } from "@/types/project";
+import { UserProject, ProjectType, PROJECT_TYPE_LABELS, sortProjectsByType } from "@/types/project";
+import { ProjectTypeDropdown } from "./project-type-dropdown";
 import { UserSkill } from "@/types/skill";
 import { uploadAvatarAction } from "@/lib/actions/profile";
 import {
@@ -653,14 +654,17 @@ export function ResumeCanvasView({
   const [isAddingProj, setIsAddingProj] = useState(false);
   const [editingProjId, setEditingProjId] = useState<string | null>(null);
   const [projTitle, setProjTitle] = useState("");
+  const [projType, setProjType] = useState<ProjectType>("key");
   const [projLiveUrl, setProjLiveUrl] = useState("");
   const [projBullets, setProjBullets] = useState<string[]>([]);
   const [newProjBulletInput, setNewProjBulletInput] = useState("");
   const [savingProj, setSavingProj] = useState(false);
+  const [projectFilter, setProjectFilter] = useState<"all" | ProjectType>("all");
 
   const handleStartAddProject = () => {
     setEditingProjId(null);
     setProjTitle("");
+    setProjType("key");
     setProjLiveUrl("");
     setProjBullets([]);
     setNewProjBulletInput("");
@@ -670,6 +674,7 @@ export function ResumeCanvasView({
   const handleStartEditProject = (proj: UserProject) => {
     setEditingProjId(proj.id);
     setProjTitle(proj.title);
+    setProjType(proj.projectType || "key");
     setProjLiveUrl(proj.liveUrl || "");
     setProjBullets(Array.isArray(proj.bullets) ? [...proj.bullets] : []);
     setNewProjBulletInput("");
@@ -699,6 +704,7 @@ export function ResumeCanvasView({
 
     const payload = {
       title: projTitle.trim(),
+      projectType: projType,
       liveUrl: projLiveUrl.trim() || undefined,
       bullets: projBullets,
     };
@@ -707,7 +713,9 @@ export function ResumeCanvasView({
       const res = await updateProjectAction(editingProjId, payload);
       if (res.success && res.data) {
         setProjects((prev) =>
-          prev.map((item) => (item.id === editingProjId ? res.data! : item))
+          sortProjectsByType(
+            prev.map((item) => (item.id === editingProjId ? res.data! : item))
+          )
         );
         setIsAddingProj(false);
         setEditingProjId(null);
@@ -715,12 +723,35 @@ export function ResumeCanvasView({
     } else {
       const res = await createProjectAction(payload);
       if (res.success && res.data) {
-        setProjects((prev) => [res.data!, ...prev]);
+        setProjects((prev) => sortProjectsByType([res.data!, ...prev]));
         setIsAddingProj(false);
         setEditingProjId(null);
       }
     }
     setSavingProj(false);
+  };
+
+  const [updatingProjTypeId, setUpdatingProjTypeId] = useState<string | null>(null);
+
+  const handleQuickChangeProjectType = async (projId: string, newType: ProjectType) => {
+    const originalProject = projects.find((p) => p.id === projId);
+    setProjects((prev) =>
+      sortProjectsByType(
+        prev.map((item) => (item.id === projId ? { ...item, projectType: newType } : item))
+      )
+    );
+    setUpdatingProjTypeId(projId);
+
+    const res = await updateProjectAction(projId, { projectType: newType });
+    setUpdatingProjTypeId(null);
+
+    if (!res.success && originalProject) {
+      setProjects((prev) =>
+        sortProjectsByType(
+          prev.map((item) => (item.id === projId ? originalProject : item))
+        )
+      );
+    }
   };
 
   const handleDeleteProject = async (id: string) => {
@@ -2142,6 +2173,59 @@ export function ResumeCanvasView({
           </div>
 
           <div className="p-6 sm:p-8 space-y-6">
+            {/* Filter pills when projects exist */}
+            {projects.length > 0 && (
+              <div className="flex flex-wrap items-center gap-2 pb-1">
+                <button
+                  type="button"
+                  onClick={() => setProjectFilter("all")}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
+                    projectFilter === "all"
+                      ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 shadow-2xs"
+                      : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
+                  }`}
+                >
+                  All ({projects.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setProjectFilter("key")}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
+                    projectFilter === "key"
+                      ? "bg-emerald-600 text-white shadow-2xs"
+                      : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-emerald-600"
+                  }`}
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Key Projects ({projects.filter((p) => (p.projectType || "key") === "key").length})</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setProjectFilter("side")}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
+                    projectFilter === "side"
+                      ? "bg-blue-600 text-white shadow-2xs"
+                      : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-blue-600"
+                  }`}
+                >
+                  <Laptop className="w-3.5 h-3.5" />
+                  <span>Side Projects ({projects.filter((p) => p.projectType === "side").length})</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setProjectFilter("capstone")}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
+                    projectFilter === "capstone"
+                      ? "bg-amber-600 text-white shadow-2xs"
+                      : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-amber-600"
+                  }`}
+                >
+                  <GraduationCap className="w-3.5 h-3.5" />
+                  <span>Capstone ({projects.filter((p) => p.projectType === "capstone").length})</span>
+                </button>
+              </div>
+            )}
+
             {/* Add / Edit Project Inline Form */}
             {isAddingProj && (
               <div className="p-5 sm:p-6 rounded-2xl bg-zinc-50/80 dark:bg-zinc-850/40 border border-zinc-200/90 dark:border-zinc-750/90 space-y-5 animate-in fade-in duration-150 shadow-xs">
@@ -2166,7 +2250,101 @@ export function ResumeCanvasView({
                 </div>
 
                 <div className="space-y-4">
-                  {/* Row 1: Title & Project Link */}
+                  {/* Row 1: Project Type Selection */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-zinc-800 dark:text-zinc-200 flex items-center justify-between">
+                      <span className="flex items-center gap-1">
+                        Project Classification <span className="text-rose-500">*</span>
+                      </span>
+                      <span className="text-[11px] font-normal text-zinc-400">
+                        Select how this project appears in your profile & tailored resume
+                      </span>
+                    </label>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                      {/* Key Project Button */}
+                      <button
+                        type="button"
+                        onClick={() => setProjType("key")}
+                        className={`p-3 rounded-xl border text-left transition flex items-center gap-2.5 cursor-pointer ${
+                          projType === "key"
+                            ? "bg-emerald-500/10 border-emerald-500/50 text-emerald-800 dark:text-emerald-200 shadow-2xs ring-1 ring-emerald-500/30"
+                            : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:border-zinc-300 dark:hover:border-zinc-600"
+                        }`}
+                      >
+                        <div
+                          className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                            projType === "key"
+                              ? "bg-emerald-500 text-white"
+                              : "bg-zinc-100 dark:bg-zinc-800 text-zinc-500"
+                          }`}
+                        >
+                          <Sparkles className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <div className="text-xs font-bold leading-tight">Key Project</div>
+                          <div className="text-[10px] text-zinc-500 dark:text-zinc-400 font-normal">
+                            Core / current flagship
+                          </div>
+                        </div>
+                      </button>
+
+                      {/* Side Project Button */}
+                      <button
+                        type="button"
+                        onClick={() => setProjType("side")}
+                        className={`p-3 rounded-xl border text-left transition flex items-center gap-2.5 cursor-pointer ${
+                          projType === "side"
+                            ? "bg-blue-500/10 border-blue-500/50 text-blue-800 dark:text-blue-200 shadow-2xs ring-1 ring-blue-500/30"
+                            : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:border-zinc-300 dark:hover:border-zinc-600"
+                        }`}
+                      >
+                        <div
+                          className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                            projType === "side"
+                              ? "bg-blue-500 text-white"
+                              : "bg-zinc-100 dark:bg-zinc-800 text-zinc-500"
+                          }`}
+                        >
+                          <Laptop className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <div className="text-xs font-bold leading-tight">Side Project</div>
+                          <div className="text-[10px] text-zinc-500 dark:text-zinc-400 font-normal">
+                            Personal & open-source
+                          </div>
+                        </div>
+                      </button>
+
+                      {/* Capstone Project Button */}
+                      <button
+                        type="button"
+                        onClick={() => setProjType("capstone")}
+                        className={`p-3 rounded-xl border text-left transition flex items-center gap-2.5 cursor-pointer ${
+                          projType === "capstone"
+                            ? "bg-amber-500/10 border-amber-500/50 text-amber-800 dark:text-amber-200 shadow-2xs ring-1 ring-amber-500/30"
+                            : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:border-zinc-300 dark:hover:border-zinc-600"
+                        }`}
+                      >
+                        <div
+                          className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                            projType === "capstone"
+                              ? "bg-amber-500 text-white"
+                              : "bg-zinc-100 dark:bg-zinc-800 text-zinc-500"
+                          }`}
+                        >
+                          <GraduationCap className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <div className="text-xs font-bold leading-tight">Capstone Project</div>
+                          <div className="text-[10px] text-zinc-500 dark:text-zinc-400 font-normal">
+                            Academic thesis / final build
+                          </div>
+                        </div>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Row 2: Title & Project Link */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
                       <label className="text-xs font-bold text-zinc-800 dark:text-zinc-200 flex items-center gap-1">
@@ -2196,7 +2374,7 @@ export function ResumeCanvasView({
                     </div>
                   </div>
 
-                  {/* Row 2: Key Highlights & Features (Bullets) */}
+                  {/* Row 3: Key Highlights & Features (Bullets) */}
                   <div className="space-y-2 pt-1">
                     <label className="text-xs font-bold text-zinc-800 dark:text-zinc-200">
                       Key Highlights & Features <span className="text-zinc-400 font-normal text-[11px]">(recommended 2–3 bullets)</span>
@@ -2285,67 +2463,96 @@ export function ResumeCanvasView({
             {/* Render Project Cards */}
             {projects.length > 0 ? (
               <div className="grid grid-cols-1 gap-4">
-                {projects.map((proj) => (
-                  <div
-                    key={proj.id}
-                    className="group relative p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 shadow-2xs hover:border-zinc-300 dark:hover:border-zinc-700 transition space-y-2.5"
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex flex-wrap items-center gap-2.5 min-w-0 flex-1">
-                        <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
-                          {proj.title}
-                        </h3>
+                {sortProjectsByType(projects)
+                  .filter((proj) => projectFilter === "all" || (proj.projectType || "key") === projectFilter)
+                  .map((proj) => {
+                    const effectiveType: ProjectType = proj.projectType || "key";
+                    return (
+                      <div
+                        key={proj.id}
+                        className="group relative p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 shadow-2xs hover:border-zinc-300 dark:hover:border-zinc-700 transition space-y-2.5"
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex flex-wrap items-center gap-2.5 min-w-0 flex-1">
+                            <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
+                              {proj.title}
+                            </h3>
 
-                        {/* Project Link */}
-                        {proj.liveUrl && (
-                          <a
-                            href={proj.liveUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200/70 dark:border-emerald-800/60 hover:bg-emerald-100 transition cursor-pointer"
-                          >
-                            <ExternalLink className="w-3 h-3" />
-                            <span>Link</span>
-                          </a>
+                            {/* Quick Project Type Switcher */}
+                            <ProjectTypeDropdown
+                              value={effectiveType}
+                              onChange={(newType) => handleQuickChangeProjectType(proj.id, newType)}
+                              isLoading={updatingProjTypeId === proj.id}
+                            />
+
+                            {/* Project Link */}
+                            {proj.liveUrl && (
+                              <a
+                                href={proj.liveUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200/70 dark:border-zinc-700 hover:bg-zinc-200/80 dark:hover:bg-zinc-700 transition cursor-pointer"
+                              >
+                                <ExternalLink className="w-3 h-3" />
+                                <span>Demo Link</span>
+                              </a>
+                            )}
+                          </div>
+
+                          {/* Action buttons on hover */}
+                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition shrink-0 self-start">
+                            <button
+                              type="button"
+                              onClick={() => handleStartEditProject(proj)}
+                              className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition cursor-pointer"
+                              title="Edit Project"
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteProject(proj.id)}
+                              className="p-1.5 rounded-lg text-zinc-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition cursor-pointer"
+                              title="Delete Project"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Bullets */}
+                        {proj.bullets && proj.bullets.length > 0 && (
+                          <ul className="space-y-1.5 pt-0.5 text-xs text-zinc-600 dark:text-zinc-300 pl-1">
+                            {proj.bullets.map((bullet, idx) => (
+                              <li key={idx} className="flex items-start gap-2">
+                                <span className="text-zinc-400 dark:text-zinc-500 font-bold select-none leading-relaxed">
+                                  •
+                                </span>
+                                <span className="leading-relaxed">{bullet}</span>
+                              </li>
+                            ))}
+                          </ul>
                         )}
                       </div>
+                    );
+                  })}
 
-                      {/* Action buttons on hover */}
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition shrink-0 self-start">
-                        <button
-                          type="button"
-                          onClick={() => handleStartEditProject(proj)}
-                          className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition cursor-pointer"
-                          title="Edit Project"
-                        >
-                          <Pencil className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteProject(proj.id)}
-                          className="p-1.5 rounded-lg text-zinc-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition cursor-pointer"
-                          title="Delete Project"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Bullets */}
-                    {proj.bullets && proj.bullets.length > 0 && (
-                      <ul className="space-y-1.5 pt-0.5 text-xs text-zinc-600 dark:text-zinc-300 pl-1">
-                        {proj.bullets.map((bullet, idx) => (
-                          <li key={idx} className="flex items-start gap-2">
-                            <span className="text-zinc-400 dark:text-zinc-500 font-bold select-none leading-relaxed">
-                              •
-                            </span>
-                            <span className="leading-relaxed">{bullet}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
+                {/* If filtered list is empty */}
+                {projects.filter((proj) => projectFilter === "all" || (proj.projectType || "key") === projectFilter).length === 0 && (
+                  <div className="py-8 text-center rounded-2xl border border-dashed border-zinc-200 dark:border-zinc-800 text-xs text-zinc-500 space-y-2">
+                    <p>No {projectFilter !== "all" ? PROJECT_TYPE_LABELS[projectFilter] : ""} projects found in this view.</p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setProjType(projectFilter !== "all" ? projectFilter : "key");
+                        handleStartAddProject();
+                      }}
+                      className="text-xs font-bold text-zinc-900 dark:text-zinc-100 underline hover:no-underline cursor-pointer"
+                    >
+                      + Add a {projectFilter !== "all" ? PROJECT_TYPE_LABELS[projectFilter] : "Project"}
+                    </button>
                   </div>
-                ))}
+                )}
               </div>
             ) : (
               !isAddingProj && (
@@ -2357,7 +2564,7 @@ export function ResumeCanvasView({
                   <div className="w-8 h-8 rounded-xl bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center text-zinc-400">
                     <Code2 className="w-4 h-4" />
                   </div>
-                  <span>+ Add your key projects & builds</span>
+                  <span>+ Add your key projects, side projects, or capstone builds</span>
                 </button>
               )
             )}

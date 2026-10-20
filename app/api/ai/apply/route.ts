@@ -122,7 +122,7 @@ export async function POST(request: Request) {
         supabase
           .from("user_projects")
           .select(
-            "title, live_url, bullets, sort_order"
+            "title, project_type, live_url, bullets, sort_order"
           )
           .eq("user_id", user.id)
           .order("sort_order", { ascending: true })
@@ -155,11 +155,30 @@ export async function POST(request: Request) {
       return `- ${exp.job_title} at ${exp.company_name} (${exp.start_year || ""}-${exp.is_current ? "Present" : exp.end_year || ""})${highlights ? `: ${highlights}` : ""}`;
     }).join("\n");
 
-    const compactProjects = projectsData.slice(0, 3).map((proj) => {
+    const sortedProjectsForPrompt = [...projectsData].sort((a, b) => {
+      const typePrio: Record<string, number> = { key: 1, side: 2, capstone: 3 };
+      const aType = a.project_type || "key";
+      const bType = b.project_type || "key";
+      const prioA = typePrio[aType] ?? 99;
+      const prioB = typePrio[bType] ?? 99;
+      if (prioA !== prioB) return prioA - prioB;
+      if (a.sort_order !== undefined && b.sort_order !== undefined && a.sort_order !== b.sort_order) {
+        return a.sort_order - b.sort_order;
+      }
+      return 0;
+    });
+
+    const compactProjects = sortedProjectsForPrompt.slice(0, 5).map((proj) => {
+      const typeLabel =
+        proj.project_type === "capstone" || proj.project_type === "capstone_project"
+          ? "Capstone Project"
+          : proj.project_type === "side" || proj.project_type === "side_project"
+          ? "Side Project"
+          : "Key Project";
       const highlights = Array.isArray(proj.bullets)
         ? proj.bullets.filter(Boolean).slice(0, 3).join(" | ")
         : "";
-      return `- ${proj.title}${proj.live_url ? ` (${proj.live_url})` : ""}${highlights ? `: ${highlights}` : ""}`;
+      return `- ${proj.title} [${typeLabel}]${proj.live_url ? ` (${proj.live_url})` : ""}${highlights ? `: ${highlights}` : ""}`;
     }).join("\n");
 
     const compactEducation = educationData.slice(0, 2).map((edu) => {
@@ -362,7 +381,7 @@ ${taskInstructions}`;
     // If generating resume, append verified database sections (PROFESSIONAL EXPERIENCE, PROJECTS, EDUCATION)
     if (contentType === "resume-suggestions") {
       // Strip any hallucinated sections if the model generated beyond TECHNICAL SKILLS
-      const trailingSectionRegex = /\n+(?:PROFESSIONAL\s+EXPERIENCE|PROJECTS|EDUCATION)\s*(?:\n[-=_\s]*\n|\n|$)/i;
+      const trailingSectionRegex = /\n+(?:PROFESSIONAL\s+EXPERIENCE|PROJECTS|KEY\s+PROJECTS|SIDE\s+PROJECTS|CAPSTONE\s+PROJECTS?|EDUCATION)\s*(?:\n[-=_\s]*\n|\n|$)/i;
       const match = finalContent.match(trailingSectionRegex);
       if (match && match.index !== undefined) {
         finalContent = finalContent.slice(0, match.index).trim();
@@ -422,24 +441,59 @@ ${taskInstructions}`;
           return 0;
         });
 
-        const projBlocks = sortedProjects.map((proj) => {
-          // Line 1: Project Title | Live URL (if provided)
-          const titleLine = proj.live_url?.trim()
-            ? `${proj.title.trim()} | ${proj.live_url.trim()}`
-            : proj.title.trim();
+        const keyProjects = sortedProjects.filter(
+          (p) => !p.project_type || p.project_type === "key"
+        );
+        const capstoneProjects = sortedProjects.filter(
+          (p) => p.project_type === "capstone" || p.project_type === "capstone_project"
+        );
+        const sideProjects = sortedProjects.filter(
+          (p) => p.project_type === "side" || p.project_type === "side_project"
+        );
 
-          const bulletLines = Array.isArray(proj.bullets)
-            ? proj.bullets
-                .filter(Boolean)
-                .map((b: string) => `• ${b.trim()}`)
-                .join("\n")
-            : "";
+        const renderProjBlocks = (projs: typeof sortedProjects) =>
+          projs.map((proj) => {
+            const titleLine = proj.live_url?.trim()
+              ? `${proj.title.trim()} | ${proj.live_url.trim()}`
+              : proj.title.trim();
 
-          return [titleLine, bulletLines].filter(Boolean).join("\n");
-        });
+            const bulletLines = Array.isArray(proj.bullets)
+              ? proj.bullets
+                  .filter(Boolean)
+                  .map((b: string) => `• ${b.trim()}`)
+                  .join("\n")
+              : "";
 
-        const projectsSectionText = `\n\nPROJECTS\n--------\n${projBlocks.join("\n\n")}`;
-        finalContent = `${finalContent.trim()}${projectsSectionText}`;
+            return [titleLine, bulletLines].filter(Boolean).join("\n");
+          });
+
+        const sectionParts: string[] = [];
+
+        // If candidate only has one single type of project and it's key (default)
+        if (capstoneProjects.length === 0 && sideProjects.length === 0) {
+          const blocks = renderProjBlocks(keyProjects);
+          sectionParts.push(`\n\nKEY PROJECTS\n------------\n${blocks.join("\n\n")}`);
+        } else {
+          // Order strictly: 1. Key Projects, 2. Side Projects, 3. Capstone Project
+          if (keyProjects.length > 0) {
+            const blocks = renderProjBlocks(keyProjects);
+            sectionParts.push(`\n\nKEY PROJECTS\n------------\n${blocks.join("\n\n")}`);
+          }
+          if (sideProjects.length > 0) {
+            const blocks = renderProjBlocks(sideProjects);
+            sectionParts.push(`\n\nSIDE PROJECTS\n-------------\n${blocks.join("\n\n")}`);
+          }
+          if (capstoneProjects.length > 0) {
+            const header = capstoneProjects.length > 1 ? "CAPSTONE PROJECTS" : "CAPSTONE PROJECT";
+            const underline = "-".repeat(header.length);
+            const blocks = renderProjBlocks(capstoneProjects);
+            sectionParts.push(`\n\n${header}\n${underline}\n${blocks.join("\n\n")}`);
+          }
+        }
+
+        if (sectionParts.length > 0) {
+          finalContent = `${finalContent.trim()}${sectionParts.join("")}`;
+        }
       }
 
       // 3. Append verified database EDUCATION directly without hallucination

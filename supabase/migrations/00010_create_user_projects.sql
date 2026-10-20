@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS public.user_projects (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
   title TEXT NOT NULL,
+  project_type TEXT NOT NULL DEFAULT 'key' CHECK (project_type IN ('key', 'side', 'capstone')),
   live_url TEXT,
   bullets JSONB NOT NULL DEFAULT '[]'::jsonb,
   sort_order INT NOT NULL DEFAULT 0,
