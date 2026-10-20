@@ -22,11 +22,6 @@ export interface JobMatchAnalysis {
   matchedSkills: string[];
   missingSkills: string[];
 
-  // Experience & Projects
-  matchingExperience: string[];
-  experienceGaps: string[];
-  relevantProjects?: RelevantProject[];
-
   // Requirements & Nice-to-Have
   unmetRequirements: string[];
   niceToHave: NiceToHaveSkill[];
@@ -38,6 +33,11 @@ export interface JobMatchAnalysis {
   // Strengths & Gaps
   keyStrengths: string[];
   potentialGaps: string[];
+
+  // Optional / legacy fields (no longer displayed)
+  matchingExperience?: string[];
+  experienceGaps?: string[];
+  relevantProjects?: RelevantProject[];
 
   // Legacy field for backward compatibility with cached records
   relevantExperience?: string[];

@@ -156,8 +156,8 @@ export interface ReconcileOptions {
   rawMissingSkills: string[];
   rawUnmetRequirements: string[];
   rawNiceToHave: (string | NiceToHaveSkill)[];
-  rawMatchingExperience: string[];
-  rawExperienceGaps: string[];
+  rawMatchingExperience?: string[];
+  rawExperienceGaps?: string[];
   rawRelevantProjects?: (RelevantProject | any)[];
   rawSeniorityLevel?: string;
   rawSeniorityAssessment?: string;
@@ -171,8 +171,8 @@ export interface ReconciledResult {
   missingSkills: string[];
   unmetRequirements: string[];
   niceToHave: NiceToHaveSkill[];
-  matchingExperience: string[];
-  experienceGaps: string[];
+  matchingExperience?: string[];
+  experienceGaps?: string[];
   relevantProjects?: RelevantProject[];
   seniorityLevel: SeniorityMatchLevel;
   seniorityAssessment: string;
@@ -190,9 +190,9 @@ export function reconcileJobMatch(options: ReconcileOptions): ReconciledResult {
     rawMissingSkills,
     rawUnmetRequirements,
     rawNiceToHave,
-    rawMatchingExperience,
-    rawExperienceGaps,
-    rawRelevantProjects,
+    rawMatchingExperience = [],
+    rawExperienceGaps = [],
+    rawRelevantProjects = [],
     rawSeniorityLevel,
     rawSeniorityAssessment,
     rawKeyStrengths,
@@ -312,10 +312,10 @@ export function reconcileJobMatch(options: ReconcileOptions): ReconciledResult {
     const niceBonus = Math.min(6, niceToHaveMatchedCount * 2);
 
     // Add bonus for strong matching experiences (max +6%)
-    const expBonus = rawMatchingExperience.length >= 2 ? 6 : rawMatchingExperience.length * 3;
+    const expBonus = (rawMatchingExperience?.length || 0) >= 2 ? 6 : (rawMatchingExperience?.length || 0) * 3;
 
     // Add bonus for verified relevant projects directly demonstrating capability (max +8%)
-    const projBonus = Math.min(8, sanitizedProjects.length * 3);
+    const projBonus = Math.min(8, (sanitizedProjects?.length || 0) * 3);
 
     if (missingList.length === 0 && verifiedUnmetRequirements.length === 0) {
       calculatedPercentage = Math.max(90, baseScore + niceBonus + expBonus + projBonus);

@@ -7,8 +7,6 @@ import {
   CheckCircle2,
   XCircle,
   AlertCircle,
-  Briefcase,
-  Award,
   AlertTriangle,
   Check,
   X,
@@ -20,7 +18,6 @@ import {
   ShieldCheck,
   CheckCheck,
   Zap,
-  FolderGit2,
   TrendingUp,
   Target,
 } from "lucide-react";
@@ -99,7 +96,7 @@ export function AIMatchPanel({
     const steps = [
       "Benchmarking profile, skills & project portfolio...",
       "Extracting required vs nice-to-have requirements...",
-      "Evaluating experience, projects & seniority...",
+      "Evaluating seniority alignment & key requirements...",
       "Finalizing structured match assessment...",
     ];
     const interval = setInterval(() => {
@@ -326,7 +323,7 @@ export function AIMatchPanel({
   const loadingStepsText = [
     "Benchmarking profile, skills & project portfolio...",
     "Extracting required vs nice-to-have requirements...",
-    "Evaluating experience, projects & seniority...",
+    "Evaluating seniority alignment & key requirements...",
     "Finalizing structured match assessment...",
   ];
 
@@ -407,7 +404,7 @@ export function AIMatchPanel({
                 <span>Evaluate Match Signal</span>
               </div>
               <p className="text-xs opacity-90 leading-relaxed">
-                Benchmark your technical skills, experience history, and credentials against this posting to calculate an objective match assessment.
+                Benchmark your technical skills, qualifications, and credentials against this posting to calculate an objective match assessment.
               </p>
             </div>
 
@@ -612,94 +609,7 @@ export function AIMatchPanel({
                 </div>
               </div>
 
-              {/* ── 2. Experience ── */}
-              {(analysis.matchingExperience?.length > 0 ||
-                analysis.experienceGaps?.length > 0) && (
-                <div className="rounded-2xl border border-zinc-200/70 dark:border-zinc-800/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-5 py-3 bg-zinc-50/80 dark:bg-zinc-800/40 border-b border-zinc-100 dark:border-zinc-800/60">
-                    <Briefcase className="w-4 h-4 text-blue-500" />
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300">
-                      Experience
-                    </h4>
-                  </div>
-
-                  <div className="px-5 py-4 space-y-4">
-                    {analysis.matchingExperience &&
-                      analysis.matchingExperience.length > 0 && (
-                        <div className="space-y-2.5">
-                          <span className="text-[11px] uppercase font-bold tracking-wider text-zinc-500 dark:text-zinc-400 flex items-center gap-1.5">
-                            <Check className="w-3.5 h-3.5 text-emerald-500" />
-                            Matching Experience
-                          </span>
-                          <ul className="space-y-2.5">
-                            {analysis.matchingExperience.map((exp, idx) => (
-                              <li
-                                key={idx}
-                                className="flex items-start gap-3 text-[13px] text-zinc-700 dark:text-zinc-300 leading-relaxed"
-                              >
-                                <Award className="w-4 h-4 text-blue-400 dark:text-blue-500 shrink-0 mt-0.5" />
-                                <span>{exp}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-
-                    {analysis.experienceGaps && analysis.experienceGaps.length > 0 && (
-                      <div className="space-y-2.5">
-                        <span className="text-[11px] uppercase font-bold tracking-wider text-zinc-500 dark:text-zinc-400 flex items-center gap-1.5">
-                          <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
-                          Experience Gaps
-                        </span>
-                        <ul className="space-y-2.5">
-                          {analysis.experienceGaps.map((gap, idx) => (
-                            <li
-                              key={idx}
-                              className="flex items-start gap-3 text-[13px] text-zinc-600 dark:text-zinc-400 leading-relaxed"
-                            >
-                              <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-                              <span>{gap}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* ── 2.5. Relevant Projects ── */}
-              {analysis.relevantProjects && analysis.relevantProjects.length > 0 && (
-                <div className="rounded-2xl border border-zinc-200/70 dark:border-zinc-800/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-5 py-3 bg-zinc-50/80 dark:bg-zinc-800/40 border-b border-zinc-100 dark:border-zinc-800/60">
-                    <FolderGit2 className="w-4 h-4 text-violet-500" />
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300">
-                      Relevant Projects
-                    </h4>
-                    <span className="ml-auto text-[11px] font-semibold text-zinc-400 dark:text-zinc-500">
-                      {analysis.relevantProjects.length}
-                    </span>
-                  </div>
-
-                  <div className="px-5 py-4 space-y-2.5">
-                    {analysis.relevantProjects.map((proj, idx) => (
-                      <div
-                        key={idx}
-                        className="p-3.5 rounded-xl bg-zinc-50/70 dark:bg-zinc-800/40 border-l-[3px] border-l-violet-400 dark:border-l-violet-500 border border-zinc-200/50 dark:border-zinc-700/50 space-y-1"
-                      >
-                        <div className="flex items-center gap-2 font-semibold text-xs text-zinc-900 dark:text-zinc-100">
-                          <span>{proj.projectTitle}</span>
-                        </div>
-                        <p className="text-[13px] text-zinc-600 dark:text-zinc-400 leading-relaxed">
-                          {proj.relevanceNote}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* ── 3. Requirements & Nice to Have ── */}
+              {/* ── 2. Requirements & Nice to Have ── */}
               {(analysis.unmetRequirements?.length > 0 ||
                 analysis.niceToHave?.length > 0) && (
                 <div className="rounded-2xl border border-zinc-200/70 dark:border-zinc-800/80 overflow-hidden">
@@ -779,7 +689,7 @@ export function AIMatchPanel({
                 </div>
               )}
 
-              {/* ── 4. Seniority ── */}
+              {/* ── 3. Seniority ── */}
               {analysis.seniorityAssessment && (
                 <div className="rounded-2xl border border-zinc-200/70 dark:border-zinc-800/80 overflow-hidden">
                   <div className="flex items-center justify-between px-5 py-3 bg-zinc-50/80 dark:bg-zinc-800/40 border-b border-zinc-100 dark:border-zinc-800/60">
@@ -809,7 +719,7 @@ export function AIMatchPanel({
                 </div>
               )}
 
-              {/* ── 5. Assessment (Strengths & Gaps) ── */}
+              {/* ── 4. Assessment (Strengths & Gaps) ── */}
               {(analysis.keyStrengths?.length > 0 ||
                 analysis.potentialGaps?.length > 0) && (
                 <div className="rounded-2xl border border-zinc-200/70 dark:border-zinc-800/80 overflow-hidden">

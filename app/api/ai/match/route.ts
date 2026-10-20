@@ -176,29 +176,19 @@ IMPORTANT GUIDELINES FOR ACCURACY & RELIABILITY:
    - "missingSkills": STRICTLY required technical skills that the candidate truly DOES NOT have. DO NOT put skills the candidate has here.
    - "niceToHave": List optional / bonus / preferred technologies mentioned in the job. Separate these from strictly required skills.
 
-2. EXPERIENCE BREAKDOWN:
-   - "matchingExperience": 2 to 3 concrete bullet points highlighting specific roles, projects, or accomplishments from candidate's background that prove capability for this job.
-   - "experienceGaps": 1 to 2 specific domain or scope experience gaps, or [] if none.
-
-3. RELEVANT PROJECTS PORTFOLIO:
-   - "relevantProjects": 1 to 3 projects from the candidate's projects list that prove hands-on capability, architectural experience, or stack proficiency relevant to this job posting.
-     * "projectTitle": Exact title of the project.
-     * "relevanceNote": Concise 1-sentence explanation of why this project is relevant to the target role requirements.
-   - If candidate has no projects or none match the role, return [].
-
-4. REQUIREMENTS GAP ANALYSIS:
+2. REQUIREMENTS GAP ANALYSIS:
    - "unmetRequirements": ONLY important NON-SKILL requirements that the candidate does NOT meet. If candidate meets all non-skill requirements, return [].
 
-5. SENIORITY ASSESSMENT:
+3. SENIORITY ASSESSMENT:
    - "seniorityLevel": "Good Match" | "Slight Gap" | "Significant Gap"
    - "seniorityAssessment": 1-2 sentences assessing seniority alignment.
 
-6. KAIRO'S ASSESSMENT:
-   - "keyStrengths": 2 to 3 bullet points highlighting candidate's competitive advantages across skills, experience, and projects.
+4. KAIRO'S ASSESSMENT:
+   - "keyStrengths": 2 to 3 bullet points highlighting candidate's competitive advantages across skills and qualifications.
    - "potentialGaps": 1 to 2 constructive bullet points highlighting main risks.
 
-7. OVERALL RECOMMENDATION & SCORE:
-   - "matchPercentage": 0 - 100 percentage. Factor in skills match, professional experience, and relevant project portfolio.
+5. OVERALL RECOMMENDATION & SCORE:
+   - "matchPercentage": 0 - 100 percentage. Factor in skills match, qualifications, and seniority alignment.
    - "recommendation": "apply" (>= 75% match), "maybe" (50-74% match), or "skip" (< 50% match).
    - "recommendationReason": 1 sentence reason.
    - "summary": 2 sentence executive synthesis.
@@ -212,14 +202,6 @@ Return the response STRICTLY as a JSON object matching this schema:
   "summary": string,
   "matchedSkills": string[],
   "missingSkills": string[],
-  "matchingExperience": string[],
-  "experienceGaps": string[],
-  "relevantProjects": [
-    {
-      "projectTitle": string,
-      "relevanceNote": string
-    }
-  ],
   "unmetRequirements": string[],
   "niceToHave": string[],
   "seniorityLevel": "Good Match" | "Slight Gap" | "Significant Gap",
@@ -267,13 +249,6 @@ Evaluate the match thoroughly adhering strictly to the candidate's actual skills
       rawMissingSkills: Array.isArray(parsed.missingSkills) ? parsed.missingSkills : [],
       rawUnmetRequirements: Array.isArray(parsed.unmetRequirements) ? parsed.unmetRequirements : [],
       rawNiceToHave: Array.isArray(parsed.niceToHave) ? parsed.niceToHave : [],
-      rawMatchingExperience: Array.isArray(parsed.matchingExperience)
-        ? parsed.matchingExperience
-        : Array.isArray(parsed.relevantExperience)
-        ? parsed.relevantExperience
-        : [],
-      rawExperienceGaps: Array.isArray(parsed.experienceGaps) ? parsed.experienceGaps : [],
-      rawRelevantProjects: Array.isArray(parsed.relevantProjects) ? parsed.relevantProjects : [],
       rawSeniorityLevel: parsed.seniorityLevel,
       rawSeniorityAssessment: parsed.seniorityAssessment,
       rawKeyStrengths: Array.isArray(parsed.keyStrengths) ? parsed.keyStrengths : [],
@@ -296,16 +271,12 @@ Evaluate the match thoroughly adhering strictly to the candidate's actual skills
       summary: parsed.summary || "No summary provided.",
       matchedSkills: reconciled.matchedSkills,
       missingSkills: reconciled.missingSkills,
-      matchingExperience: reconciled.matchingExperience,
-      experienceGaps: reconciled.experienceGaps,
-      relevantProjects: reconciled.relevantProjects,
       unmetRequirements: reconciled.unmetRequirements,
       niceToHave: reconciled.niceToHave,
       seniorityLevel: reconciled.seniorityLevel,
       seniorityAssessment: reconciled.seniorityAssessment,
       keyStrengths: reconciled.keyStrengths,
       potentialGaps: reconciled.potentialGaps,
-      relevantExperience: reconciled.matchingExperience, // Legacy fallback
       analyzedAt: new Date().toISOString(),
     };
 
