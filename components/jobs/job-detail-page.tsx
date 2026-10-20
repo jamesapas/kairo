@@ -25,9 +25,6 @@ import {
   CheckCircle2,
   ChevronRight,
   Share2,
-  ListChecks,
-  CheckCircle,
-  Circle,
   Briefcase,
   AlertCircle,
   Sparkles,
@@ -66,13 +63,6 @@ interface JobDetailPageProps {
 }
 
 type ActiveTab = "ai-match" | "materials" | "description";
-
-const DEFAULT_CHECKLIST_ITEMS = [
-  "Customized resume & portfolio submitted",
-  "Researched company culture & recent product updates",
-  "Prepared questions for hiring team & interviewers",
-  "Followed up with recruiter / sent thank-you note",
-];
 
 function WorkplaceBadge({ type }: { type: WorkplaceType }) {
   const config = {
@@ -240,28 +230,7 @@ export function JobDetailPage({ jobId }: JobDetailPageProps) {
   const [tempLinkValue, setTempLinkValue] = useState("");
   const [isSavingLink, setIsSavingLink] = useState(false);
 
-  // Checklist state persisted to localStorage per job
-  const [checklist, setChecklist] = useState<Record<string, boolean>>({});
 
-  useEffect(() => {
-    if (!jobId) return;
-    try {
-      const saved = localStorage.getItem(`kairo-checklist-${jobId}`);
-      if (saved) {
-        setChecklist(JSON.parse(saved));
-      }
-    } catch {}
-  }, [jobId]);
-
-  const toggleChecklistItem = (item: string) => {
-    setChecklist((prev) => {
-      const updated = { ...prev, [item]: !prev[item] };
-      try {
-        localStorage.setItem(`kairo-checklist-${jobId}`, JSON.stringify(updated));
-      } catch {}
-      return updated;
-    });
-  };
 
   const showToast = useCallback((msg: string) => {
     setToastMessage(msg);
@@ -801,45 +770,7 @@ export function JobDetailPage({ jobId }: JobDetailPageProps) {
 
           {/* RIGHT COLUMN: Sidebar Rail (4 cols) */}
           <div className="lg:col-span-4 space-y-6">
-            {/* Application Checklist */}
-            <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 border border-zinc-200/90 dark:border-zinc-800 shadow-[0_2px_8px_rgba(0,0,0,0.03)] space-y-4">
-              <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 pb-3.5">
-                <div className="flex items-center gap-2">
-                  <ListChecks className="w-4 h-4 text-zinc-400" />
-                  <h2 className="text-xs uppercase font-bold tracking-wider text-zinc-500 dark:text-zinc-400">
-                    Application Checklist
-                  </h2>
-                </div>
 
-                <span className="text-[11px] font-bold text-zinc-400 dark:text-zinc-500">
-                  {Object.values(checklist).filter(Boolean).length} of {DEFAULT_CHECKLIST_ITEMS.length}
-                </span>
-              </div>
-
-              <div className="space-y-2 pt-1">
-                {DEFAULT_CHECKLIST_ITEMS.map((item) => {
-                  const isChecked = !!checklist[item];
-                  return (
-                    <button
-                      key={item}
-                      onClick={() => toggleChecklistItem(item)}
-                      className={`w-full p-2.5 rounded-xl border text-left transition cursor-pointer flex items-center gap-2.5 ${
-                        isChecked
-                          ? "bg-zinc-50/70 dark:bg-zinc-800/40 border-zinc-200/60 dark:border-zinc-800 text-zinc-400 dark:text-zinc-500 line-through"
-                          : "bg-white dark:bg-zinc-900 border-zinc-200/90 dark:border-zinc-800 text-zinc-800 dark:text-zinc-200 hover:border-zinc-300 dark:hover:border-zinc-700"
-                      }`}
-                    >
-                      {isChecked ? (
-                        <CheckCircle className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                      ) : (
-                        <Circle className="w-3.5 h-3.5 text-zinc-300 dark:text-zinc-600 shrink-0" />
-                      )}
-                      <span className="text-xs font-semibold leading-snug">{item}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
 
             {/* Direct Links Card - Minimalist List Mode */}
             <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 border border-zinc-200/90 dark:border-zinc-800 shadow-[0_2px_8px_rgba(0,0,0,0.03)] space-y-3">
