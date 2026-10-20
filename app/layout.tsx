@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import NextTopLoader from "nextjs-toploader";
 import { ThemeProvider } from "@/components/theme/theme-provider";
 
 const inter = Inter({
@@ -50,6 +51,18 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-full bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 flex flex-col font-sans">
+        <NextTopLoader
+          color="#2563eb"
+          initialPosition={0.15}
+          crawlSpeed={200}
+          height={3}
+          crawl={true}
+          showSpinner={false}
+          easing="ease"
+          speed={200}
+          shadow="0 0 10px #2563eb, 0 0 5px #3b82f6"
+          zIndex={99999}
+        />
         <ThemeProvider>
           {children}
         </ThemeProvider>
