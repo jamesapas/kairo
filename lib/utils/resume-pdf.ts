@@ -40,9 +40,12 @@ export function downloadResumePdf({
   const CONTACT_FONT_SIZE = 10; // 10pt
   const SECTION_FONT_SIZE = 11; // 11pt
   const BODY_FONT_SIZE = 10.5; // 10.5pt
-  const LINE_HEIGHT_MM = 4.8; // Compact line spacing
-  const EXPERIENCE_GAP_MM = 2.0; // Inter-experience gap (2.0mm)
-  const PROJECT_GAP_MM = 2.0; // Inter-project gap matching experience (2.0mm)
+  const LINE_HEIGHT_MM = 5.0; // Line spacing (5.0mm)
+  const SECTION_GAP_MM = 4.5; // Inter-section gap (4.5mm)
+  const EXPERIENCE_GAP_MM = 3.0; // Inter-experience gap (3.0mm)
+  const PROJECT_GAP_MM = 3.0; // Inter-project gap matching experience (3.0mm)
+  const EDUCATION_GAP_MM = 3.0; // Inter-education gap (3.0mm)
+  const BULLET_GAP_MM = 0.8; // Subtle spacing between consecutive bullet points (0.8mm)
 
   let cursorY = marginTop;
 
@@ -80,7 +83,7 @@ export function downloadResumePdf({
     doc.setFontSize(NAME_FONT_SIZE);
     doc.setTextColor(0, 0, 0);
     doc.text(nameLine, centerX, cursorY, { align: "center" });
-    cursorY += 6.5;
+    cursorY += 7.2;
 
     // Line 2: Role Title (Centered, Normal, 12pt)
     if (headerLines.length > 1) {
@@ -89,7 +92,7 @@ export function downloadResumePdf({
       doc.setFontSize(ROLE_FONT_SIZE);
       doc.setTextColor(0, 0, 0);
       doc.text(roleLine, centerX, cursorY, { align: "center" });
-      cursorY += 5.0;
+      cursorY += 5.4;
     }
 
     // Line 3+: Contact Info & Links (Centered, 10pt, Clickable)
@@ -162,12 +165,12 @@ export function downloadResumePdf({
             }
             startX += it.width;
           }
-          cursorY += 4.5;
+          cursorY += 4.8;
         }
       }
     }
 
-    cursorY += 5.0; // Space before first section
+    cursorY += 5.5; // Space before first section
   }
 
   // 2. Process Sections & Body (e.g. PROFESSIONAL SUMMARY, TECHNICAL SKILLS, PROFESSIONAL EXPERIENCE, PROJECTS, EDUCATION)
@@ -198,7 +201,7 @@ export function downloadResumePdf({
         line.includes("PROJECT"));
 
     if (isSectionHeader) {
-      const sectionGap = !isFirstSection ? 3.0 : 0;
+      const sectionGap = !isFirstSection ? SECTION_GAP_MM : 0;
       isFirstSection = false;
       lastItemWasSectionHeader = true;
 
@@ -209,9 +212,9 @@ export function downloadResumePdf({
       else if (line.includes("EDUCATION")) currentSection = "EDUCATION";
       else currentSection = "";
 
-      // Section header needs: text + 2.0mm rule gap + 5.5mm body gap = 7.5mm
-      // Plus at least 1 line of content (4.8mm) to avoid an orphan header
-      if (cursorY + sectionGap + 7.5 + LINE_HEIGHT_MM > pageHeight - marginBottom) {
+      // Section header needs: text + 2.2mm rule gap + 5.8mm body gap = 8.0mm
+      // Plus at least 1 line of content to avoid an orphan header
+      if (cursorY + sectionGap + 8.0 + LINE_HEIGHT_MM > pageHeight - marginBottom) {
         doc.addPage();
         cursorY = marginTop;
       } else {
@@ -222,13 +225,13 @@ export function downloadResumePdf({
       doc.setFontSize(SECTION_FONT_SIZE);
       doc.setTextColor(0, 0, 0);
       doc.text(line.toUpperCase(), marginX, cursorY);
-      cursorY += 2.0;
+      cursorY += 2.2;
 
       // Draw thin solid black horizontal line across printable boundary
       doc.setDrawColor(0, 0, 0);
       doc.setLineWidth(0.20);
       doc.line(marginX, cursorY, marginX + printableWidth, cursorY);
-      cursorY += 5.5; // Spacing after horizontal line for the body text
+      cursorY += 5.8; // Spacing after horizontal line for the body text
       i++;
       continue;
     }
@@ -253,6 +256,12 @@ export function downloadResumePdf({
         }
         doc.text(wrappedBullet[bIdx], marginX + bulletIndent, cursorY);
         cursorY += LINE_HEIGHT_MM;
+      }
+
+      // Add subtle spacing between bullet points if followed by another bullet
+      const nextLine = i + 1 < lines.length ? lines[i + 1].trim() : "";
+      if (nextLine.startsWith("•") || nextLine.startsWith("- ")) {
+        cursorY += BULLET_GAP_MM;
       }
 
       i++;
@@ -321,7 +330,12 @@ export function downloadResumePdf({
     const hasPipe = line.includes("|");
     if (hasPipe) {
       const looksLikeDateLine = /\b(present|\d{4})\b/i.test(line);
-      const gapToUse = currentSection === "EXPERIENCE" ? EXPERIENCE_GAP_MM : 2.0;
+      const gapToUse =
+        currentSection === "EXPERIENCE"
+          ? EXPERIENCE_GAP_MM
+          : currentSection === "PROJECTS"
+          ? PROJECT_GAP_MM
+          : EDUCATION_GAP_MM;
       const gap = !lastItemWasSectionHeader && looksLikeDateLine ? gapToUse : 0;
       lastItemWasSectionHeader = false;
 
