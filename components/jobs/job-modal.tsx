@@ -162,6 +162,34 @@ function JobModalForm({
     company?: string;
   }>({});
 
+  useEffect(() => {
+    if (initialJob) {
+      setJobTitle(initialJob.jobTitle || "");
+      setCompany(initialJob.company || "");
+      setDescription(initialJob.description || "");
+      setAppliedOn(initialJob.appliedOn || PLATFORM_OPTIONS[0]);
+      setJobUrl(initialJob.jobUrl || "");
+      setWorkplaceType(initialJob.workplaceType || "Remote");
+      const parsed = parseSalary(initialJob.salary);
+      setSalaryCurrency(parsed.currency);
+      setSalaryAmount(parsed.amount);
+      setSalaryPeriod(parsed.period);
+      setIsPinned(initialJob.isPinned || false);
+    } else {
+      setJobTitle("");
+      setCompany("");
+      setDescription("");
+      setAppliedOn(PLATFORM_OPTIONS[0]);
+      setJobUrl("");
+      setWorkplaceType("Remote");
+      setSalaryCurrency("₱");
+      setSalaryAmount("");
+      setSalaryPeriod("/mo");
+      setIsPinned(false);
+    }
+    setErrors({});
+  }, [initialJob]);
+
   const validate = () => {
     const newErrors: { jobTitle?: string; company?: string } = {};
     if (!jobTitle.trim()) newErrors.jobTitle = "Job title is required";
@@ -191,6 +219,8 @@ function JobModalForm({
       workplaceType,
       salary: formattedSalary,
       isPinned,
+      aiMatchAnalysis: initialJob?.aiMatchAnalysis,
+      aiApplyMaterials: initialJob?.aiApplyMaterials,
     });
     onClose();
   };
@@ -462,6 +492,7 @@ export function JobModal({
 
       {/* Modal Card */}
       <JobModalForm
+        key={initialJob ? initialJob.id : "new-job"}
         initialJob={initialJob}
         onSave={onSave}
         onClose={handleClose}

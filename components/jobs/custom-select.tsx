@@ -127,6 +127,9 @@ export function CustomSelect<T extends string = string>({
         type="button"
         onClick={(e) => {
           e.stopPropagation();
+          if (!isOpen) {
+            updateCoords();
+          }
           setIsOpen(!isOpen);
         }}
         className={`rounded-xl bg-white dark:bg-zinc-800 border border-zinc-200/90 dark:border-zinc-700 text-xs font-semibold text-zinc-700 dark:text-zinc-200 hover:border-zinc-300 dark:hover:border-zinc-600 hover:bg-zinc-50 dark:hover:bg-zinc-700 cursor-pointer shadow-2xs select-none ${
@@ -137,7 +140,7 @@ export function CustomSelect<T extends string = string>({
       >
         <div className="flex items-center gap-2 truncate">
           {selectedOption?.icon ? selectedOption.icon : prefixIcon}
-          <span className="truncate">{selectedOption ? selectedOption.label : placeholder}</span>
+          <span className="truncate">{selectedOption ? selectedOption.label : (value || placeholder || "Select...")}</span>
         </div>
         <ChevronDown
           className={`w-3 h-3 text-zinc-400 dark:text-zinc-500 transition-transform duration-150 shrink-0 ml-1 ${
@@ -157,7 +160,7 @@ export function CustomSelect<T extends string = string>({
               position: "fixed",
               top: `${coords.top}px`,
               left: `${coords.left}px`,
-              width: width || `${coords.width}px`,
+              width: width || (coords.width ? `${coords.width}px` : "auto"),
               zIndex: 9999,
               maxHeight: "260px",
             }}

@@ -197,7 +197,10 @@ export function JobKanban({
                         {prev && (
                           <button
                             type="button"
-                            onClick={() => onStatusChange(job.id, prev)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onStatusChange(job.id, prev);
+                            }}
                             title="Move to previous stage"
                             className="p-1 rounded-lg bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-500 dark:text-zinc-400 transition cursor-pointer"
                           >
@@ -207,7 +210,10 @@ export function JobKanban({
                         {next && (
                           <button
                             type="button"
-                            onClick={() => onStatusChange(job.id, next)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onStatusChange(job.id, next);
+                            }}
                             title="Advance to next stage"
                             className="p-1 rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-white transition cursor-pointer shadow-2xs"
                           >
@@ -219,7 +225,10 @@ export function JobKanban({
                       <div className="flex items-center gap-0.5">
                         <button
                           type="button"
-                          onClick={() => onEditJob(job)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onEditJob(job);
+                          }}
                           title="Edit"
                           className="p-1 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 dark:text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 transition cursor-pointer"
                         >
@@ -227,7 +236,10 @@ export function JobKanban({
                         </button>
                         <button
                           type="button"
-                          onClick={() => onDeleteJob(job.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onDeleteJob(job.id);
+                          }}
                           title="Delete"
                           className="p-1 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 text-zinc-400 dark:text-zinc-500 hover:text-rose-600 dark:hover:text-rose-400 transition cursor-pointer"
                         >

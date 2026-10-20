@@ -378,21 +378,33 @@ export function JobDetailPage({ jobId }: JobDetailPageProps) {
     }
   };
 
-  const handleEditSave = (
+  const handleEditSave = async (
     savedJobData: Omit<JobApplication, "id" | "createdAt" | "updatedAt"> & { id?: string }
   ) => {
-    setJob((prev) =>
-      prev
-        ? {
-            ...prev,
-            ...savedJobData,
-            id: prev.id,
-            createdAt: prev.createdAt,
-            updatedAt: new Date().toISOString(),
-          }
-        : null
-    );
+    if (!job) return;
+    const prevJob = { ...job };
+    const updatedJob: JobApplication = {
+      ...prevJob,
+      ...savedJobData,
+      id: prevJob.id,
+      createdAt: prevJob.createdAt,
+      updatedAt: new Date().toISOString(),
+    };
+    setJob(updatedJob);
     showToast("Application details saved successfully");
+
+    try {
+      const res = await updateJobAction(job.id, savedJobData);
+      if (!res.success) {
+        setJob(prevJob);
+        showToast(res.error || "Failed to update application");
+      } else if (res.data) {
+        setJob(res.data);
+      }
+    } catch (err: unknown) {
+      setJob(prevJob);
+      showToast((err as Error)?.message || "Failed to update application");
+    }
   };
 
   const handleCopyDescription = () => {

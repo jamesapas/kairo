@@ -180,6 +180,7 @@ export async function updateJobAction(
     }
 
     revalidatePath("/");
+    revalidatePath(`/jobs/${id}`);
     return { success: true, data: mapRowToJob(data as JobApplicationRow) };
   } catch (err: unknown) {
     console.error("Unexpected error updating job:", err);
