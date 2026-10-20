@@ -63,7 +63,6 @@ import {
 import {
   PREDEFINED_SKILLS,
   searchSkillSuggestions,
-  getSkillIcon,
 } from "@/lib/constants/skills";
 import { CustomSelect, CustomSelectOption } from "@/components/jobs/custom-select";
 import {
@@ -1715,8 +1714,7 @@ export function ResumeCanvasView({
                                 : "text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
                             }`}
                           >
-                            <div className="flex items-center gap-2.5 min-w-0">
-                              <Icon icon={rec.icon} className="w-4 h-4 shrink-0" />
+                            <div className="flex items-center min-w-0">
                               <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100 truncate">
                                 {rec.name}
                               </span>
@@ -1753,9 +1751,8 @@ export function ResumeCanvasView({
                   {skills.map((skill) => (
                     <div
                       key={skill.id}
-                      className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-xs font-semibold border border-zinc-200/90 dark:border-zinc-700/80 shadow-2xs group hover:border-zinc-300 dark:hover:border-zinc-600 transition"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-xs font-semibold border border-zinc-200/90 dark:border-zinc-700/80 shadow-2xs group hover:border-zinc-300 dark:hover:border-zinc-600 transition"
                     >
-                      <Icon icon={getSkillIcon(skill.name)} className="w-4 h-4 shrink-0" />
                       <span>{skill.name}</span>
                       <button
                         type="button"
@@ -1795,7 +1792,6 @@ export function ResumeCanvasView({
                         onClick={() => handleAddSkill(preset.name)}
                         className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-zinc-50/90 dark:bg-zinc-850/60 text-zinc-700 dark:text-zinc-300 border border-zinc-200/80 dark:border-zinc-750 hover:border-zinc-400 dark:hover:border-zinc-600 hover:bg-white dark:hover:bg-zinc-800 transition cursor-pointer shadow-2xs group active:scale-[0.98]"
                       >
-                        <Icon icon={preset.icon} className="w-3.5 h-3.5 shrink-0" />
                         <span>{preset.name}</span>
                         <Plus className="w-2.5 h-2.5 text-zinc-400 group-hover:text-zinc-700 dark:group-hover:text-zinc-200" />
                       </button>
