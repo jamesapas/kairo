@@ -193,7 +193,7 @@ ${compactExperiences ? `Experience:\n${compactExperiences}\n` : ""}${compactProj
     const matchContextText = targetMatchAnalysis
       ? `MATCH INSIGHTS:
 - Score: ${targetMatchAnalysis.matchPercentage}%
-- Matched Skills: ${(targetMatchAnalysis.matchedSkills || []).slice(0, 8).join(", ") || "None"}
+- Matched Skills For This Role: ${(targetMatchAnalysis.matchedSkills || []).join(", ") || "None"}
 - Key Strengths: ${(targetMatchAnalysis.keyStrengths || []).slice(0, 3).join("; ") || "None"}`
       : "";
 
@@ -306,16 +306,30 @@ ABSOLUTE STRICT RULES:
    - If the target position is 'Web Developer', the summary MUST start by identifying as a Web Developer (e.g. "[Results-driven / Dedicated / Innovative] Web Developer with [X] years of experience in..." or "Web Developer with [X] years of experience...").
    - NEVER default or revert to 'Full-Stack Developer' unless 'Full-Stack Developer' is the actual target position.
    - The 'PROFESSIONAL SUMMARY' must be concise, punchy, and around 55–60 words, directly tailored to the role using verified experience.
-6. In 'TECHNICAL SKILLS', dynamically generate 3 to 4 natural, well-targeted categories that directly match what the job description is looking for. DO NOT force 5 categories if it causes awkward, redundant, or inaccurate groupings.
-   - Strict Domain Categorization Rules:
-     * Databases / BaaS / Backend: Firebase, Supabase, PostgreSQL, MySQL, MongoDB, Node.js, Express, REST APIs. (CRITICAL: Firebase is a Backend-as-a-Service/Database platform, NEVER classify Firebase as a CMS).
-     * CMS: WordPress, Statamic, Strapi, Sanity, Shopify, Contentful.
-     * Frontend: Next.js, React, Tailwind CSS, HTML/CSS, Responsive Web Design.
-     * Languages: TypeScript, JavaScript, HTML5, CSS3, SQL, PHP, Python.
-     * Tools & Practices: Git, GitHub, Cursor, Vite, Web Performance (Lighthouse, Core Web Vitals), SEO Best Practices, Agile Development.
-   - Do NOT create micro-categories with only 1 or 2 items (e.g. do not create a separate 'Performance Optimization' category when Lighthouse/Web Vitals naturally belong under 'Tools & Practices' or 'Frontend').
-   - Keep categories cohesive, accurate, and relevant.
-   - Format each category line as: "Category Name: Skill1, Skill2, Skill3".
+6. TARGETED TECHNICAL SKILLS (SMART ATS CATEGORIZATION & STRICT JOB RELEVANCE):
+   - STRICT JOB RELEVANCE: ONLY include candidate skills that are directly related to, required by, or mentioned in the job description, or that directly support the role's primary tech stack. Strictly exclude unrelated technologies (e.g. no PHP/WordPress on a React/Next.js role).
+   - BALANCED, COHESIVE CATEGORIES (ANTI-FRAGMENTATION):
+     * NEVER create awkward micro-categories with only 1 or 2 items (e.g. NEVER output "Version Control: Git" or "Performance Optimization: Lighthouse, Web Vitals" on their own lines).
+     * Group tooling, version control, build tools, workflows, and performance into a single unified category:
+       "Developer Tools & Practices: Git, GitHub, Cursor, Vite, Lighthouse, Core Web Vitals" (or "Tools & Performance: Git, Vite, Lighthouse, Web Vitals").
+     * DO NOT dump all languages and frameworks into a single bloated "Frontend Technologies" line. Separate core languages from frameworks/libraries for clean ATS readability:
+       - Languages: Core programming & markup languages (e.g. "Languages: TypeScript, JavaScript, HTML5, CSS3")
+       - Frontend Frameworks & Libraries: UI frameworks, libraries, & styling (e.g. "Frontend Frameworks: React, Next.js, Vue.js, Tailwind CSS, Alpine.js")
+       - Backend & Databases: Server, API, and DB tech (e.g. "Backend & Databases: Node.js, Supabase, PostgreSQL, REST APIs" — only if relevant to the role)
+       - Tools & Performance: VCS, build tools, performance & SEO (e.g. "Tools & Performance: Git, GitHub, Vite, Lighthouse, Web Vitals")
+   - CANONICAL EXAMPLES:
+     * Frontend role example:
+       Languages: TypeScript, JavaScript, HTML5, CSS3
+       Frontend Frameworks: React, Next.js, Vue.js, Tailwind CSS, Alpine.js
+       Tools & Performance: Git, GitHub, Lighthouse, Web Vitals, Vite
+     * Full-Stack role example:
+       Languages: TypeScript, JavaScript, SQL, HTML5, CSS3
+       Frontend: React, Next.js, Tailwind CSS
+       Backend & Databases: Node.js, Supabase, PostgreSQL, RESTful APIs
+       Tools & Practices: Git, GitHub, Vite, Lighthouse
+   - All included skills MUST come from the candidate's verified profile, experiences, or projects. NEVER fabricate or hallucinate unverified skills.
+   - Domain Accuracy: Firebase and Supabase belong under Databases/Backend or BaaS, NEVER under CMS.
+   - Format each category line strictly as: "Category Name: Skill1, Skill2, Skill3".
 
 Return JSON matching:
 {
@@ -337,13 +351,11 @@ PROFESSIONAL SUMMARY
 
 TECHNICAL SKILLS
 ----------------
-[3-4 natural, cohesive categories tailored to what the job description requires from the candidate's verified background. Examples:
-Languages: TypeScript, JavaScript, HTML5, CSS3
-Frontend: Next.js, React, Tailwind CSS, Responsive Web Design
-Databases & Backend: Supabase, Firebase, Node.js, RESTful APIs
-Tools & Practices: Git, GitHub, Cursor, Web Performance (Lighthouse, Web Vitals), SEO Best Practices
-
-Strict accuracy: Firebase belongs in Databases/Backend, NEVER in CMS. Do not force 5 categories if 3 or 4 are more cohesive and accurate.]`;
+[Organize ONLY verified candidate skills that are directly relevant to the job description into smart, balanced, ATS-friendly categories.
+- NO MICRO-CATEGORIES: NEVER output 1-2 item lines like "Version Control: Git" or "Performance Optimization: Lighthouse, Web Vitals". Combine tooling, VCS, and performance together into a cohesive line (e.g. "Tools & Performance: Git, Vite, Lighthouse, Web Vitals").
+- SEPARATE LANGUAGES & FRAMEWORKS: Do NOT lump all languages, frameworks, and styling into one bloated line. Keep "Languages: TypeScript, JavaScript, HTML5, CSS3" and "Frontend Frameworks: React, Next.js, Vue.js, Tailwind CSS" clean and distinct.
+- Format strictly as:
+Category Name: Skill1, Skill2, Skill3]`;
         break;
     }
 
@@ -355,7 +367,12 @@ JOB REQUIREMENTS:
 ${cleanDescription}
 
 TASK:
-${taskInstructions}`;
+${taskInstructions}
+
+NOTE FOR TECHNICAL SKILLS:
+1. Select ONLY the candidate's verified skills that are related to or included in this job description.
+2. Be smart with categorization: Never output 1-2 item lines like "Version Control: Git" or "Performance Optimization: Lighthouse, Web Vitals". Combine tooling, VCS, and performance under "Tools & Performance" or "Developer Tools".
+3. Keep Languages (TypeScript, JavaScript, HTML5, CSS3) and Frameworks/Libraries (React, Next.js, Tailwind CSS) clean and distinct instead of bloated under one giant line.`;
 
     const openai = new OpenAI({ apiKey });
 
