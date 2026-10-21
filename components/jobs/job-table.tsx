@@ -422,29 +422,29 @@ export function JobTable({
     return (
       <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200/90 dark:border-zinc-800 shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+          <table className="w-full min-w-[1000px] text-left border-collapse table-fixed">
             <thead>
               <tr className="border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50/80 dark:bg-zinc-800/80 text-[10px] uppercase font-bold tracking-wider text-zinc-400 dark:text-zinc-500">
                 <th className="py-3 pl-4 pr-1 w-14 text-center"></th>
-                <th className="py-3 px-4">Role & Company</th>
-                <th className="py-3 px-3">Status</th>
-                <th className="py-3 px-3">Platform</th>
-                <th className="py-3 px-3">Workplace</th>
-                <th className="py-3 px-3">Salary</th>
-                <th className="py-3 px-3">Applied</th>
-                <th className="py-3 px-4 w-10 text-right"></th>
+                <th className="py-3 px-4 w-[280px]">Role & Company</th>
+                <th className="py-3 px-3 w-[140px]">Status</th>
+                <th className="py-3 px-3 w-[130px]">Platform</th>
+                <th className="py-3 px-3 w-[100px]">Workplace</th>
+                <th className="py-3 px-3 w-[125px]">Salary</th>
+                <th className="py-3 px-3 w-[115px]">Applied</th>
+                <th className="py-3 px-4 w-12 text-right"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800 text-xs">
               {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
                 <tr key={i} className="animate-pulse">
                   {/* Match */}
-                  <td className="py-3.5 pl-4 pr-1 text-center align-middle">
+                  <td className="py-3.5 pl-4 pr-1 w-14 text-center align-middle">
                     <div className="w-8 h-8 rounded-full border-2 border-zinc-200 dark:border-zinc-800 mx-auto" />
                   </td>
 
                   {/* Role & Company */}
-                  <td className="py-3.5 px-4">
+                  <td className="py-3.5 px-4 w-[280px]">
                     <div className="min-w-0 space-y-1.5">
                       <div className="w-44 h-3.5 rounded bg-zinc-200 dark:bg-zinc-800" />
                       <div className="w-28 h-2.5 rounded bg-zinc-100 dark:bg-zinc-800/70" />
@@ -452,12 +452,12 @@ export function JobTable({
                   </td>
 
                   {/* Status */}
-                  <td className="py-3.5 px-3">
+                  <td className="py-3.5 px-3 w-[140px]">
                     <div className="w-24 h-7 rounded-xl bg-zinc-100 dark:bg-zinc-800 border border-zinc-200/60 dark:border-zinc-700/60" />
                   </td>
 
                   {/* Platform */}
-                  <td className="py-3.5 px-3">
+                  <td className="py-3.5 px-3 w-[130px]">
                     <div className="flex items-center gap-1.5">
                       <div className="w-3.5 h-3.5 rounded-full bg-zinc-200 dark:bg-zinc-800 shrink-0" />
                       <div className="w-16 h-3 rounded bg-zinc-100 dark:bg-zinc-800" />
@@ -465,17 +465,17 @@ export function JobTable({
                   </td>
 
                   {/* Workplace */}
-                  <td className="py-3.5 px-3">
+                  <td className="py-3.5 px-3 w-[100px]">
                     <div className="w-14 h-5 rounded-md bg-zinc-100/70 dark:bg-zinc-800 border border-zinc-200/50 dark:border-zinc-700" />
                   </td>
 
                   {/* Salary */}
-                  <td className="py-3.5 px-3">
+                  <td className="py-3.5 px-3 w-[125px]">
                     <div className="w-20 h-3.5 rounded bg-zinc-100 dark:bg-zinc-800" />
                   </td>
 
                   {/* Applied */}
-                  <td className="py-3.5 px-3">
+                  <td className="py-3.5 px-3 w-[115px]">
                     <div className="flex items-center gap-1.5">
                       <div className="w-3.5 h-3.5 rounded bg-zinc-200 dark:bg-zinc-800" />
                       <div className="w-14 h-3 rounded bg-zinc-100 dark:bg-zinc-800" />
@@ -483,7 +483,7 @@ export function JobTable({
                   </td>
 
                   {/* Actions */}
-                  <td className="py-3.5 px-4 text-right">
+                  <td className="py-3.5 px-4 w-12 text-right">
                     <div className="w-6 h-6 ml-auto rounded-lg bg-zinc-100 dark:bg-zinc-800" />
                   </td>
                 </tr>
@@ -542,7 +542,7 @@ export function JobTable({
           }`}
         >
           {/* Match Progress Bar */}
-          <td className="py-3.5 pl-4 pr-1 text-center align-middle">
+          <td className="py-3.5 pl-4 pr-1 w-14 text-center align-middle">
             <MatchProgressBar
               percentage={job.aiMatchAnalysis?.matchPercentage}
               label={job.aiMatchAnalysis?.matchLabel}
@@ -550,23 +550,27 @@ export function JobTable({
           </td>
 
           {/* Role & Company */}
-          <td className="py-3.5 px-4">
-            <div className="min-w-0">
-              <div className="flex items-center gap-1.5">
+          <td className="py-3.5 px-4 w-[280px]">
+            <div className="min-w-0 max-w-full">
+              <div className="flex items-center gap-1.5 min-w-0">
                 <Link
                   href={`/jobs/${job.id}`}
-                  className="font-bold text-zinc-900 dark:text-zinc-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 hover:underline truncate"
+                  title={job.jobTitle}
+                  className="font-bold text-zinc-900 dark:text-zinc-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 hover:underline truncate min-w-0 block"
                 >
                   {job.jobTitle}
                 </Link>
                 {job.isPinned && (
-                  <span title="Pinned">
+                  <span title="Pinned" className="shrink-0">
                     <Pin className="w-3 h-3 fill-rose-500 text-rose-500 shrink-0" />
                   </span>
                 )}
               </div>
               {job.company ? (
-                <p className="text-zinc-500 dark:text-zinc-400 text-[11px] font-medium truncate mt-0.5">
+                <p
+                  title={job.company}
+                  className="text-zinc-500 dark:text-zinc-400 text-[11px] font-medium truncate mt-0.5"
+                >
                   {job.company}
                 </p>
               ) : null}
@@ -574,7 +578,7 @@ export function JobTable({
           </td>
 
           {/* Status Dropdown */}
-          <td className="py-3.5 px-3" onClick={(e) => e.stopPropagation()}>
+          <td className="py-3.5 px-3 w-[140px]" onClick={(e) => e.stopPropagation()}>
             <StatusDropdown
               value={job.status}
               onChange={(newStatus) => onStatusChange(job.id, newStatus)}
@@ -583,37 +587,37 @@ export function JobTable({
           </td>
 
           {/* Platform */}
-          <td className="py-3.5 px-3 text-zinc-600 dark:text-zinc-400 font-medium">
-            <div className="flex items-center gap-1.5 text-xs">
+          <td className="py-3.5 px-3 w-[130px] text-zinc-600 dark:text-zinc-400 font-medium">
+            <div className="flex items-center gap-1.5 text-xs truncate">
               <PlatformIcon platform={job.appliedOn} className="w-3.5 h-3.5 shrink-0" />
               <span className="truncate">{job.appliedOn}</span>
             </div>
           </td>
 
           {/* Workplace */}
-          <td className="py-3.5 px-3 text-zinc-600 dark:text-zinc-400 font-medium text-xs">
-            <span className="px-2 py-0.5 rounded-md bg-zinc-100/70 dark:bg-zinc-800 border border-zinc-200/50 dark:border-zinc-700 text-[11px]">
+          <td className="py-3.5 px-3 w-[100px] text-zinc-600 dark:text-zinc-400 font-medium text-xs">
+            <span className="px-2 py-0.5 rounded-md bg-zinc-100/70 dark:bg-zinc-800 border border-zinc-200/50 dark:border-zinc-700 text-[11px] inline-block">
               {job.workplaceType}
             </span>
           </td>
 
           {/* Compensation */}
-          <td className="py-3.5 px-3 text-zinc-700 dark:text-zinc-300 font-medium text-xs">
-            <span className="truncate block max-w-[130px] text-xs font-semibold text-zinc-800 dark:text-zinc-200">
+          <td className="py-3.5 px-3 w-[125px] text-zinc-700 dark:text-zinc-300 font-medium text-xs">
+            <span className="truncate block max-w-full text-xs font-semibold text-zinc-800 dark:text-zinc-200">
               {formatSalaryDisplay(job.salary) || "—"}
             </span>
           </td>
 
           {/* Date Applied */}
-          <td className="py-3.5 px-3 text-zinc-500 dark:text-zinc-400 font-medium text-xs">
-            <div className="flex items-center gap-1.5" title={job.dateApplied}>
+          <td className="py-3.5 px-3 w-[115px] text-zinc-500 dark:text-zinc-400 font-medium text-xs">
+            <div className="flex items-center gap-1.5 truncate" title={job.dateApplied}>
               <Calendar className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-500 shrink-0" />
-              <span>{formatRelativeDate(job.dateApplied)}</span>
+              <span className="truncate">{formatRelativeDate(job.dateApplied)}</span>
             </div>
           </td>
 
           {/* Actions - 3-dots Menu */}
-          <td className="py-3.5 px-4 text-right" onClick={(e) => e.stopPropagation()}>
+          <td className="py-3.5 px-4 w-12 text-right" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-end">
               <JobRowActionMenu
                 job={job}
@@ -643,17 +647,17 @@ export function JobTable({
           </div>
           <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-rose-200/90 dark:border-rose-900/50 shadow-[0_2px_8px_rgba(244,63,94,0.06)] overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
+              <table className="w-full min-w-[1000px] text-left border-collapse table-fixed">
                 <thead>
                   <tr className="border-b border-rose-100 dark:border-rose-900/50 bg-rose-50/40 dark:bg-rose-950/20 text-[10px] uppercase font-bold tracking-wider text-zinc-500 dark:text-zinc-400">
                     <th className="py-3 pl-4 pr-1 w-14 text-center"></th>
-                    <th className="py-3 px-4">Role & Company</th>
-                    <th className="py-3 px-3">Status</th>
-                    <th className="py-3 px-3">Platform</th>
-                    <th className="py-3 px-3">Workplace</th>
-                    <th className="py-3 px-3">Salary</th>
-                    <th className="py-3 px-3">Applied</th>
-                    <th className="py-3 px-4 w-10 text-right"></th>
+                    <th className="py-3 px-4 w-[280px]">Role & Company</th>
+                    <th className="py-3 px-3 w-[140px]">Status</th>
+                    <th className="py-3 px-3 w-[130px]">Platform</th>
+                    <th className="py-3 px-3 w-[100px]">Workplace</th>
+                    <th className="py-3 px-3 w-[125px]">Salary</th>
+                    <th className="py-3 px-3 w-[115px]">Applied</th>
+                    <th className="py-3 px-4 w-12 text-right"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800 text-xs">
@@ -676,17 +680,17 @@ export function JobTable({
         )}
         <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200/90 dark:border-zinc-800 shadow-xs overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+            <table className="w-full min-w-[1000px] text-left border-collapse table-fixed">
               <thead>
                 <tr className="border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50/80 dark:bg-zinc-800/80 text-[10px] uppercase font-bold tracking-wider text-zinc-400 dark:text-zinc-500">
                   <th className="py-3 pl-4 pr-1 w-14 text-center"></th>
-                  <th className="py-3 px-4">Role & Company</th>
-                  <th className="py-3 px-3">Status</th>
-                  <th className="py-3 px-3">Platform</th>
-                  <th className="py-3 px-3">Workplace</th>
-                  <th className="py-3 px-3">Salary</th>
-                  <th className="py-3 px-3">Applied</th>
-                  <th className="py-3 px-4 w-10 text-right"></th>
+                  <th className="py-3 px-4 w-[280px]">Role & Company</th>
+                  <th className="py-3 px-3 w-[140px]">Status</th>
+                  <th className="py-3 px-3 w-[130px]">Platform</th>
+                  <th className="py-3 px-3 w-[100px]">Workplace</th>
+                  <th className="py-3 px-3 w-[125px]">Salary</th>
+                  <th className="py-3 px-3 w-[115px]">Applied</th>
+                  <th className="py-3 px-4 w-12 text-right"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800 text-xs">
@@ -835,17 +839,17 @@ export function JobTable({
           </div>
           <div className="bg-zinc-50/60 dark:bg-zinc-900 rounded-2xl border border-zinc-200/80 dark:border-zinc-800 shadow-xs overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
+              <table className="w-full min-w-[1000px] text-left border-collapse table-fixed">
                 <thead>
                   <tr className="border-b border-zinc-200/70 dark:border-zinc-800 bg-zinc-100/60 dark:bg-zinc-800/60 text-[10px] uppercase font-bold tracking-wider text-zinc-500 dark:text-zinc-400">
-                    <th className="py-2.5 pl-4 pr-1 w-14 text-center"></th>
-                    <th className="py-2.5 px-4">Role & Company</th>
-                    <th className="py-2.5 px-3">Status</th>
-                    <th className="py-2.5 px-3">Platform</th>
-                    <th className="py-2.5 px-3">Workplace</th>
-                    <th className="py-2.5 px-3">Salary</th>
-                    <th className="py-2.5 px-3">Applied</th>
-                    <th className="py-2.5 px-4 w-10 text-right"></th>
+                    <th className="py-3 pl-4 pr-1 w-14 text-center"></th>
+                    <th className="py-3 px-4 w-[280px]">Role & Company</th>
+                    <th className="py-3 px-3 w-[140px]">Status</th>
+                    <th className="py-3 px-3 w-[130px]">Platform</th>
+                    <th className="py-3 px-3 w-[100px]">Workplace</th>
+                    <th className="py-3 px-3 w-[125px]">Salary</th>
+                    <th className="py-3 px-3 w-[115px]">Applied</th>
+                    <th className="py-3 px-4 w-12 text-right"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-200/60 dark:divide-zinc-800 text-xs">
