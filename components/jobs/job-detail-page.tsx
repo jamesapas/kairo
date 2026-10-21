@@ -429,7 +429,7 @@ export function JobDetailPage({ jobId }: JobDetailPageProps) {
               </div>
 
               {/* Job Description (Scrolls internally inside card) */}
-              <div className="flex-1 overflow-y-auto p-5 sm:p-6 pt-4 border-t border-zinc-100 dark:border-zinc-800 space-y-3">
+              <div className="flex-1 overflow-y-auto scrollbar-thin p-5 sm:p-6 pt-4 border-t border-zinc-100 dark:border-zinc-800 space-y-3">
                 <h2 className="text-xs uppercase font-bold tracking-wider text-zinc-500 dark:text-zinc-400">
                   Job Description
                 </h2>

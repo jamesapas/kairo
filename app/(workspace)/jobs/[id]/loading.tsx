@@ -22,9 +22,9 @@ export default function Loading() {
 
       {/* Two-Column Split Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* LEFT COLUMN: Unified Job Context Box (Sticky Skeleton) */}
+        {/* LEFT COLUMN: Unified Job Context Box (Full Height Sticky Skeleton) */}
         <div className="lg:col-span-5 xl:col-span-4 lg:sticky lg:top-[5.25rem] lg:self-start z-10">
-          <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200/90 dark:border-zinc-800 shadow-xs flex flex-col lg:max-h-[calc(100vh-6.75rem)] overflow-hidden">
+          <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200/90 dark:border-zinc-800 shadow-xs flex flex-col lg:h-[calc(100vh-6.75rem)] overflow-hidden">
             {/* Header: Company, Date, Title, Badges (Pinned in card) */}
             <div className="p-5 sm:p-6 pb-5 space-y-3.5 shrink-0">
               {/* Top Row: Company & Date Applied */}
@@ -49,26 +49,68 @@ export default function Loading() {
               </div>
             </div>
 
-            {/* Description Body Skeleton */}
-            <div className="flex-1 overflow-y-auto p-5 sm:p-6 pt-4 border-t border-zinc-100 dark:border-zinc-800/80 space-y-3">
-              <div className="w-28 h-3 rounded bg-zinc-200 dark:bg-zinc-800 animate-pulse" />
+            {/* Description Body Skeleton - Completely Fills Container */}
+            <div className="flex-1 overflow-hidden p-5 sm:p-6 pt-4 border-t border-zinc-100 dark:border-zinc-800/80 space-y-5">
+              {/* Section 1: Role Overview */}
+              <div className="space-y-2.5">
+                <div className="w-28 h-3 rounded bg-zinc-200 dark:bg-zinc-800 animate-pulse" />
+                <div className="space-y-2 pt-1">
+                  <div className="w-full h-3 rounded bg-zinc-100 dark:bg-zinc-800/70 animate-pulse" />
+                  <div className="w-11/12 h-3 rounded bg-zinc-100 dark:bg-zinc-800/70 animate-pulse" />
+                  <div className="w-full h-3 rounded bg-zinc-100 dark:bg-zinc-800/70 animate-pulse" />
+                  <div className="w-4/5 h-3 rounded bg-zinc-100 dark:bg-zinc-800/70 animate-pulse" />
+                </div>
+              </div>
+
+              {/* Section 2: Key Responsibilities */}
               <div className="space-y-2.5 pt-1">
-                <div className="w-full h-3 rounded bg-zinc-100 dark:bg-zinc-800/70 animate-pulse" />
-                <div className="w-11/12 h-3 rounded bg-zinc-100 dark:bg-zinc-800/70 animate-pulse" />
-                <div className="w-4/5 h-3 rounded bg-zinc-100 dark:bg-zinc-800/70 animate-pulse" />
-                <div className="w-full h-3 rounded bg-zinc-100 dark:bg-zinc-800/70 animate-pulse" />
-                <div className="w-3/4 h-3 rounded bg-zinc-100 dark:bg-zinc-800/70 animate-pulse" />
-                <div className="w-5/6 h-3 rounded bg-zinc-100 dark:bg-zinc-800/70 animate-pulse" />
-                <div className="w-2/3 h-3 rounded bg-zinc-100 dark:bg-zinc-800/70 animate-pulse" />
+                <div className="w-36 h-3 rounded bg-zinc-200 dark:bg-zinc-800 animate-pulse" />
+                <div className="space-y-2 pt-1">
+                  <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-zinc-300 dark:bg-zinc-700 shrink-0" />
+                    <div className="w-full h-3 rounded bg-zinc-100 dark:bg-zinc-800/70 animate-pulse" />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-zinc-300 dark:bg-zinc-700 shrink-0" />
+                    <div className="w-5/6 h-3 rounded bg-zinc-100 dark:bg-zinc-800/70 animate-pulse" />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-zinc-300 dark:bg-zinc-700 shrink-0" />
+                    <div className="w-11/12 h-3 rounded bg-zinc-100 dark:bg-zinc-800/70 animate-pulse" />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-zinc-300 dark:bg-zinc-700 shrink-0" />
+                    <div className="w-3/4 h-3 rounded bg-zinc-100 dark:bg-zinc-800/70 animate-pulse" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Section 3: Requirements */}
+              <div className="space-y-2.5 pt-1">
+                <div className="w-32 h-3 rounded bg-zinc-200 dark:bg-zinc-800 animate-pulse" />
+                <div className="space-y-2 pt-1">
+                  <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-zinc-300 dark:bg-zinc-700 shrink-0" />
+                    <div className="w-full h-3 rounded bg-zinc-100 dark:bg-zinc-800/70 animate-pulse" />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-zinc-300 dark:bg-zinc-700 shrink-0" />
+                    <div className="w-4/5 h-3 rounded bg-zinc-100 dark:bg-zinc-800/70 animate-pulse" />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-zinc-300 dark:bg-zinc-700 shrink-0" />
+                    <div className="w-9/12 h-3 rounded bg-zinc-100 dark:bg-zinc-800/70 animate-pulse" />
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* RIGHT COLUMN: AI Copilot & Materials Workspace */}
-        <div className="lg:col-span-7 xl:col-span-8 space-y-6">
+        {/* RIGHT COLUMN: AI Copilot & Materials Workspace (Full Height Skeleton) */}
+        <div className="lg:col-span-7 xl:col-span-8 lg:sticky lg:top-[5.25rem] lg:self-start flex flex-col lg:h-[calc(100vh-6.75rem)] space-y-4">
           {/* Segmented Workspace Tabs Bar (2 Tabs) */}
-          <div className="flex items-center gap-1.5 p-1 bg-zinc-100/90 dark:bg-zinc-800/70 border border-zinc-200/80 dark:border-zinc-700/80 rounded-2xl">
+          <div className="flex items-center gap-1.5 p-1 bg-zinc-100/90 dark:bg-zinc-800/70 border border-zinc-200/80 dark:border-zinc-700/80 rounded-2xl shrink-0">
             <div className="flex-1 h-9 rounded-xl bg-white dark:bg-zinc-900 shadow-xs flex items-center justify-center gap-2 animate-pulse">
               <div className="w-3.5 h-3.5 rounded bg-zinc-200 dark:bg-zinc-700" />
               <div className="w-28 h-3.5 rounded bg-zinc-200 dark:bg-zinc-700" />
@@ -79,10 +121,10 @@ export default function Loading() {
             </div>
           </div>
 
-          {/* AI Match Panel Content Skeleton */}
-          <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200/90 dark:border-zinc-800 shadow-[0_2px_12px_rgba(0,0,0,0.04)] overflow-hidden">
+          {/* AI Match Panel Content Skeleton - Full Height matching left side */}
+          <div className="flex-1 bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200/90 dark:border-zinc-800 shadow-[0_2px_12px_rgba(0,0,0,0.04)] flex flex-col min-h-0 overflow-hidden">
             {/* Header */}
-            <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-zinc-100 dark:border-zinc-800/80">
+            <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-zinc-100 dark:border-zinc-800/80 shrink-0">
               <div className="flex items-center gap-2.5">
                 <div className="w-7 h-7 rounded-xl bg-zinc-200 dark:bg-zinc-800 animate-pulse" />
                 <div className="w-32 h-4 rounded-md bg-zinc-200 dark:bg-zinc-800 animate-pulse" />
@@ -91,7 +133,7 @@ export default function Loading() {
             </div>
 
             {/* Panel Body */}
-            <div className="p-6 space-y-5">
+            <div className="flex-1 overflow-hidden p-6 space-y-5">
               {/* Score Banner Skeleton */}
               <div className="p-5 rounded-2xl bg-zinc-50/70 dark:bg-zinc-800/40 border border-zinc-200/60 dark:border-zinc-800/80">
                 <div className="flex items-center gap-5">
@@ -126,7 +168,24 @@ export default function Loading() {
                     <div className="w-16 h-7 rounded-lg bg-zinc-100 dark:bg-zinc-800/60 animate-pulse" />
                     <div className="w-28 h-7 rounded-lg bg-zinc-100 dark:bg-zinc-800/60 animate-pulse" />
                     <div className="w-20 h-7 rounded-lg bg-zinc-100 dark:bg-zinc-800/60 animate-pulse" />
+                    <div className="w-24 h-7 rounded-lg bg-zinc-100 dark:bg-zinc-800/60 animate-pulse" />
+                    <div className="w-18 h-7 rounded-lg bg-zinc-100 dark:bg-zinc-800/60 animate-pulse" />
                   </div>
+                </div>
+              </div>
+
+              {/* Qualifications & Seniority Match Card Skeleton */}
+              <div className="rounded-2xl border border-zinc-200/70 dark:border-zinc-800/80 overflow-hidden">
+                <div className="flex items-center justify-between px-5 py-3 bg-zinc-50/80 dark:bg-zinc-800/40 border-b border-zinc-100 dark:border-zinc-800/60">
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 rounded bg-zinc-200 dark:bg-zinc-700 animate-pulse" />
+                    <div className="w-28 h-3 rounded bg-zinc-200 dark:bg-zinc-700 animate-pulse" />
+                  </div>
+                  <div className="w-20 h-5 rounded-md bg-zinc-200 dark:bg-zinc-700 animate-pulse" />
+                </div>
+                <div className="px-5 py-4 space-y-3">
+                  <div className="w-full h-3 rounded bg-zinc-100 dark:bg-zinc-800/70 animate-pulse" />
+                  <div className="w-4/5 h-3 rounded bg-zinc-100 dark:bg-zinc-800/70 animate-pulse" />
                 </div>
               </div>
             </div>
