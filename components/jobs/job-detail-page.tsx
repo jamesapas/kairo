@@ -34,6 +34,7 @@ import {
 import { StatusDropdown } from "./status-dropdown";
 import { PlatformIcon } from "./platform-badge";
 import { JobModal } from "./job-modal";
+import { JobDescriptionView } from "./job-description-view";
 import { AIMatchPanel } from "./ai-match-panel";
 import { HelpMeApplyModal } from "./help-me-apply-modal";
 import { ApplyMaterialsPanel } from "./apply-materials-panel";
@@ -435,9 +436,7 @@ export function JobDetailPage({ jobId }: JobDetailPageProps) {
                 </h2>
 
                 {job.description ? (
-                  <div className="text-xs sm:text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed whitespace-pre-line font-normal selection:bg-zinc-200 dark:selection:bg-zinc-700">
-                    {job.description}
-                  </div>
+                  <JobDescriptionView description={job.description} />
                 ) : (
                   <div className="py-8 text-center space-y-3">
                     <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">

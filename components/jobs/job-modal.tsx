@@ -17,6 +17,7 @@ import {
 } from "@/types/job";
 import { CustomSelect, CustomSelectOption } from "./custom-select";
 import { PlatformIcon } from "./platform-badge";
+import { JobDescriptionEditor } from "./job-description-editor";
 
 interface JobModalProps {
   isOpen: boolean;
@@ -382,12 +383,11 @@ function JobModalForm({
             </label>
             <span className="text-[10px] text-zinc-400">Used for AI Match & Help Me Apply</span>
           </div>
-          <textarea
-            rows={5}
-            placeholder="Paste the job description, qualifications, and role scope here to enable AI matching and tailored application materials..."
+          <JobDescriptionEditor
             value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            className="w-full px-3 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 text-xs text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:border-zinc-400 dark:focus:border-zinc-500 resize-y"
+            onChange={(val) => setDescription(val)}
+            minHeight="140px"
+            maxHeight="260px"
           />
         </div>
 

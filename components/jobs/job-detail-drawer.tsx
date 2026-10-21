@@ -33,6 +33,8 @@ import {
 import { StatusDropdown } from "./status-dropdown";
 import { PlatformIcon, PlatformBadge } from "./platform-badge";
 import { AIMatchPanel } from "./ai-match-panel";
+import { JobDescriptionView } from "./job-description-view";
+import { richHtmlToPlainText } from "@/lib/utils/job-description";
 
 interface JobDetailDrawerProps {
   job: JobApplication | null;
@@ -157,7 +159,7 @@ export function JobDetailDrawer({
 
   const handleCopyDescription = () => {
     if (currentJob.description) {
-      navigator.clipboard.writeText(currentJob.description);
+      navigator.clipboard.writeText(richHtmlToPlainText(currentJob.description));
       setCopiedDesc(true);
       setTimeout(() => setCopiedDesc(false), 2000);
     }
@@ -478,8 +480,8 @@ export function JobDetailDrawer({
             </div>
 
             {currentJob.description ? (
-              <div className="p-4 rounded-2xl bg-zinc-50/90 dark:bg-zinc-800/40 border border-zinc-200/80 dark:border-zinc-800/90 text-xs text-zinc-700 dark:text-zinc-300 leading-relaxed whitespace-pre-line font-normal selection:bg-zinc-200 dark:selection:bg-zinc-700">
-                {currentJob.description}
+              <div className="p-4 rounded-2xl bg-zinc-50/90 dark:bg-zinc-800/40 border border-zinc-200/80 dark:border-zinc-800/90 selection:bg-zinc-200 dark:selection:bg-zinc-700">
+                <JobDescriptionView description={currentJob.description} />
               </div>
             ) : (
               <div className="p-6 rounded-2xl bg-zinc-50/50 dark:bg-zinc-800/20 border border-dashed border-zinc-200 dark:border-zinc-800 text-center space-y-1.5">
