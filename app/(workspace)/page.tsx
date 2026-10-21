@@ -41,9 +41,17 @@ export default async function Page() {
         userEmail={userEmail}
         userName={userName}
         initialJobs={initialJobs}
+        isGuest={false}
       />
     );
   }
 
-  return <JobDashboard userEmail={userEmail} userName={userName} />;
+  return (
+    <JobDashboard
+      userEmail={undefined}
+      userName={undefined}
+      initialJobs={[]}
+      isGuest={true}
+    />
+  );
 }

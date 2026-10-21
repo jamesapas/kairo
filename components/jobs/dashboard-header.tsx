@@ -9,6 +9,7 @@ interface DashboardHeaderProps {
   userEmail?: string;
   userName?: string;
   isLoading?: boolean;
+  isGuest?: boolean;
   onAddNew: () => void;
   onExportCSV: () => void;
   onOpenStreakModal?: () => void;
@@ -26,6 +27,7 @@ export function DashboardHeader({
   userEmail,
   userName,
   isLoading = false,
+  isGuest = false,
   onAddNew,
   onExportCSV,
 }: DashboardHeaderProps) {
@@ -47,8 +49,12 @@ export function DashboardHeader({
           Job Applications
         </h1>
 
-        {/* Personalized Subtitle or Skeleton until fully mounted & loaded */}
-        {!isReady ? (
+        {/* Personalized Subtitle or Guest Subtitle */}
+        {isGuest ? (
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">
+            Welcome to Kairo — track applications, manage interview stages, and land your next role.
+          </p>
+        ) : !isReady ? (
           <div className="w-52 h-4 rounded-md bg-zinc-100 dark:bg-zinc-800 animate-pulse mt-0.5" />
         ) : (
           <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">

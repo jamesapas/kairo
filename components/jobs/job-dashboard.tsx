@@ -47,6 +47,7 @@ import { PlatformIcon } from "./platform-badge";
 import { JobStatsOverview } from "./job-stats-overview";
 import { StreakModal } from "./streak-modal";
 import { DashboardHeader } from "./dashboard-header";
+import { useAuthModal } from "@/components/auth/auth-modal-context";
 
 type SortOption = "date-desc" | "date-asc" | "company-asc" | "title-asc";
 
@@ -54,22 +55,30 @@ interface JobDashboardProps {
   userEmail?: string;
   userName?: string;
   initialJobs?: JobApplication[];
+  isGuest?: boolean;
 }
 
 export function JobDashboard({
   userEmail: initialUserEmail,
   userName: initialUserName,
   initialJobs,
+  isGuest = false,
 }: JobDashboardProps = {}) {
   const router = useRouter();
+  const { openAuthModal } = useAuthModal();
   const { start: startTopLoader } = useTopLoader();
   const [jobs, setJobs] = useState<JobApplication[]>(initialJobs || []);
   const [userEmail, setUserEmail] = useState<string | undefined>(initialUserEmail);
   const [userName, setUserName] = useState<string | undefined>(initialUserName);
-  const [isLoading, setIsLoading] = useState(!initialJobs || initialJobs.length === 0);
+  const [isLoading, setIsLoading] = useState(!isGuest && (!initialJobs || initialJobs.length === 0));
   const fetchedRef = useRef(false);
 
   useEffect(() => {
+    if (isGuest) {
+      setIsLoading(false);
+      return;
+    }
+
     const supabase = createClient();
 
     if (!userName || !userEmail) {
@@ -417,19 +426,45 @@ export function JobDashboard({
             userEmail={userEmail}
             userName={userName}
             isLoading={isLoading}
+            isGuest={isGuest}
             onAddNew={() => {
+              if (isGuest) {
+                openAuthModal(
+                  "login",
+                  "Sign in or create an account to start tracking job applications"
+                );
+                return;
+              }
               setEditingJob(null);
               setIsModalOpen(true);
             }}
             onExportCSV={handleExportCSV}
-            onOpenStreakModal={() => setIsStreakModalOpen(true)}
+            onOpenStreakModal={() => {
+              if (isGuest) {
+                openAuthModal(
+                  "register",
+                  "Create an account to start tracking daily application streaks!"
+                );
+                return;
+              }
+              setIsStreakModalOpen(true);
+            }}
           />
 
           {/* Stats Overview Metric Cards */}
           <JobStatsOverview
             jobs={jobs}
             isLoading={isLoading}
-            onOpenStreakModal={() => setIsStreakModalOpen(true)}
+            onOpenStreakModal={() => {
+              if (isGuest) {
+                openAuthModal(
+                  "register",
+                  "Create an account to start tracking daily application streaks!"
+                );
+                return;
+              }
+              setIsStreakModalOpen(true);
+            }}
             onFilterThisWeek={() => setWeekOnlyFilter((prev) => !prev)}
             onFilterInterviewing={() =>
               setStatusFilter((curr) =>
@@ -540,8 +575,19 @@ export function JobDashboard({
           <JobTable
             jobs={filteredJobs}
             isLoading={isLoading}
-            onSelectJob={handleSelectJob}
+            isGuest={isGuest}
+            onSelectJob={(job) => {
+              if (isGuest) {
+                openAuthModal("login");
+                return;
+              }
+              handleSelectJob(job);
+            }}
             onEditJob={(job) => {
+              if (isGuest) {
+                openAuthModal("login");
+                return;
+              }
               setEditingJob(job);
               setIsModalOpen(true);
             }}
@@ -549,6 +595,13 @@ export function JobDashboard({
             onStatusChange={handleStatusChange}
             onTogglePin={handleTogglePin}
             onAddNew={() => {
+              if (isGuest) {
+                openAuthModal(
+                  "login",
+                  "Sign in or create an account to start tracking job applications"
+                );
+                return;
+              }
               setEditingJob(null);
               setIsModalOpen(true);
             }}
@@ -557,13 +610,35 @@ export function JobDashboard({
           <JobKanban
             jobs={filteredJobs}
             isLoading={isLoading}
-            onSelectJob={handleSelectJob}
+            onSelectJob={(job) => {
+              if (isGuest) {
+                openAuthModal("login");
+                return;
+              }
+              handleSelectJob(job);
+            }}
             onEditJob={(job) => {
+              if (isGuest) {
+                openAuthModal("login");
+                return;
+              }
               setEditingJob(job);
               setIsModalOpen(true);
             }}
-            onDeleteJob={handleDeleteJob}
-            onStatusChange={handleStatusChange}
+            onDeleteJob={(id) => {
+              if (isGuest) {
+                openAuthModal("login");
+                return;
+              }
+              handleDeleteJob(id);
+            }}
+            onStatusChange={(id, newStatus) => {
+              if (isGuest) {
+                openAuthModal("login");
+                return;
+              }
+              handleStatusChange(id, newStatus);
+            }}
           />
         )}
       </main>

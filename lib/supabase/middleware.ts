@@ -42,11 +42,14 @@ export async function updateSession(request: NextRequest) {
     return supabaseResponse;
   }
 
+  const isHomePage = request.nextUrl.pathname === "/";
+
   // Check if user is logged in
-  if (!user && !isLoginPage) {
-    // Redirect unauthenticated user to /login
+  if (!user && !isLoginPage && !isHomePage) {
+    // Redirect unauthenticated user accessing protected routes to / with auth modal
     const url = request.nextUrl.clone();
-    url.pathname = "/login";
+    url.pathname = "/";
+    url.searchParams.set("auth", "login");
     return NextResponse.redirect(url);
   }
 

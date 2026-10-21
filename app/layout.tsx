@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import NextTopLoader from "nextjs-toploader";
 import { ThemeProvider } from "@/components/theme/theme-provider";
+import { AuthModalProvider } from "@/components/auth/auth-modal-context";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -64,7 +65,9 @@ export default function RootLayout({
           zIndex={99999}
         />
         <ThemeProvider>
-          {children}
+          <AuthModalProvider>
+            {children}
+          </AuthModalProvider>
         </ThemeProvider>
       </body>
     </html>
