@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { signOutAction } from "@/lib/actions/auth";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import {
   LogOut,
@@ -21,6 +21,7 @@ interface NavbarProps {
 }
 
 export function Navbar({ userEmail: initialEmail }: NavbarProps = {}) {
+  const router = useRouter();
   const { openAuthModal } = useAuthModal();
   const [userEmail, setUserEmail] = useState<string | undefined>(initialEmail);
   const [avatarUrl, setAvatarUrl] = useState<string | undefined>();
@@ -29,16 +30,12 @@ export function Navbar({ userEmail: initialEmail }: NavbarProps = {}) {
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (initialEmail) {
-      setUserEmail(initialEmail);
-    }
+    setUserEmail(initialEmail);
 
     const supabase = createClient();
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user) {
-        if (user.email && !initialEmail) {
-          setUserEmail(user.email);
-        }
+        setUserEmail(user.email);
         supabase
           .from("users")
           .select("avatar_url")
@@ -49,11 +46,29 @@ export function Navbar({ userEmail: initialEmail }: NavbarProps = {}) {
               setAvatarUrl(data.avatar_url);
             }
           });
+      } else {
+        setUserEmail(undefined);
+        setAvatarUrl(undefined);
       }
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUserEmail(session?.user?.email);
+      const email = session?.user?.email;
+      setUserEmail(email);
+      if (!session?.user) {
+        setAvatarUrl(undefined);
+      } else {
+        supabase
+          .from("users")
+          .select("avatar_url")
+          .eq("id", session.user.id)
+          .maybeSingle()
+          .then(({ data }) => {
+            if (data?.avatar_url) {
+              setAvatarUrl(data.avatar_url);
+            }
+          });
+      }
     });
 
     return () => {
@@ -75,7 +90,13 @@ export function Navbar({ userEmail: initialEmail }: NavbarProps = {}) {
 
   const handleSignOut = async () => {
     setLoggingOut(true);
-    await signOutAction();
+    setMenuOpen(false);
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    setUserEmail(undefined);
+    setAvatarUrl(undefined);
+    setLoggingOut(false);
+    router.refresh();
   };
 
   return (

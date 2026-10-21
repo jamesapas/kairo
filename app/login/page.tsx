@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { signInWithPassword, signUpWithPassword } from "@/lib/actions/auth";
+import { createClient } from "@/lib/supabase/client";
 import { Loader2, AlertCircle, CheckCircle2, Eye, EyeOff } from "lucide-react";
 import { KairoLogo } from "@/components/ui/logo";
 
@@ -94,6 +94,8 @@ export default function LoginPage() {
     setErrorMsg("");
     setSuccessMsg("");
 
+    const supabase = createClient();
+
     if (mode === "register") {
       if (password.length < 6) {
         setErrorMsg("Password must be at least 6 characters.");
@@ -107,33 +109,32 @@ export default function LoginPage() {
         return;
       }
 
-      const res = await signUpWithPassword(email, password);
+      const { data, error } = await supabase.auth.signUp({
+        email: email.trim().toLowerCase(),
+        password,
+      });
 
-      if (!res.success) {
-        setErrorMsg(res.error || "Registration failed.");
+      if (error) {
+        setErrorMsg(error.message || "Registration failed.");
         setLoading(false);
       } else {
-        if (res.requiresEmailConfirmation) {
-          setSuccessMsg(res.message || "Please check your email to confirm your account.");
+        if (data.user && !data.session) {
+          setSuccessMsg("Account created! Please check your email to confirm your account.");
           setLoading(false);
         } else {
           setSuccessMsg("Account created! Logging you in...");
-          const loginRes = await signInWithPassword(email, password);
-          if (loginRes.success) {
-            router.push("/");
-            router.refresh();
-          } else {
-            setMode("login");
-            setSuccessMsg("Account created! Please sign in.");
-            setLoading(false);
-          }
+          router.push("/");
+          router.refresh();
         }
       }
     } else {
-      const res = await signInWithPassword(email, password);
+      const { error } = await supabase.auth.signInWithPassword({
+        email: email.trim().toLowerCase(),
+        password,
+      });
 
-      if (!res.success) {
-        setErrorMsg(res.error || "Failed to sign in. Please check your credentials.");
+      if (error) {
+        setErrorMsg(error.message || "Failed to sign in. Please check your credentials.");
         setLoading(false);
       } else {
         router.push("/");

@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { signInWithPassword, signUpWithPassword } from "@/lib/actions/auth";
+import { createClient } from "@/lib/supabase/client";
 import { Loader2, AlertCircle, CheckCircle2, Eye, EyeOff, X } from "lucide-react";
 import { KairoLogo } from "@/components/ui/logo";
 
@@ -85,6 +85,8 @@ export function AuthModal({
   reason,
 }: AuthModalProps) {
   const router = useRouter();
+  const [isRendered, setIsRendered] = useState(isOpen);
+  const [isClosing, setIsClosing] = useState(false);
   const [mode, setMode] = useState<"login" | "register">(initialMode);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -96,25 +98,46 @@ export function AuthModal({
   const modalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setMode(initialMode);
-    setErrorMsg("");
-    setSuccessMsg("");
-  }, [initialMode, isOpen]);
+    if (isOpen) {
+      setIsRendered(true);
+      setIsClosing(false);
+      setMode(initialMode);
+      setErrorMsg("");
+      setSuccessMsg("");
+    } else if (isRendered) {
+      setIsClosing(true);
+      const timer = setTimeout(() => {
+        setIsRendered(false);
+        setIsClosing(false);
+      }, 200);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, initialMode, isRendered]);
+
+  const handleClose = useCallback(() => {
+    if (isClosing) return;
+    setIsClosing(true);
+    setTimeout(() => {
+      onClose();
+      setIsRendered(false);
+      setIsClosing(false);
+    }, 200);
+  }, [isClosing, onClose]);
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isRendered) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        onClose();
+      if (e.key === "Escape" && !isClosing) {
+        handleClose();
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
+  }, [isRendered, isClosing, handleClose]);
 
-  if (!isOpen) return null;
+  if (!isRendered) return null;
 
   const handleTabSwitch = (newMode: "login" | "register") => {
     setMode(newMode);
@@ -127,6 +150,8 @@ export function AuthModal({
     setLoading(true);
     setErrorMsg("");
     setSuccessMsg("");
+
+    const supabase = createClient();
 
     if (mode === "register") {
       if (password.length < 6) {
@@ -141,36 +166,35 @@ export function AuthModal({
         return;
       }
 
-      const res = await signUpWithPassword(email, password);
+      const { data, error } = await supabase.auth.signUp({
+        email: email.trim().toLowerCase(),
+        password,
+      });
 
-      if (!res.success) {
-        setErrorMsg(res.error || "Registration failed.");
+      if (error) {
+        setErrorMsg(error.message || "Registration failed.");
         setLoading(false);
       } else {
-        if (res.requiresEmailConfirmation) {
-          setSuccessMsg(res.message || "Please check your email to confirm your account.");
+        if (data.user && !data.session) {
+          setSuccessMsg("Account created! Please check your email to confirm your account.");
           setLoading(false);
         } else {
           setSuccessMsg("Account created! Logging you in...");
-          const loginRes = await signInWithPassword(email, password);
-          if (loginRes.success) {
-            onClose();
-            router.refresh();
-          } else {
-            setMode("login");
-            setSuccessMsg("Account created! Please sign in.");
-            setLoading(false);
-          }
+          handleClose();
+          router.refresh();
         }
       }
     } else {
-      const res = await signInWithPassword(email, password);
+      const { error } = await supabase.auth.signInWithPassword({
+        email: email.trim().toLowerCase(),
+        password,
+      });
 
-      if (!res.success) {
-        setErrorMsg(res.error || "Failed to sign in. Please check your credentials.");
+      if (error) {
+        setErrorMsg(error.message || "Failed to sign in. Please check your credentials.");
         setLoading(false);
       } else {
-        onClose();
+        handleClose();
         router.refresh();
       }
     }
@@ -180,21 +204,26 @@ export function AuthModal({
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fade-in"
-      onClick={(e) => {
-        if (modalRef.current && !modalRef.current.contains(e.target as Node)) {
-          onClose();
-        }
-      }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto"
     >
+      {/* Backdrop */}
+      <div
+        className={`fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity ${
+          isClosing ? "animate-fade-out" : "animate-fade-in"
+        }`}
+        onClick={handleClose}
+      />
+
       <div
         ref={modalRef}
-        className="relative w-full max-w-sm sm:max-w-md bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 sm:p-7 shadow-2xl animate-in zoom-in-95 duration-200"
+        className={`relative z-10 w-full max-w-sm sm:max-w-md bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 sm:p-7 shadow-2xl my-auto ${
+          isClosing ? "animate-modal-out" : "animate-modal"
+        }`}
       >
         {/* Close Button */}
         <button
           type="button"
-          onClick={onClose}
+          onClick={handleClose}
           aria-label="Close"
           className="absolute right-4 top-4 p-2 rounded-xl text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition cursor-pointer"
         >
@@ -302,9 +331,9 @@ export function AuthModal({
               {loading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : mode === "login" ? (
-                "Sign In to Workspace"
+                "Sign In"
               ) : (
-                "Create Free Account"
+                "Create Account"
               )}
             </button>
           </form>

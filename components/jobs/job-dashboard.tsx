@@ -67,66 +67,78 @@ export function JobDashboard({
   const router = useRouter();
   const { openAuthModal } = useAuthModal();
   const { start: startTopLoader } = useTopLoader();
+  const [guestMode, setGuestMode] = useState(isGuest);
   const [jobs, setJobs] = useState<JobApplication[]>(initialJobs || []);
   const [userEmail, setUserEmail] = useState<string | undefined>(initialUserEmail);
   const [userName, setUserName] = useState<string | undefined>(initialUserName);
   const [isLoading, setIsLoading] = useState(!isGuest && (!initialJobs || initialJobs.length === 0));
-  const fetchedRef = useRef(false);
 
+  // Sync props when server re-renders or updates
   useEffect(() => {
+    setGuestMode(isGuest);
     if (isGuest) {
+      setJobs([]);
+      setUserEmail(undefined);
+      setUserName(undefined);
       setIsLoading(false);
       return;
     }
+    if (initialUserEmail) setUserEmail(initialUserEmail);
+    if (initialUserName) setUserName(initialUserName);
+    if (initialJobs) {
+      setJobs(initialJobs);
+      setIsLoading(false);
+    }
+  }, [initialJobs, isGuest, initialUserEmail, initialUserName]);
 
+  // Optimistic real-time auth listener
+  useEffect(() => {
     const supabase = createClient();
 
-    if (!userName || !userEmail) {
-      supabase.auth.getUser().then(async ({ data: { user } }) => {
-        if (user) {
-          if (!userEmail && user.email) {
-            setUserEmail(user.email);
-          }
-          if (!userName) {
-            const { data } = await supabase
-              .from("users")
-              .select("name")
-              .eq("id", user.id)
-              .maybeSingle();
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === "SIGNED_OUT" || !session?.user) {
+        // Optimistically clear jobs and user immediately
+        setJobs([]);
+        setUserEmail(undefined);
+        setUserName(undefined);
+        setGuestMode(true);
+        setIsLoading(false);
+      } else if (session?.user) {
+        setGuestMode(false);
+        setUserEmail(session.user.email);
 
+        supabase
+          .from("users")
+          .select("name")
+          .eq("id", session.user.id)
+          .maybeSingle()
+          .then(({ data }) => {
             if (data?.name) {
               setUserName(data.name);
             }
-          }
+          });
+
+        const { data: jobsData } = await supabase
+          .from("job_applications")
+          .select("*")
+          .eq("user_id", session.user.id)
+          .order("is_pinned", { ascending: false })
+          .order("date_applied", { ascending: false })
+          .order("created_at", { ascending: false });
+
+        if (jobsData) {
+          setJobs((jobsData as JobApplicationRow[]).map(mapRowToJob));
         }
-      });
-    }
-
-    if (initialJobs && initialJobs.length > 0) {
-      setJobs(initialJobs);
-      setIsLoading(false);
-      return;
-    }
-
-    if (fetchedRef.current) return;
-    fetchedRef.current = true;
-
-    async function fetchJobs() {
-      const { data, error } = await supabase
-        .from("job_applications")
-        .select("*")
-        .order("is_pinned", { ascending: false })
-        .order("date_applied", { ascending: false })
-        .order("created_at", { ascending: false });
-
-      if (!error && data) {
-        setJobs((data as JobApplicationRow[]).map(mapRowToJob));
+        setIsLoading(false);
       }
-      setIsLoading(false);
-    }
+    });
 
-    fetchJobs();
-  }, [initialJobs, userEmail]);
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
 
   // Search & Filter state
   const [searchQuery, setSearchQuery] = useState("");
@@ -426,9 +438,9 @@ export function JobDashboard({
             userEmail={userEmail}
             userName={userName}
             isLoading={isLoading}
-            isGuest={isGuest}
+            isGuest={guestMode}
             onAddNew={() => {
-              if (isGuest) {
+              if (guestMode) {
                 openAuthModal(
                   "login",
                   "Sign in or create an account to start tracking job applications"
@@ -440,7 +452,7 @@ export function JobDashboard({
             }}
             onExportCSV={handleExportCSV}
             onOpenStreakModal={() => {
-              if (isGuest) {
+              if (guestMode) {
                 openAuthModal(
                   "register",
                   "Create an account to start tracking daily application streaks!"
@@ -456,7 +468,7 @@ export function JobDashboard({
             jobs={jobs}
             isLoading={isLoading}
             onOpenStreakModal={() => {
-              if (isGuest) {
+              if (guestMode) {
                 openAuthModal(
                   "register",
                   "Create an account to start tracking daily application streaks!"
@@ -575,16 +587,16 @@ export function JobDashboard({
           <JobTable
             jobs={filteredJobs}
             isLoading={isLoading}
-            isGuest={isGuest}
+            isGuest={guestMode}
             onSelectJob={(job) => {
-              if (isGuest) {
+              if (guestMode) {
                 openAuthModal("login");
                 return;
               }
               handleSelectJob(job);
             }}
             onEditJob={(job) => {
-              if (isGuest) {
+              if (guestMode) {
                 openAuthModal("login");
                 return;
               }
@@ -595,7 +607,7 @@ export function JobDashboard({
             onStatusChange={handleStatusChange}
             onTogglePin={handleTogglePin}
             onAddNew={() => {
-              if (isGuest) {
+              if (guestMode) {
                 openAuthModal(
                   "login",
                   "Sign in or create an account to start tracking job applications"
@@ -611,14 +623,14 @@ export function JobDashboard({
             jobs={filteredJobs}
             isLoading={isLoading}
             onSelectJob={(job) => {
-              if (isGuest) {
+              if (guestMode) {
                 openAuthModal("login");
                 return;
               }
               handleSelectJob(job);
             }}
             onEditJob={(job) => {
-              if (isGuest) {
+              if (guestMode) {
                 openAuthModal("login");
                 return;
               }
@@ -626,14 +638,14 @@ export function JobDashboard({
               setIsModalOpen(true);
             }}
             onDeleteJob={(id) => {
-              if (isGuest) {
+              if (guestMode) {
                 openAuthModal("login");
                 return;
               }
               handleDeleteJob(id);
             }}
             onStatusChange={(id, newStatus) => {
-              if (isGuest) {
+              if (guestMode) {
                 openAuthModal("login");
                 return;
               }
