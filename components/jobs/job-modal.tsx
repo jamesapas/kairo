@@ -28,6 +28,19 @@ interface JobModalProps {
   initialJob?: JobApplication | null;
 }
 
+const LAST_PLATFORM_STORAGE_KEY = "kairo-last-platform";
+
+function getSavedPlatform(): string {
+  if (typeof window === "undefined") return PLATFORM_OPTIONS[0];
+  try {
+    const saved = localStorage.getItem(LAST_PLATFORM_STORAGE_KEY);
+    if (saved && (PLATFORM_OPTIONS as readonly string[]).includes(saved)) {
+      return saved;
+    }
+  } catch {}
+  return PLATFORM_OPTIONS[0];
+}
+
 const PLATFORM_SELECT_OPTIONS: CustomSelectOption<string>[] = PLATFORM_OPTIONS.map(
   (plat) => ({
     value: plat,
@@ -144,7 +157,7 @@ function JobModalForm({
   const [company, setCompany] = useState(initialJob?.company || "");
   const [description, setDescription] = useState(initialJob?.description || "");
   const [appliedOn, setAppliedOn] = useState(
-    initialJob?.appliedOn || PLATFORM_OPTIONS[0]
+    initialJob?.appliedOn || getSavedPlatform()
   );
   const [jobUrl, setJobUrl] = useState(initialJob?.jobUrl || "");
   const [workplaceType, setWorkplaceType] = useState<WorkplaceType>(
@@ -179,7 +192,7 @@ function JobModalForm({
       setJobTitle("");
       setCompany("");
       setDescription("");
-      setAppliedOn(PLATFORM_OPTIONS[0]);
+      setAppliedOn(getSavedPlatform());
       setJobUrl("");
       setWorkplaceType("Remote");
       setSalaryCurrency("₱");
@@ -189,6 +202,15 @@ function JobModalForm({
     }
     setErrors({});
   }, [initialJob]);
+
+  const handlePlatformChange = (val: string) => {
+    setAppliedOn(val);
+    if (!initialJob) {
+      try {
+        localStorage.setItem(LAST_PLATFORM_STORAGE_KEY, val);
+      } catch {}
+    }
+  };
 
   const validate = () => {
     const newErrors: { jobTitle?: string } = {};
@@ -200,6 +222,12 @@ function JobModalForm({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
+
+    if (!initialJob) {
+      try {
+        localStorage.setItem(LAST_PLATFORM_STORAGE_KEY, appliedOn);
+      } catch {}
+    }
 
     const formattedSalary = salaryAmount.trim()
       ? `${salaryCurrency}${salaryAmount.trim()}${salaryPeriod}`
@@ -292,7 +320,7 @@ function JobModalForm({
             </label>
             <CustomSelect<string>
               value={appliedOn}
-              onChange={(val) => setAppliedOn(val)}
+              onChange={handlePlatformChange}
               options={PLATFORM_SELECT_OPTIONS}
               className="w-full"
             />
