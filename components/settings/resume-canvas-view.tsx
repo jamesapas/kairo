@@ -67,6 +67,8 @@ import {
 import { CustomSelect, CustomSelectOption } from "@/components/jobs/custom-select";
 import {
   ProfileSectionSkeleton,
+  ProfileCompletenessSkeleton,
+  CareerSummarySkeleton,
   ExperienceSectionSkeleton,
   SkillsSectionSkeleton,
   EducationSectionSkeleton,
@@ -1205,66 +1207,83 @@ export function ResumeCanvasView({
 
         {/* Right Column: Main Content Sections */}
         <main className="lg:col-span-8 xl:col-span-8 space-y-8 min-w-0">
-          {/* Profile Strength Card */}
-          <div className="p-5 sm:p-6 rounded-3xl bg-white dark:bg-zinc-900 border border-zinc-200/90 dark:border-zinc-800 shadow-xs space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="w-7 h-7 rounded-lg bg-amber-50 dark:bg-amber-950/50 border border-amber-200/80 dark:border-amber-800/80 text-amber-600 dark:text-amber-400 flex items-center justify-center">
-                  <Sparkles className="w-3.5 h-3.5" />
-                </div>
+          {/* Profile Completeness Card */}
+          {loadingProfile ? (
+            <ProfileCompletenessSkeleton />
+          ) : (
+            <div className="p-5 sm:p-6 rounded-3xl bg-white dark:bg-zinc-900 border border-zinc-200/90 dark:border-zinc-800 shadow-xs space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div>
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-zinc-100">
-                    Profile Strength
-                  </h3>
-                  <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-zinc-100">
+                      Profile Completeness
+                    </h3>
+                    <span className="text-[10px] font-bold text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded-full border border-zinc-200/70 dark:border-zinc-700 font-mono">
+                      {completeness}%
+                    </span>
+                  </div>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
                     {completeness === 100
-                      ? "All core profile sections completed for tailored applications"
-                      : "Complete your profile to generate higher-impact tailored resumes"}
+                      ? "Your profile is complete and ready for tailored applications."
+                      : "Complete remaining sections to ensure accurate resume tailoring."}
                   </p>
                 </div>
+
+                <div className="flex items-center gap-2 text-xs font-semibold shrink-0">
+                  <span
+                    className={`text-[11px] px-2.5 py-0.5 rounded-full border ${
+                      completeness === 100
+                        ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200/60 dark:border-emerald-800/60"
+                        : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border-zinc-200/70 dark:border-zinc-700"
+                    }`}
+                  >
+                    {completeness === 100 ? "Complete" : `${100 - completeness}% remaining`}
+                  </span>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 font-mono">
-                  {completeness}%
-                </span>
-                <span className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded-full border border-zinc-200/70 dark:border-zinc-700">
-                  {completeness >= 80 ? "Strong" : completeness >= 50 ? "Good" : "Needs Info"}
-                </span>
+
+              <div className="w-full h-2 rounded-full bg-zinc-100 dark:bg-zinc-800 overflow-hidden">
+                <div
+                  className={`h-full transition-all duration-300 rounded-full ${
+                    completeness === 100
+                      ? "bg-emerald-500 dark:bg-emerald-400"
+                      : "bg-zinc-900 dark:bg-zinc-100"
+                  }`}
+                  style={{ width: `${completeness}%` }}
+                />
               </div>
             </div>
-            <div className="w-full h-2.5 rounded-full bg-zinc-100 dark:bg-zinc-800 overflow-hidden">
-              <div
-                className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-500 rounded-full"
-                style={{ width: `${completeness}%` }}
-              />
-            </div>
-          </div>
+          )}
 
           {/* Career Summary Card */}
-          <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200/90 dark:border-zinc-800 shadow-xs overflow-hidden">
-            <div className="px-6 sm:px-8 py-4 border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-800/30 flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="w-7 h-7 rounded-lg bg-zinc-100 dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 flex items-center justify-center">
-                  <FileText className="w-3.5 h-3.5" />
+          {loadingProfile ? (
+            <CareerSummarySkeleton />
+          ) : (
+            <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200/90 dark:border-zinc-800 shadow-xs overflow-hidden">
+              <div className="px-6 sm:px-8 py-4 border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-800/30 flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-7 h-7 rounded-lg bg-zinc-100 dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 flex items-center justify-center">
+                    <FileText className="w-3.5 h-3.5" />
+                  </div>
+                  <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-zinc-100">
+                    Career Summary
+                  </h2>
                 </div>
-                <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-zinc-100">
-                  Career Summary
-                </h2>
+              </div>
+              <div className="p-6 sm:p-8 space-y-2">
+                <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                  Highlight your professional identity, years of experience, and primary engineering domains.
+                </p>
+                <textarea
+                  value={careerSummary}
+                  onChange={(e) => setCareerSummary(e.target.value)}
+                  rows={4}
+                  placeholder="e.g. Senior Software Engineer with 6+ years building distributed cloud applications and high-impact web products. Specialized in React, TypeScript, Next.js, and system architecture..."
+                  className="w-full px-4 py-3 rounded-2xl bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 text-xs font-semibold text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:bg-white dark:focus:bg-zinc-800 focus:border-zinc-400 dark:focus:border-zinc-500 transition shadow-2xs resize-y min-h-[100px] leading-relaxed"
+                />
               </div>
             </div>
-            <div className="p-6 sm:p-8 space-y-2">
-              <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                Highlight your professional identity, years of experience, and primary engineering domains.
-              </p>
-              <textarea
-                value={careerSummary}
-                onChange={(e) => setCareerSummary(e.target.value)}
-                rows={4}
-                placeholder="e.g. Senior Software Engineer with 6+ years building distributed cloud applications and high-impact web products. Specialized in React, TypeScript, Next.js, and system architecture..."
-                className="w-full px-4 py-3 rounded-2xl bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 text-xs font-semibold text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:bg-white dark:focus:bg-zinc-800 focus:border-zinc-400 dark:focus:border-zinc-500 transition shadow-2xs resize-y min-h-[100px] leading-relaxed"
-              />
-            </div>
-          </div>
+          )}
 
       {/* =========================================================================
           SECTION 2: WORK EXPERIENCE (EDITORIAL TIMELINE)
