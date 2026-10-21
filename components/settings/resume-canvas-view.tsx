@@ -348,6 +348,36 @@ function WorkplaceBadge({ type }: { type: WorkplaceType }) {
   );
 }
 
+function formatDuration(
+  startMonth?: string,
+  startYear?: string,
+  endMonth?: string,
+  endYear?: string,
+  isCurrent?: boolean
+): string {
+  if (!startYear) return "";
+  const monthMap: Record<string, number> = {
+    Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5,
+    Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11,
+  };
+  const sMonth = monthMap[startMonth || "Jan"] ?? 0;
+  const sYear = parseInt(startYear, 10);
+  if (isNaN(sYear)) return "";
+  const now = new Date();
+  const eMonth = isCurrent ? now.getMonth() : monthMap[endMonth || "Dec"] ?? 11;
+  const eYear = isCurrent ? now.getFullYear() : parseInt(endYear || String(now.getFullYear()), 10);
+  if (isNaN(eYear)) return "";
+
+  const totalMonths = Math.max(1, (eYear - sYear) * 12 + (eMonth - sMonth) + 1);
+  const years = Math.floor(totalMonths / 12);
+  const months = totalMonths % 12;
+
+  const parts: string[] = [];
+  if (years > 0) parts.push(`${years} ${years === 1 ? "yr" : "yrs"}`);
+  if (months > 0 && years < 3) parts.push(`${months} ${months === 1 ? "mo" : "mos"}`);
+  return parts.join(" ") || "1 mo";
+}
+
 interface ResumeCanvasViewProps {
   name: string;
   setName: (v: string) => void;
@@ -411,6 +441,20 @@ export function ResumeCanvasView({
   isDirty,
   onSubmit,
 }: ResumeCanvasViewProps) {
+  // Profile Completeness Score
+  const completeness = useMemo(() => {
+    let score = 0;
+    if (name.trim()) score += 15;
+    if (avatarUrl) score += 10;
+    if (location.trim()) score += 10;
+    if (careerSummary.trim()) score += 20;
+    if (links.length > 0) score += 15;
+    if (experiences.length > 0) score += 15;
+    if (projects.length > 0) score += 10;
+    if (skills.length > 0) score += 5;
+    return Math.min(score, 100);
+  }, [name, avatarUrl, location, careerSummary, links, experiences, projects, skills]);
+
   // Link input state
   const [isAddingLink, setIsAddingLink] = useState(false);
   const [selectedPlatformId, setSelectedPlatformId] = useState<string>("linkedin");
@@ -861,87 +905,84 @@ export function ResumeCanvasView({
       )}
 
       {/* =========================================================================
-          SECTION 1: CANDIDATE IDENTITY & DYNAMIC LINKS CARD
+          TWO-COLUMN MODERN WORKSPACE
+          Left: Sticky Profile Card, Completeness Meter, Career Summary & Links
+          Right: Work Experience, Skills, Education & Projects
           ========================================================================= */}
-      {loadingProfile ? (
-        <ProfileSectionSkeleton />
-      ) : (
-        <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200/90 dark:border-zinc-800 shadow-xs overflow-hidden">
-          {/* Header Ribbon */}
-          <div className="px-6 sm:px-8 py-4 border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-800/30 flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded-lg bg-zinc-100 dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 flex items-center justify-center">
-                <User className="w-3.5 h-3.5" />
-              </div>
-              <div>
-                <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-zinc-100">
-                  Profile
-                </h2>
-              </div>
-            </div>
-          </div>
-
-          <div className="p-6 sm:p-8">
-            <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
-              {/* Left: Circular Avatar with Action Buttons Below */}
-              <div className="flex flex-col items-center gap-3.5 shrink-0 self-center md:self-start">
-                <div className="relative w-36 h-36 sm:w-40 sm:h-40 rounded-full bg-zinc-100 dark:bg-zinc-800 border-2 border-zinc-200/90 dark:border-zinc-700 shadow-xs overflow-hidden flex items-center justify-center group">
-                  {avatarUrl ? (
-                    <Image
-                      src={avatarUrl}
-                      alt="Avatar"
-                      width={160}
-                      height={160}
-                      unoptimized
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-zinc-300 dark:text-zinc-600 bg-zinc-50 dark:bg-zinc-850">
-                      <User className="w-16 h-16" />
-                    </div>
-                  )}
-
-                  {uploadingAvatar && (
-                    <div className="absolute inset-0 bg-black/60 backdrop-blur-2xs flex flex-col items-center justify-center gap-1 text-white">
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                    </div>
-                  )}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* Left Column (col-span-4) - Sticky Profile Card below Navbar */}
+        <aside className="lg:col-span-4 xl:col-span-4 space-y-6 lg:sticky lg:top-20">
+          {loadingProfile ? (
+            <ProfileSectionSkeleton />
+          ) : (
+            <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200/90 dark:border-zinc-800 shadow-xs overflow-hidden">
+              {/* Header Ribbon */}
+              <div className="px-6 py-4 border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-800/30 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-zinc-100 dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 flex items-center justify-center">
+                    <User className="w-3.5 h-3.5" />
+                  </div>
+                  <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-zinc-100">
+                    Profile
+                  </h2>
                 </div>
+              </div>
 
-                {/* Action Buttons Below Avatar */}
-                <div className="flex flex-col items-center gap-1.5 w-full">
-                  <label
-                    htmlFor="canvas-avatar-input"
-                    className="w-full px-3 py-1.5 rounded-xl bg-zinc-100 hover:bg-zinc-200/80 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 border border-zinc-200/80 dark:border-zinc-700 text-xs font-semibold cursor-pointer transition flex items-center justify-center gap-1.5 shadow-2xs active:scale-[0.98]"
-                  >
-                    <Camera className="w-3.5 h-3.5" />
-                    <span>{avatarUrl ? "Change Photo" : "Upload Photo"}</span>
-                    <input
-                      id="canvas-avatar-input"
-                      type="file"
-                      accept="image/*"
-                      onChange={handleAvatarFile}
-                      className="hidden"
-                    />
-                  </label>
+              <div className="p-6 space-y-6">
+                {/* Avatar Section */}
+                <div className="flex flex-col items-center gap-3 pt-1">
+                  <div className="relative w-28 h-28 rounded-full bg-zinc-100 dark:bg-zinc-800 border-2 border-zinc-200/90 dark:border-zinc-700 shadow-xs overflow-hidden flex items-center justify-center group">
+                    {avatarUrl ? (
+                      <Image
+                        src={avatarUrl}
+                        alt="Avatar"
+                        width={112}
+                        height={112}
+                        unoptimized
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-zinc-300 dark:text-zinc-600 bg-zinc-50 dark:bg-zinc-850">
+                        <User className="w-12 h-12" />
+                      </div>
+                    )}
 
-                  {avatarUrl && (
-                    <button
-                      type="button"
-                      onClick={() => setAvatarUrl("")}
-                      className="text-[11px] font-semibold text-rose-500 hover:text-rose-600 dark:text-rose-400 dark:hover:text-rose-300 transition cursor-pointer py-0.5 hover:underline"
+                    {uploadingAvatar && (
+                      <div className="absolute inset-0 bg-black/60 backdrop-blur-2xs flex flex-col items-center justify-center gap-1 text-white">
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex flex-col items-center gap-1 w-full max-w-[200px]">
+                    <label
+                      htmlFor="canvas-avatar-input"
+                      className="w-full px-3 py-1.5 rounded-xl bg-zinc-100 hover:bg-zinc-200/80 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 border border-zinc-200/80 dark:border-zinc-700 text-xs font-semibold cursor-pointer transition flex items-center justify-center gap-1.5 shadow-2xs active:scale-[0.98]"
                     >
-                      Remove Photo
-                    </button>
-                  )}
+                      <Camera className="w-3.5 h-3.5" />
+                      <span>{avatarUrl ? "Change Photo" : "Upload Photo"}</span>
+                      <input
+                        id="canvas-avatar-input"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleAvatarFile}
+                        className="hidden"
+                      />
+                    </label>
+                    {avatarUrl && (
+                      <button
+                        type="button"
+                        onClick={() => setAvatarUrl("")}
+                        className="text-[11px] font-semibold text-rose-500 hover:text-rose-600 dark:text-rose-400 dark:hover:text-rose-300 transition cursor-pointer py-0.5 hover:underline"
+                      >
+                        Remove Photo
+                      </button>
+                    )}
+                  </div>
                 </div>
-              </div>
 
-              {/* Right Column: Full Name, Email, and Links */}
-              <div className="flex-1 w-full space-y-5">
-                {/* Row 1: Full Name, Location & Account Email in responsive grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {/* Full Name */}
+                {/* Name, Location, Email Inputs */}
+                <div className="space-y-3.5 pt-1">
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5">
                       <User className="w-3.5 h-3.5 text-zinc-400" />
@@ -956,7 +997,6 @@ export function ResumeCanvasView({
                     />
                   </div>
 
-                  {/* Location */}
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5">
                       <MapPin className="w-3.5 h-3.5 text-zinc-400" />
@@ -971,7 +1011,6 @@ export function ResumeCanvasView({
                     />
                   </div>
 
-                  {/* Email Address */}
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between">
                       <label className="text-xs font-bold text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5">
@@ -993,25 +1032,10 @@ export function ResumeCanvasView({
                   </div>
                 </div>
 
-                {/* Row 2: Career Summary */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5">
-                    <FileText className="w-3.5 h-3.5 text-zinc-400" />
-                    Career Summary
-                  </label>
-                  <textarea
-                    value={careerSummary}
-                    onChange={(e) => setCareerSummary(e.target.value)}
-                    rows={3}
-                    placeholder="e.g. Senior Software Engineer with 6+ years building distributed cloud applications and high-impact web products. Specialized in React, TypeScript, Next.js, and system architecture..."
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 text-xs font-semibold text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:bg-white dark:focus:bg-zinc-800 focus:border-zinc-400 dark:focus:border-zinc-500 transition shadow-2xs resize-y min-h-[84px] leading-relaxed"
-                  />
-                </div>
-
-                {/* Links Section */}
-                <div className="space-y-2">
+                {/* Links & Online Presence */}
+                <div className="space-y-3 pt-2 border-t border-zinc-100 dark:border-zinc-800">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-2">
                       <label className="text-xs font-bold text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5">
                         <Link2 className="w-3.5 h-3.5 text-zinc-400" />
                         Links
@@ -1030,12 +1054,12 @@ export function ResumeCanvasView({
                         className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 border border-zinc-200/80 dark:border-zinc-700/80 text-[11px] font-semibold transition cursor-pointer active:scale-[0.98]"
                       >
                         <Plus className="w-3 h-3" />
-                        <span>Add Link</span>
+                        <span>Add</span>
                       </button>
                     )}
                   </div>
 
-                  {/* Active Links List (List Mode) */}
+                  {/* Active Links List */}
                   {links.length > 0 && (
                     <div className="rounded-2xl border border-zinc-200/80 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-800/30 divide-y divide-zinc-200/60 dark:divide-zinc-800 overflow-hidden shadow-2xs">
                       {links.map((link) => {
@@ -1043,40 +1067,27 @@ export function ResumeCanvasView({
                         return (
                           <div
                             key={link.id}
-                            className="p-3 sm:px-4 flex items-center justify-between gap-3 hover:bg-white dark:hover:bg-zinc-850/60 transition group"
+                            className="p-3 flex items-center justify-between gap-2.5 hover:bg-white dark:hover:bg-zinc-850/60 transition group"
                           >
-                            {/* Platform Badge & Title */}
-                            <div className="flex items-center gap-2.5 min-w-[120px] sm:min-w-[160px] shrink-0">
-                              <div className="w-7 h-7 rounded-lg bg-white dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700 flex items-center justify-center shrink-0 shadow-2xs">
-                                <Icon icon={platformDef.icon} className="w-3.5 h-3.5 text-zinc-800 dark:text-zinc-200" />
+                            <div className="flex items-center gap-2 min-w-0">
+                              <div className="w-6 h-6 rounded-md bg-white dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700 flex items-center justify-center shrink-0 shadow-2xs">
+                                <Icon icon={platformDef.icon} className="w-3 h-3 text-zinc-800 dark:text-zinc-200" />
                               </div>
                               <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100 truncate">
                                 {link.label || platformDef.name}
                               </span>
                             </div>
 
-                            {/* Editable URL Input in Center */}
-                            <div className="flex-1 min-w-0">
-                              <input
-                                type="text"
-                                value={link.url}
-                                onChange={(e) => handleUpdateLinkUrl(link.id, e.target.value)}
-                                placeholder="https://..."
-                                className="w-full px-2.5 py-1 rounded-lg bg-transparent hover:bg-white dark:hover:bg-zinc-800 focus:bg-white dark:focus:bg-zinc-800 border border-transparent hover:border-zinc-200 dark:hover:border-zinc-700 focus:border-zinc-300 dark:focus:border-zinc-600 text-xs text-zinc-700 dark:text-zinc-300 font-medium transition"
-                              />
-                            </div>
-
-                            {/* Right Action Buttons */}
                             <div className="flex items-center gap-1 shrink-0">
                               {link.url && link.url.includes(".") && (
                                 <a
                                   href={link.url.startsWith("http") ? link.url : `https://${link.url}`}
                                   target="_blank"
                                   rel="noreferrer"
-                                  className="px-2.5 py-1 rounded-lg text-[11px] font-semibold text-zinc-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition flex items-center gap-1"
+                                  className="p-1.5 rounded-lg text-zinc-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
+                                  title="Visit"
                                 >
-                                  <span>Visit</span>
-                                  <ExternalLink className="w-3 h-3" />
+                                  <ExternalLink className="w-3.5 h-3.5" />
                                 </a>
                               )}
                               <button
@@ -1094,7 +1105,7 @@ export function ResumeCanvasView({
                     </div>
                   )}
 
-                  {/* Empty State when no links and not adding */}
+                  {/* Empty state when no links */}
                   {links.length === 0 && !isAddingLink && (
                     <button
                       type="button"
@@ -1102,19 +1113,18 @@ export function ResumeCanvasView({
                       className="w-full py-3.5 rounded-2xl border border-dashed border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 bg-zinc-50/40 dark:bg-zinc-850/20 text-xs font-semibold text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 transition flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
                     >
                       <Plus className="w-3.5 h-3.5" />
-                      <span>Add a Social or Portfolio Link</span>
+                      <span>Add Social or Portfolio Link</span>
                     </button>
                   )}
 
-                  {/* Inline Link Adder at the Bottom of Links */}
+                  {/* Inline Link Adder */}
                   {isAddingLink && (
-                    <div className="p-3 rounded-2xl bg-zinc-50/90 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700 space-y-2.5 animate-in fade-in">
-                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
-                        {/* Platform Selector Dropdown */}
-                        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 shrink-0">
+                    <div className="p-3.5 rounded-2xl bg-zinc-50/90 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700 space-y-2.5 animate-in fade-in">
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 shrink-0">
                           <Icon
                             icon={getPlatformDef(selectedPlatformId).icon}
-                            className="w-4 h-4 text-zinc-800 dark:text-zinc-200 shrink-0"
+                            className="w-3.5 h-3.5 text-zinc-800 dark:text-zinc-200 shrink-0"
                           />
                           <select
                             value={selectedPlatformId}
@@ -1138,65 +1148,123 @@ export function ResumeCanvasView({
                           </select>
                         </div>
 
-                        {/* Custom Title if Platform is Other */}
                         {selectedPlatformId === "other" && (
                           <input
                             type="text"
                             value={customTitle}
                             onChange={(e) => setCustomTitle(e.target.value)}
-                            placeholder="Platform name (e.g. Medium, Dribbble)"
-                            className="px-3 py-2 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-xs font-semibold text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:border-zinc-400 transition sm:w-48"
+                            placeholder="Platform name"
+                            className="px-2.5 py-1.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-xs font-semibold text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:border-zinc-400 transition w-28"
                           />
                         )}
+                      </div>
 
-                        {/* URL Input */}
-                        <input
-                          type="text"
-                          value={newLinkUrl}
-                          onChange={(e) => setNewLinkUrl(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                              e.preventDefault();
-                              handleAddLink();
-                            }
+                      <input
+                        type="text"
+                        value={newLinkUrl}
+                        onChange={(e) => setNewLinkUrl(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            handleAddLink();
+                          }
+                        }}
+                        placeholder={getPlatformDef(selectedPlatformId).placeholder}
+                        className="w-full px-3 py-1.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-xs font-medium text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:border-zinc-400 transition"
+                      />
+
+                      <div className="flex justify-end items-center gap-1.5 pt-1">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsAddingLink(false);
+                            setNewLinkUrl("");
+                            if (selectedPlatformId === "other") setCustomTitle("");
                           }}
-                          placeholder={getPlatformDef(selectedPlatformId).placeholder}
-                          className="flex-1 px-3 py-2 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-xs font-medium text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:border-zinc-400 transition"
-                        />
-
-                        {/* Add / Cancel Buttons */}
-                        <div className="flex items-center gap-1.5 self-end sm:self-auto">
-                          <button
-                            type="button"
-                            onClick={handleAddLink}
-                            disabled={!newLinkUrl.trim()}
-                            className="px-3.5 py-2 rounded-xl bg-zinc-900 dark:bg-zinc-100 hover:bg-zinc-800 dark:hover:bg-white text-white dark:text-zinc-900 text-xs font-bold transition disabled:opacity-50 flex items-center gap-1 cursor-pointer shadow-2xs active:scale-[0.98]"
-                          >
-                            <Plus className="w-3.5 h-3.5" />
-                            <span>Add</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setIsAddingLink(false);
-                              setNewLinkUrl("");
-                              if (selectedPlatformId === "other") setCustomTitle("");
-                            }}
-                            className="p-2 rounded-xl hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 transition cursor-pointer"
-                            title="Cancel"
-                          >
-                            <X className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
+                          className="px-2.5 py-1 rounded-lg text-xs font-medium text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 transition cursor-pointer"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleAddLink}
+                          disabled={!newLinkUrl.trim()}
+                          className="px-3 py-1 rounded-lg bg-zinc-900 dark:bg-zinc-100 hover:bg-zinc-800 dark:hover:bg-white text-white dark:text-zinc-900 text-xs font-bold transition disabled:opacity-50 flex items-center gap-1 cursor-pointer shadow-2xs"
+                        >
+                          <Plus className="w-3 h-3" />
+                          <span>Add Link</span>
+                        </button>
                       </div>
                     </div>
                   )}
                 </div>
               </div>
             </div>
+          )}
+        </aside>
+
+        {/* Right Column: Main Content Sections */}
+        <main className="lg:col-span-8 xl:col-span-8 space-y-8 min-w-0">
+          {/* Profile Strength Card */}
+          <div className="p-5 sm:p-6 rounded-3xl bg-white dark:bg-zinc-900 border border-zinc-200/90 dark:border-zinc-800 shadow-xs space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-lg bg-amber-50 dark:bg-amber-950/50 border border-amber-200/80 dark:border-amber-800/80 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                  <Sparkles className="w-3.5 h-3.5" />
+                </div>
+                <div>
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-zinc-100">
+                    Profile Strength
+                  </h3>
+                  <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                    {completeness === 100
+                      ? "All core profile sections completed for tailored applications"
+                      : "Complete your profile to generate higher-impact tailored resumes"}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 font-mono">
+                  {completeness}%
+                </span>
+                <span className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded-full border border-zinc-200/70 dark:border-zinc-700">
+                  {completeness >= 80 ? "Strong" : completeness >= 50 ? "Good" : "Needs Info"}
+                </span>
+              </div>
+            </div>
+            <div className="w-full h-2.5 rounded-full bg-zinc-100 dark:bg-zinc-800 overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-500 rounded-full"
+                style={{ width: `${completeness}%` }}
+              />
+            </div>
           </div>
-        </div>
-      )}
+
+          {/* Career Summary Card */}
+          <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200/90 dark:border-zinc-800 shadow-xs overflow-hidden">
+            <div className="px-6 sm:px-8 py-4 border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-800/30 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-lg bg-zinc-100 dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 flex items-center justify-center">
+                  <FileText className="w-3.5 h-3.5" />
+                </div>
+                <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-zinc-100">
+                  Career Summary
+                </h2>
+              </div>
+            </div>
+            <div className="p-6 sm:p-8 space-y-2">
+              <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                Highlight your professional identity, years of experience, and primary engineering domains.
+              </p>
+              <textarea
+                value={careerSummary}
+                onChange={(e) => setCareerSummary(e.target.value)}
+                rows={4}
+                placeholder="e.g. Senior Software Engineer with 6+ years building distributed cloud applications and high-impact web products. Specialized in React, TypeScript, Next.js, and system architecture..."
+                className="w-full px-4 py-3 rounded-2xl bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 text-xs font-semibold text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:bg-white dark:focus:bg-zinc-800 focus:border-zinc-400 dark:focus:border-zinc-500 transition shadow-2xs resize-y min-h-[100px] leading-relaxed"
+              />
+            </div>
+          </div>
 
       {/* =========================================================================
           SECTION 2: WORK EXPERIENCE (EDITORIAL TIMELINE)
@@ -1204,7 +1272,7 @@ export function ResumeCanvasView({
       {loadingExp ? (
         <ExperienceSectionSkeleton />
       ) : (
-        <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200/90 dark:border-zinc-800 shadow-xs overflow-hidden">
+        <div id="experience" className="scroll-mt-24 bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200/90 dark:border-zinc-800 shadow-xs overflow-hidden">
           <div className="px-6 sm:px-8 py-4 border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-800/30 flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <div className="w-7 h-7 rounded-lg bg-zinc-100 dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 flex items-center justify-center">
@@ -1540,12 +1608,19 @@ export function ResumeCanvasView({
                           )}
                         </div>
 
-                        <div className="flex items-center gap-1.5 text-xs text-zinc-400 font-medium shrink-0 pt-0.5">
-                          <Calendar className="w-3.5 h-3.5 text-zinc-400" />
-                          <span>
-                            {exp.startMonth} {exp.startYear} —{" "}
-                            {exp.isCurrent ? "Present" : `${exp.endMonth || ""} ${exp.endYear || ""}`}
-                          </span>
+                        <div className="flex items-center gap-2 text-xs text-zinc-400 font-medium shrink-0 pt-0.5">
+                          <div className="flex items-center gap-1.5">
+                            <Calendar className="w-3.5 h-3.5 text-zinc-400" />
+                            <span>
+                              {exp.startMonth} {exp.startYear} —{" "}
+                              {exp.isCurrent ? "Present" : `${exp.endMonth || ""} ${exp.endYear || ""}`}
+                            </span>
+                          </div>
+                          {formatDuration(exp.startMonth, exp.startYear, exp.endMonth, exp.endYear, exp.isCurrent) && (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 border border-zinc-200/60 dark:border-zinc-700/60">
+                              {formatDuration(exp.startMonth, exp.startYear, exp.endMonth, exp.endYear, exp.isCurrent)}
+                            </span>
+                          )}
                         </div>
                       </div>
 
@@ -1619,7 +1694,7 @@ export function ResumeCanvasView({
       {loadingSkills ? (
         <SkillsSectionSkeleton />
       ) : (
-        <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200/90 dark:border-zinc-800 shadow-xs overflow-hidden">
+        <div id="skills" className="scroll-mt-24 bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200/90 dark:border-zinc-800 shadow-xs overflow-hidden">
           <div className="px-6 sm:px-8 py-4 border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-800/30 flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <div className="w-7 h-7 rounded-lg bg-zinc-100 dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 flex items-center justify-center">
@@ -1810,7 +1885,7 @@ export function ResumeCanvasView({
       {loadingEdu ? (
         <EducationSectionSkeleton />
       ) : (
-        <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200/90 dark:border-zinc-800 shadow-xs overflow-hidden">
+        <div id="education" className="scroll-mt-24 bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200/90 dark:border-zinc-800 shadow-xs overflow-hidden">
           <div className="px-6 sm:px-8 py-4 border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-800/30 flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <div className="w-7 h-7 rounded-lg bg-zinc-100 dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 flex items-center justify-center">
@@ -2063,12 +2138,19 @@ export function ResumeCanvasView({
                           )}
                         </div>
 
-                        <div className="flex items-center gap-1.5 text-xs text-zinc-400 font-medium shrink-0 pt-0.5">
-                          <Calendar className="w-3.5 h-3.5 text-zinc-400" />
-                          <span>
-                            {edu.startMonth} {edu.startYear} —{" "}
-                            {edu.isCurrent ? "Present" : `${edu.endMonth || ""} ${edu.endYear || ""}`}
-                          </span>
+                        <div className="flex items-center gap-2 text-xs text-zinc-400 font-medium shrink-0 pt-0.5">
+                          <div className="flex items-center gap-1.5">
+                            <Calendar className="w-3.5 h-3.5 text-zinc-400" />
+                            <span>
+                              {edu.startMonth} {edu.startYear} —{" "}
+                              {edu.isCurrent ? "Present" : `${edu.endMonth || ""} ${edu.endYear || ""}`}
+                            </span>
+                          </div>
+                          {formatDuration(edu.startMonth, edu.startYear, edu.endMonth, edu.endYear, edu.isCurrent) && (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 border border-zinc-200/60 dark:border-zinc-700/60">
+                              {formatDuration(edu.startMonth, edu.startYear, edu.endMonth, edu.endYear, edu.isCurrent)}
+                            </span>
+                          )}
                         </div>
                       </div>
 
@@ -2140,7 +2222,7 @@ export function ResumeCanvasView({
       {loadingProjects ? (
         <ProjectsSectionSkeleton />
       ) : (
-        <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200/90 dark:border-zinc-800 shadow-xs overflow-hidden">
+        <div id="projects" className="scroll-mt-24 bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200/90 dark:border-zinc-800 shadow-xs overflow-hidden">
           <div className="px-6 sm:px-8 py-4 border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-800/30 flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <div className="w-7 h-7 rounded-lg bg-zinc-100 dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 flex items-center justify-center">
@@ -2567,6 +2649,8 @@ export function ResumeCanvasView({
           </div>
         </div>
       )}
+        </main>
+      </div>
 
       {/* =========================================================================
           STICKY SAVE ACTION BAR (CLEAN LIGHT GLASSMORPHIC BAR)

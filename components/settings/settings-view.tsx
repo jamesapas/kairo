@@ -180,9 +180,11 @@ export function SettingsView() {
             </p>
           </div>
 
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-zinc-100 dark:bg-zinc-800/80 border border-zinc-200/80 dark:border-zinc-700/80 text-xs font-semibold text-zinc-800 dark:text-zinc-200 shadow-2xs self-start sm:self-auto">
-            <UserCheck className="w-4 h-4 text-emerald-500" />
-            <span>Profile Ready</span>
+          <div className="flex items-center gap-2.5 self-start sm:self-auto">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-zinc-100 dark:bg-zinc-800/80 border border-zinc-200/80 dark:border-zinc-700/80 text-xs font-semibold text-zinc-800 dark:text-zinc-200 shadow-2xs">
+              <UserCheck className="w-4 h-4 text-emerald-500" />
+              <span>Profile Ready</span>
+            </div>
           </div>
         </div>
       </div>
