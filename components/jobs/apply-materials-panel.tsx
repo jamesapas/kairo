@@ -1056,17 +1056,6 @@ export function ApplyMaterialsPanel({
             Help Me Apply
           </h2>
         </div>
-
-        {onOpenHelpMeApply && (
-          <button
-            type="button"
-            onClick={onOpenHelpMeApply}
-            className="px-3.5 py-1.5 rounded-xl text-xs bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 hover:from-amber-400 hover:to-rose-400 text-white font-bold shadow-[0_4px_24px_rgba(249,115,22,0.4),0_0_12px_rgba(244,63,94,0.3)] hover:shadow-[0_6px_32px_rgba(249,115,22,0.6)] border border-amber-300/40 transition flex items-center gap-1.5 cursor-pointer active:scale-[0.98]"
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Help Me Apply</span>
-          </button>
-        )}
       </div>
 
       {/* Error Alert */}
@@ -1176,9 +1165,9 @@ export function ApplyMaterialsPanel({
                   <button
                     type="button"
                     onClick={() => setIsEditing(true)}
-                    className="h-7 px-2.5 rounded-lg bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 hover:from-amber-400 hover:to-rose-400 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-2xs hover:shadow-xs active:scale-[0.98] cursor-pointer"
+                    className="h-7 px-2.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-750 text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 text-xs font-semibold transition flex items-center gap-1.5 shadow-2xs active:scale-[0.98] cursor-pointer"
                   >
-                    <Edit3 className="w-3.5 h-3.5" />
+                    <Edit3 className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-400" />
                     <span>Edit Resume</span>
                   </button>
                 )}
