@@ -2,6 +2,7 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   ArrowRight,
   ArrowLeft,
@@ -168,9 +169,12 @@ export function JobKanban({
                     </div>
 
                     {/* Role Title */}
-                    <h5 className="text-xs font-bold text-zinc-900 dark:text-zinc-100 leading-snug group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-2">
+                    <Link
+                      href={`/jobs/${job.id}`}
+                      className="text-xs font-bold text-zinc-900 dark:text-zinc-100 leading-snug group-hover:text-blue-600 dark:group-hover:text-blue-400 hover:underline transition-colors line-clamp-2 block"
+                    >
                       {job.jobTitle}
-                    </h5>
+                    </Link>
 
                     {/* Salary Tag (if available) */}
                     {job.salary && (

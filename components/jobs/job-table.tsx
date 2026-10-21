@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { createPortal } from "react-dom";
 import {
   Calendar,
@@ -545,9 +546,12 @@ export function JobTable({
           <td className="py-3.5 px-4">
             <div className="min-w-0">
               <div className="flex items-center gap-1.5">
-                <p className="font-bold text-zinc-900 dark:text-zinc-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 truncate">
+                <Link
+                  href={`/jobs/${job.id}`}
+                  className="font-bold text-zinc-900 dark:text-zinc-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 hover:underline truncate"
+                >
                   {job.jobTitle}
-                </p>
+                </Link>
                 {job.isPinned && (
                   <span title="Pinned">
                     <Pin className="w-3 h-3 fill-rose-500 text-rose-500 shrink-0" />

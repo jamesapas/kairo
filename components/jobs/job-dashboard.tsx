@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { useTopLoader } from "nextjs-toploader";
 import { createClient } from "@/lib/supabase/client";
 import {
   Plus,
@@ -61,6 +62,7 @@ export function JobDashboard({
   initialJobs,
 }: JobDashboardProps = {}) {
   const router = useRouter();
+  const { start: startTopLoader } = useTopLoader();
   const [jobs, setJobs] = useState<JobApplication[]>(initialJobs || []);
   const [userEmail, setUserEmail] = useState<string | undefined>(initialUserEmail);
   const [userName, setUserName] = useState<string | undefined>(initialUserName);
@@ -140,6 +142,7 @@ export function JobDashboard({
   };
 
   const handleSelectJob = (job: JobApplication) => {
+    startTopLoader();
     router.push(`/jobs/${job.id}`);
   };
 
