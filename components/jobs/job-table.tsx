@@ -538,7 +538,7 @@ export function JobTable({
           onClick={() => onSelectJob(job)}
           onMouseEnter={() => router.prefetch(`/jobs/${job.id}`)}
           className={`hover:bg-zinc-50/90 dark:hover:bg-zinc-800/60 cursor-pointer group relative ${
-            isMuted ? "opacity-75 hover:opacity-100 bg-zinc-50/20 dark:bg-zinc-800/20" : ""
+            isMuted ? "opacity-85 hover:opacity-100 bg-zinc-50/30 dark:bg-zinc-850/40" : ""
           }`}
         >
           {/* Match Progress Bar */}
@@ -829,15 +829,15 @@ export function JobTable({
         <div className="space-y-2 pt-2">
           <div className="flex items-center gap-2 px-1">
             <span className="w-2 h-2 rounded-full bg-rose-400" />
-            <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-500">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
               Archived / Rejected ({rejectedJobs.length})
             </h3>
           </div>
-          <div className="bg-zinc-50/60 rounded-2xl border border-zinc-200/80 shadow-xs overflow-hidden">
+          <div className="bg-zinc-50/60 dark:bg-zinc-900 rounded-2xl border border-zinc-200/80 dark:border-zinc-800 shadow-xs overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="border-b border-zinc-200/70 bg-zinc-100/60 text-[10px] uppercase font-bold tracking-wider text-zinc-400">
+                  <tr className="border-b border-zinc-200/70 dark:border-zinc-800 bg-zinc-100/60 dark:bg-zinc-800/60 text-[10px] uppercase font-bold tracking-wider text-zinc-500 dark:text-zinc-400">
                     <th className="py-2.5 pl-4 pr-1 w-14 text-center"></th>
                     <th className="py-2.5 px-4">Role & Company</th>
                     <th className="py-2.5 px-3">Status</th>
@@ -848,7 +848,7 @@ export function JobTable({
                     <th className="py-2.5 px-4 w-10 text-right"></th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-zinc-200/60 text-xs">
+                <tbody className="divide-y divide-zinc-200/60 dark:divide-zinc-800 text-xs">
                   {renderJobRows(rejectedJobs, true)}
                 </tbody>
               </table>
