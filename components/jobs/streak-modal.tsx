@@ -386,9 +386,11 @@ export function StreakModal({
                               <span className="font-semibold text-zinc-800 dark:text-zinc-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition truncate">
                                 {job.jobTitle}
                               </span>
-                              <span className="text-zinc-400 dark:text-zinc-500 text-[11px] truncate">
-                                · {job.company}
-                              </span>
+                              {job.company ? (
+                                <span className="text-zinc-400 dark:text-zinc-500 text-[11px] truncate">
+                                  · {job.company}
+                                </span>
+                              ) : null}
                             </div>
 
                             <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 shrink-0">

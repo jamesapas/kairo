@@ -237,10 +237,12 @@ export function JobDetailDrawer({
               <h2 className="text-lg sm:text-xl font-extrabold text-zinc-900 dark:text-zinc-100 tracking-tight leading-tight">
                 {currentJob.jobTitle}
               </h2>
-              <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 flex items-center gap-1.5 mt-0.5">
-                <Building2 className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-500 shrink-0" />
-                <span className="truncate">{currentJob.company}</span>
-              </p>
+              {currentJob.company ? (
+                <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 flex items-center gap-1.5 mt-0.5">
+                  <Building2 className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-500 shrink-0" />
+                  <span className="truncate">{currentJob.company}</span>
+                </p>
+              ) : null}
             </div>
           </div>
         </div>

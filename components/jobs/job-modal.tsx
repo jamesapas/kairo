@@ -160,7 +160,6 @@ function JobModalForm({
   const [isPinned, setIsPinned] = useState(initialJob?.isPinned || false);
   const [errors, setErrors] = useState<{
     jobTitle?: string;
-    company?: string;
   }>({});
 
   useEffect(() => {
@@ -192,9 +191,8 @@ function JobModalForm({
   }, [initialJob]);
 
   const validate = () => {
-    const newErrors: { jobTitle?: string; company?: string } = {};
+    const newErrors: { jobTitle?: string } = {};
     if (!jobTitle.trim()) newErrors.jobTitle = "Job title is required";
-    if (!company.trim()) newErrors.company = "Company name is required";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -274,25 +272,15 @@ function JobModalForm({
 
           <div>
             <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-              Company <span className="text-rose-500">*</span>
+              Company <span className="text-zinc-400 font-normal">(Optional)</span>
             </label>
             <input
               type="text"
               placeholder="e.g. Acme Corp"
               value={company}
-              onChange={(e) => {
-                setCompany(e.target.value);
-                if (errors.company) setErrors({ ...errors, company: undefined });
-              }}
-              className={`w-full px-3 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-800/80 border ${
-                errors.company ? "border-rose-400" : "border-zinc-200 dark:border-zinc-700"
-              } text-xs font-medium text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:border-zinc-400 dark:focus:border-zinc-500 transition`}
+              onChange={(e) => setCompany(e.target.value)}
+              className="w-full px-3 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 text-xs font-medium text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:border-zinc-400 dark:focus:border-zinc-500 transition"
             />
-            {errors.company && (
-              <p className="text-[11px] text-rose-500 mt-1 flex items-center gap-1">
-                <AlertCircle className="w-3 h-3" /> {errors.company}
-              </p>
-            )}
           </div>
         </div>
 

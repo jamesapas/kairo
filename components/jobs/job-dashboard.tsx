@@ -281,7 +281,7 @@ export function JobDashboard({
 
     const rows = jobs.map((j) => [
       `"${j.jobTitle.replace(/"/g, '""')}"`,
-      `"${j.company.replace(/"/g, '""')}"`,
+      `"${(j.company || "").replace(/"/g, '""')}"`,
       `"${j.status}"`,
       `"${j.aiMatchAnalysis?.matchPercentage !== undefined ? `${j.aiMatchAnalysis.matchPercentage}%` : "—"}"`,
       `"${j.appliedOn}"`,
@@ -322,7 +322,7 @@ export function JobDashboard({
         if (searchQuery.trim()) {
           const q = searchQuery.toLowerCase();
           const matchTitle = job.jobTitle.toLowerCase().includes(q);
-          const matchCompany = job.company.toLowerCase().includes(q);
+          const matchCompany = (job.company || "").toLowerCase().includes(q);
           const matchDesc = (job.description || "").toLowerCase().includes(q);
           const matchPlatform = job.appliedOn.toLowerCase().includes(q);
           if (!matchTitle && !matchCompany && !matchDesc && !matchPlatform) {
@@ -339,7 +339,7 @@ export function JobDashboard({
           return new Date(a.dateApplied).getTime() - new Date(b.dateApplied).getTime();
         }
         if (sortBy === "company-asc") {
-          return a.company.localeCompare(b.company);
+          return (a.company || "").localeCompare(b.company || "");
         }
         if (sortBy === "title-asc") {
           return a.jobTitle.localeCompare(b.jobTitle);

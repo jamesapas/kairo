@@ -565,9 +565,11 @@ export function JobTable({
                   </span>
                 )}
               </div>
-              <p className="text-zinc-500 dark:text-zinc-400 text-[11px] font-medium truncate mt-0.5">
-                {job.company}
-              </p>
+              {job.company ? (
+                <p className="text-zinc-500 dark:text-zinc-400 text-[11px] font-medium truncate mt-0.5">
+                  {job.company}
+                </p>
+              ) : null}
             </div>
           </td>
 

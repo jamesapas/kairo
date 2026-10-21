@@ -203,7 +203,9 @@ export function JobDetailPage({ jobId }: JobDetailPageProps) {
   const handleDelete = async () => {
     if (!job) return;
     const confirmDelete = window.confirm(
-      `Are you sure you want to delete ${job.jobTitle} at ${job.company}? This cannot be undone.`
+      job.company
+        ? `Are you sure you want to delete ${job.jobTitle} at ${job.company}? This cannot be undone.`
+        : `Are you sure you want to delete ${job.jobTitle}? This cannot be undone.`
     );
     if (!confirmDelete) return;
 
@@ -315,10 +317,14 @@ export function JobDetailPage({ jobId }: JobDetailPageProps) {
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>Applications</span>
             </Link>
-            <ChevronRight className="w-3.5 h-3.5 text-zinc-300 dark:text-zinc-700" />
-            <span className="font-semibold text-zinc-700 dark:text-zinc-300 truncate max-w-[140px]">
-              {job.company}
-            </span>
+            {job.company ? (
+              <>
+                <ChevronRight className="w-3.5 h-3.5 text-zinc-300 dark:text-zinc-700" />
+                <span className="font-semibold text-zinc-700 dark:text-zinc-300 truncate max-w-[140px]">
+                  {job.company}
+                </span>
+              </>
+            ) : null}
             <ChevronRight className="w-3.5 h-3.5 text-zinc-300 dark:text-zinc-700" />
             <span className="text-zinc-900 dark:text-zinc-100 font-semibold truncate max-w-[200px]">
               {job.jobTitle}
@@ -376,8 +382,8 @@ export function JobDetailPage({ jobId }: JobDetailPageProps) {
                     <div className="w-7 h-7 rounded-xl bg-zinc-100 dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700/80 flex items-center justify-center shrink-0">
                       <Building2 className="w-3.5 h-3.5 text-zinc-500 dark:text-zinc-400" />
                     </div>
-                    <span className="font-bold text-sm text-zinc-900 dark:text-zinc-100 truncate">
-                      {job.company}
+                    <span className={`text-sm truncate ${job.company ? "font-bold text-zinc-900 dark:text-zinc-100" : "font-medium text-zinc-400 dark:text-zinc-500 italic"}`}>
+                      {job.company || "No company specified"}
                     </span>
                   </div>
 

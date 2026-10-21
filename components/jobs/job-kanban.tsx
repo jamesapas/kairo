@@ -151,8 +151,8 @@ export function JobKanban({
                   >
                     {/* Header: Company & AI Match Badge */}
                     <div className="flex items-center justify-between gap-1.5">
-                      <span className="text-xs font-bold text-zinc-700 dark:text-zinc-300 truncate">
-                        {job.company}
+                      <span className={`text-xs truncate ${job.company ? "font-bold text-zinc-700 dark:text-zinc-300" : "font-medium text-zinc-400 dark:text-zinc-500 italic"}`}>
+                        {job.company || "No company specified"}
                       </span>
                       <div className="flex items-center gap-1.5 shrink-0">
                         {job.isPinned && (

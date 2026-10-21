@@ -17,7 +17,7 @@ export interface JobApplication {
   id: string;
   userId?: string;
   jobTitle: string;
-  company: string;
+  company?: string;
   description: string;
   appliedOn: string;
   jobUrl?: string;
@@ -37,7 +37,7 @@ export interface JobApplicationRow {
   id: string;
   user_id: string;
   job_title: string;
-  company: string;
+  company: string | null;
   description: string | null;
   applied_on: string | null;
   job_url: string | null;
@@ -58,7 +58,7 @@ export function mapRowToJob(row: JobApplicationRow): JobApplication {
     id: row.id,
     userId: row.user_id,
     jobTitle: row.job_title,
-    company: row.company,
+    company: row.company || "",
     description: row.description || "",
     appliedOn: row.applied_on || "LinkedIn",
     jobUrl: row.job_url || "",

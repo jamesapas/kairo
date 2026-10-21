@@ -99,7 +99,7 @@ export async function createJobAction(
     const newRow = {
       user_id: user.id,
       job_title: jobData.jobTitle,
-      company: jobData.company,
+      company: jobData.company?.trim() || "",
       description: jobData.description || "",
       applied_on: jobData.appliedOn || "LinkedIn",
       job_url: jobData.jobUrl || "",
@@ -154,7 +154,7 @@ export async function updateJobAction(
     };
 
     if (updates.jobTitle !== undefined) rowUpdates.job_title = updates.jobTitle;
-    if (updates.company !== undefined) rowUpdates.company = updates.company;
+    if (updates.company !== undefined) rowUpdates.company = updates.company?.trim() || "";
     if (updates.description !== undefined) rowUpdates.description = updates.description;
     if (updates.appliedOn !== undefined) rowUpdates.applied_on = updates.appliedOn;
     if (updates.jobUrl !== undefined) rowUpdates.job_url = updates.jobUrl;
