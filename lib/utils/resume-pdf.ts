@@ -382,7 +382,7 @@ export function downloadResumePdf({
       doc.setFont(FONT_FAMILY, "bold");
       doc.setFontSize(BODY_FONT_SIZE);
       doc.setTextColor(0, 0, 0);
-      const labelWidth = doc.getTextWidth(categoryLabel);
+      const labelWidth = doc.getTextWidth(categoryLabel.trimEnd()) + doc.getTextWidth(" ") * 1.5;
 
       doc.setFont(FONT_FAMILY, "normal");
       const contentWidth = doc.getTextWidth(skillsContent);
@@ -427,8 +427,10 @@ export function downloadResumePdf({
     }
 
     // Standard body text paragraph (10.5px / 9pt)
+    const isEduTitle =
+      currentSection === "EDUCATION" && (lastItemWasSectionHeader || !lines[i - 1]?.trim());
     lastItemWasSectionHeader = false;
-    doc.setFont(FONT_FAMILY, "normal");
+    doc.setFont(FONT_FAMILY, isEduTitle ? "bold" : "normal");
     doc.setFontSize(BODY_FONT_SIZE);
     doc.setTextColor(0, 0, 0);
 

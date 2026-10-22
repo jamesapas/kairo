@@ -290,6 +290,138 @@ export function removeResumeSkill(
   return normalized.replace(skillsSectionRegex, `${header}${newBody}\n`);
 }
 
+// Move a skill category to a new position in TECHNICAL SKILLS
+export function reorderResumeSkillCategory(
+  content: string,
+  fromCategory: string,
+  toCategory: string
+): string {
+  const normalized = content.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+  const skillsSectionRegex = /(TECHNICAL\s+SKILLS\s*\n[-=_]+\s*\n)([\s\S]*?)(?=\n+[A-Z\s/&-]{3,}\s*(?:\n[-=_]+\s*\n|\n|$)|$)/i;
+  const match = normalized.match(skillsSectionRegex);
+
+  if (!match) return content;
+
+  const header = match[1];
+  const lines = match[2].split("\n").filter(Boolean);
+  const findIdx = (cat: string) =>
+    lines.findIndex((line) => line.match(/^([^:]+):/)?.[1].trim().toLowerCase() === cat.toLowerCase());
+
+  const fromIdx = findIdx(fromCategory);
+  const toIdx = findIdx(toCategory);
+  if (fromIdx === -1 || toIdx === -1 || fromIdx === toIdx) return content;
+
+  const [moved] = lines.splice(fromIdx, 1);
+  lines.splice(toIdx, 0, moved);
+
+  return normalized.replace(skillsSectionRegex, `${header}${lines.join("\n")}\n`);
+}
+
+// Move a skill to a new position within its category
+export function reorderResumeSkill(
+  content: string,
+  targetCategory: string,
+  fromIndex: number,
+  toIndex: number
+): string {
+  if (fromIndex === toIndex) return content;
+
+  const normalized = content.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+  const skillsSectionRegex = /(TECHNICAL\s+SKILLS\s*\n[-=_]+\s*\n)([\s\S]*?)(?=\n+[A-Z\s/&-]{3,}\s*(?:\n[-=_]+\s*\n|\n|$)|$)/i;
+  const match = normalized.match(skillsSectionRegex);
+
+  if (!match) return content;
+
+  const header = match[1];
+  const lines = match[2].split("\n").filter(Boolean);
+
+  const newLines = lines.map((line) => {
+    const colonMatch = line.match(/^([^:]+):\s*(.*)$/);
+    if (!colonMatch) return line;
+
+    const catName = colonMatch[1].trim();
+    if (catName.toLowerCase() !== targetCategory.toLowerCase()) return line;
+
+    const skills = colonMatch[2]
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (fromIndex < 0 || fromIndex >= skills.length || toIndex < 0 || toIndex >= skills.length) return line;
+
+    const [moved] = skills.splice(fromIndex, 1);
+    skills.splice(toIndex, 0, moved);
+    return `${catName}: ${skills.join(", ")}`;
+  });
+
+  return normalized.replace(skillsSectionRegex, `${header}${newLines.join("\n")}\n`);
+}
+
+// Rename a skill category in TECHNICAL SKILLS
+export function renameResumeSkillCategory(
+  content: string,
+  oldCategory: string,
+  newCategory: string
+): string {
+  const cleanNew = newCategory.trim().replace(/:+$/, "").trim();
+  if (!cleanNew || cleanNew === oldCategory.trim()) return content;
+
+  const normalized = content.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+  const skillsSectionRegex = /(TECHNICAL\s+SKILLS\s*\n[-=_]+\s*\n)([\s\S]*?)(?=\n+[A-Z\s/&-]{3,}\s*(?:\n[-=_]+\s*\n|\n|$)|$)/i;
+  const match = normalized.match(skillsSectionRegex);
+
+  if (!match) return content;
+
+  const header = match[1];
+  const lines = match[2].split("\n").filter(Boolean);
+
+  const newLines = lines.map((line) => {
+    const colonMatch = line.match(/^([^:]+):\s*(.*)$/);
+    if (!colonMatch || colonMatch[1].trim().toLowerCase() !== oldCategory.trim().toLowerCase()) return line;
+    return colonMatch[2].trim() ? `${cleanNew}: ${colonMatch[2].trim()}` : `${cleanNew}:`;
+  });
+
+  return normalized.replace(skillsSectionRegex, `${header}${newLines.join("\n")}\n`);
+}
+
+// Edit the text of a single skill within its category
+export function updateResumeSkill(
+  content: string,
+  targetCategory: string,
+  skillIndex: number,
+  newSkill: string
+): string {
+  const cleanSkill = newSkill.trim().replace(/,/g, "");
+  if (!cleanSkill) return content;
+
+  const normalized = content.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+  const skillsSectionRegex = /(TECHNICAL\s+SKILLS\s*\n[-=_]+\s*\n)([\s\S]*?)(?=\n+[A-Z\s/&-]{3,}\s*(?:\n[-=_]+\s*\n|\n|$)|$)/i;
+  const match = normalized.match(skillsSectionRegex);
+
+  if (!match) return content;
+
+  const header = match[1];
+  const lines = match[2].split("\n").filter(Boolean);
+
+  const newLines = lines.map((line) => {
+    const colonMatch = line.match(/^([^:]+):\s*(.*)$/);
+    if (!colonMatch) return line;
+
+    const catName = colonMatch[1].trim();
+    if (catName.toLowerCase() !== targetCategory.toLowerCase()) return line;
+
+    const skills = colonMatch[2]
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (skillIndex < 0 || skillIndex >= skills.length) return line;
+
+    skills[skillIndex] = cleanSkill;
+    return `${catName}: ${skills.join(", ")}`;
+  });
+
+  return normalized.replace(skillsSectionRegex, `${header}${newLines.join("\n")}\n`);
+}
+
 // Parse all projects currently in the resume text
 export function parseResumeProjects(content: string): ParsedProject[] {
   const normalized = content.replace(/\r\n/g, "\n").replace(/\r/g, "\n");

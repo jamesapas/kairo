@@ -23,6 +23,7 @@ import {
   Trash2,
   Video,
   MessageSquare,
+  GripVertical,
 } from "lucide-react";
 import {
   ApplyContentType,
@@ -43,6 +44,10 @@ import {
   addResumeSkill,
   removeResumeSkill,
   addResumeSkillCategory,
+  reorderResumeSkillCategory,
+  reorderResumeSkill,
+  renameResumeSkillCategory,
+  updateResumeSkill,
   removeResumeSkillCategory,
   changeResumeProjectType,
   hideResumeProject,
@@ -171,6 +176,60 @@ function renderCoverLetterContent(content: string) {
         );
       })}
     </div>
+  );
+}
+
+function InlineEditableText({
+  value,
+  onSave,
+  className,
+}: {
+  value: string;
+  onSave: (next: string) => void;
+  className?: string;
+}) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [draft, setDraft] = useState(value);
+
+  if (!isEditing) {
+    return (
+      <span
+        onDoubleClick={() => {
+          setDraft(value);
+          setIsEditing(true);
+        }}
+        className={`cursor-text ${className ?? ""}`}
+        title="Double-click to edit"
+      >
+        {value}
+      </span>
+    );
+  }
+
+  const commit = () => {
+    const trimmed = draft.trim();
+    if (trimmed && trimmed !== value) onSave(trimmed);
+    setIsEditing(false);
+  };
+
+  return (
+    <input
+      type="text"
+      autoFocus
+      value={draft}
+      onChange={(e) => setDraft(e.target.value)}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          commit();
+        } else if (e.key === "Escape") {
+          setIsEditing(false);
+        }
+      }}
+      style={{ width: `${Math.max(draft.length, 4) + 1}ch` }}
+      className="h-5 px-1 text-xs rounded border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-amber-500"
+    />
   );
 }
 
@@ -496,9 +555,10 @@ function ResumeDocumentView({
     idx++;
   }
 
-  const sections: { title: string; body: string[] }[] = [];
+  const sections: { title: string; body: string[]; entryStarts: Set<number> }[] = [];
   let currentSectionTitle = "";
   let currentBody: string[] = [];
+  let currentEntryStarts = new Set<number>();
 
   while (idx < lines.length) {
     const line = lines[idx].trim();
@@ -523,20 +583,24 @@ function ResumeDocumentView({
 
     if (isSectionHeader) {
       if (currentSectionTitle) {
-        sections.push({ title: currentSectionTitle, body: currentBody });
+        sections.push({ title: currentSectionTitle, body: currentBody, entryStarts: currentEntryStarts });
       }
       currentSectionTitle = line.toUpperCase();
       currentBody = [];
+      currentEntryStarts = new Set<number>();
       idx++;
       continue;
     }
 
+    if (currentBody.length === 0 || !lines[idx - 1]?.trim()) {
+      currentEntryStarts.add(currentBody.length);
+    }
     currentBody.push(line);
     idx++;
   }
 
   if (currentSectionTitle) {
-    sections.push({ title: currentSectionTitle, body: currentBody });
+    sections.push({ title: currentSectionTitle, body: currentBody, entryStarts: currentEntryStarts });
   }
 
   if (headerLines.length > 0) {
@@ -719,11 +783,36 @@ function ResumeDocumentView({
                               );
 
                               return (
-                                <div key={pIdx} className="group/cat space-y-1.5 py-1 px-1 -mx-1 rounded-lg hover:bg-zinc-100/50 dark:hover:bg-zinc-800/30 transition">
+                                <div
+                                  key={pIdx}
+                                  onDragOver={(e) => e.preventDefault()}
+                                  onDrop={(e) => {
+                                    const fromCat = e.dataTransfer.getData("application/x-skill-category");
+                                    if (!fromCat) return;
+                                    e.preventDefault();
+                                    onContentChange?.(reorderResumeSkillCategory(content, fromCat, catName));
+                                  }}
+                                  className="group/cat space-y-1.5 py-1 px-1 -mx-1 rounded-lg hover:bg-zinc-100/50 dark:hover:bg-zinc-800/30 transition"
+                                >
                                   <div className="flex flex-wrap items-center gap-1.5">
                                     <div className="inline-flex items-center gap-1 mr-1">
+                                      <span
+                                        draggable
+                                        onDragStart={(e) => {
+                                          e.dataTransfer.setData("application/x-skill-category", catName);
+                                          e.dataTransfer.effectAllowed = "move";
+                                        }}
+                                        className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 cursor-grab active:cursor-grabbing"
+                                        title="Drag to reorder category"
+                                      >
+                                        <GripVertical className="w-3.5 h-3.5" />
+                                      </span>
                                       <strong className="font-bold text-zinc-950 dark:text-zinc-50 text-xs sm:text-sm">
-                                        {colonMatch[1]}
+                                        <InlineEditableText
+                                          value={catName}
+                                          onSave={(next) => onContentChange?.(renameResumeSkillCategory(content, catName, next))}
+                                        />
+                                        :
                                       </strong>
                                       <button
                                         type="button"
@@ -747,9 +836,27 @@ function ResumeDocumentView({
                                     {skills.map((skill, sIdx) => (
                                       <span
                                         key={sIdx}
-                                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-zinc-200/80 dark:bg-zinc-700/60 text-zinc-800 dark:text-zinc-200 text-xs font-medium"
+                                        draggable
+                                        onDragStart={(e) => {
+                                          e.dataTransfer.setData("application/x-skill", JSON.stringify({ cat: catName, idx: sIdx }));
+                                          e.dataTransfer.effectAllowed = "move";
+                                        }}
+                                        onDragOver={(e) => e.preventDefault()}
+                                        onDrop={(e) => {
+                                          const raw = e.dataTransfer.getData("application/x-skill");
+                                          if (!raw) return;
+                                          e.preventDefault();
+                                          e.stopPropagation();
+                                          const { cat, idx } = JSON.parse(raw) as { cat: string; idx: number };
+                                          if (cat !== catName) return;
+                                          onContentChange?.(reorderResumeSkill(content, catName, idx, sIdx));
+                                        }}
+                                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-zinc-200/80 dark:bg-zinc-700/60 text-zinc-800 dark:text-zinc-200 text-xs font-medium cursor-grab active:cursor-grabbing"
                                       >
-                                        <span>{skill}</span>
+                                        <InlineEditableText
+                                          value={skill}
+                                          onSave={(next) => onContentChange?.(updateResumeSkill(content, catName, sIdx, next))}
+                                        />
                                         <button
                                           type="button"
                                           onClick={() => {
@@ -970,6 +1077,14 @@ function ResumeDocumentView({
                             </span>
                           )}
                         </div>
+                      );
+                    }
+
+                    if (sec.title.includes("EDUCATION") && sec.entryStarts.has(pIdx) && !p.includes("|")) {
+                      return (
+                        <h5 key={pIdx} className="font-bold text-zinc-950 dark:text-zinc-50 text-xs sm:text-sm pt-3.5 first:pt-0">
+                          {p}
+                        </h5>
                       );
                     }
 
