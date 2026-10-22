@@ -4,8 +4,8 @@ export interface UserEducation {
   school: string;
   degree: string;
   fieldOfStudy?: string;
-  startMonth: string;
-  startYear: string;
+  startMonth?: string;
+  startYear?: string;
   endMonth?: string;
   endYear?: string;
   isCurrent: boolean;
@@ -22,8 +22,8 @@ export interface UserEducationRow {
   school: string;
   degree: string;
   field_of_study: string | null;
-  start_month: string;
-  start_year: string;
+  start_month: string | null;
+  start_year: string | null;
   end_month: string | null;
   end_year: string | null;
   is_current: boolean;
@@ -41,8 +41,8 @@ export function mapRowToEducation(row: UserEducationRow): UserEducation {
     school: row.school,
     degree: row.degree,
     fieldOfStudy: row.field_of_study || undefined,
-    startMonth: row.start_month || "Aug",
-    startYear: row.start_year || "2020",
+    startMonth: row.start_month || undefined,
+    startYear: row.start_year || undefined,
     endMonth: row.end_month || undefined,
     endYear: row.end_year || undefined,
     isCurrent: !!row.is_current,

@@ -156,7 +156,7 @@ export async function POST(request: Request) {
         degree: edu.degree,
         school: edu.school,
         fieldOfStudy: edu.field_of_study || "",
-        period: `${edu.start_year} - ${edu.is_current ? "Present" : edu.end_year || ""}`.trim(),
+        period: [edu.start_year, edu.is_current ? "Present" : edu.end_year].filter(Boolean).join(" - "),
         honors: edu.honors || "",
       })),
     };

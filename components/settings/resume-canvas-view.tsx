@@ -297,7 +297,7 @@ const MONTH_OPTIONS = [
 ];
 
 const CURRENT_YEAR = new Date().getFullYear();
-const YEAR_OPTIONS = Array.from({ length: 45 }, (_, i) => String(CURRENT_YEAR - i));
+const YEAR_OPTIONS = Array.from({ length: 55 }, (_, i) => String(CURRENT_YEAR + 6 - i));
 
 function EntityAvatar({
   name,
@@ -627,10 +627,10 @@ export function ResumeCanvasView({
   const [eduDegree, setEduDegree] = useState("");
   const [eduLocation, setEduLocation] = useState("");
   const [eduHonors, setEduHonors] = useState("");
-  const [eduStartMonth, setEduStartMonth] = useState("Aug");
-  const [eduStartYear, setEduStartYear] = useState("2020");
-  const [eduEndMonth, setEduEndMonth] = useState("Jun");
-  const [eduEndYear, setEduEndYear] = useState("2024");
+  const [eduStartMonth, setEduStartMonth] = useState("");
+  const [eduStartYear, setEduStartYear] = useState("");
+  const [eduEndMonth, setEduEndMonth] = useState("");
+  const [eduEndYear, setEduEndYear] = useState("");
   const [eduIsCurrent, setEduIsCurrent] = useState(false);
   const [savingEdu, setSavingEdu] = useState(false);
 
@@ -640,10 +640,10 @@ export function ResumeCanvasView({
     setEduDegree("");
     setEduLocation("");
     setEduHonors("");
-    setEduStartMonth("Aug");
-    setEduStartYear("2020");
-    setEduEndMonth("Jun");
-    setEduEndYear("2024");
+    setEduStartMonth("");
+    setEduStartYear("");
+    setEduEndMonth("");
+    setEduEndYear("");
     setEduIsCurrent(false);
     setIsAddingEdu(true);
   };
@@ -654,10 +654,10 @@ export function ResumeCanvasView({
     setEduDegree(edu.degree);
     setEduLocation(edu.location || "");
     setEduHonors(edu.honors || "");
-    setEduStartMonth(edu.startMonth || "Aug");
-    setEduStartYear(edu.startYear || "2020");
-    setEduEndMonth(edu.endMonth || "Jun");
-    setEduEndYear(edu.endYear || "2024");
+    setEduStartMonth(edu.startMonth || "");
+    setEduStartYear(edu.startYear || "");
+    setEduEndMonth(edu.endMonth || "");
+    setEduEndYear(edu.endYear || "");
     setEduIsCurrent(edu.isCurrent);
     setIsAddingEdu(true);
   };
@@ -675,8 +675,8 @@ export function ResumeCanvasView({
       honors: eduHonors.trim() || undefined,
       startMonth: eduStartMonth,
       startYear: eduStartYear,
-      endMonth: eduIsCurrent ? undefined : eduEndMonth,
-      endYear: eduIsCurrent ? undefined : eduEndYear,
+      endMonth: eduIsCurrent ? "" : eduEndMonth,
+      endYear: eduIsCurrent ? "" : eduEndYear,
       isCurrent: eduIsCurrent,
     };
 
@@ -2030,16 +2030,31 @@ export function ResumeCanvasView({
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       {/* Start Date */}
                       <div className="space-y-1.5">
-                        <label className="text-xs font-bold text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5">
-                          <Calendar className="w-3.5 h-3.5 text-zinc-400" />
-                          Start Date
-                        </label>
+                        <div className="flex items-center justify-between">
+                          <label className="text-xs font-bold text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5">
+                            <Calendar className="w-3.5 h-3.5 text-zinc-400" />
+                            <span>Start Date (Optional)</span>
+                          </label>
+                          {(eduStartMonth || eduStartYear) && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEduStartMonth("");
+                                setEduStartYear("");
+                              }}
+                              className="text-[11px] text-zinc-400 hover:text-rose-500 font-semibold cursor-pointer transition"
+                            >
+                              Clear
+                            </button>
+                          )}
+                        </div>
                         <div className="grid grid-cols-2 gap-2">
                           <select
                             value={eduStartMonth}
                             onChange={(e) => setEduStartMonth(e.target.value)}
                             className="w-full px-3 py-2 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-xs font-semibold text-zinc-900 dark:text-zinc-100 focus:border-zinc-400 cursor-pointer"
                           >
+                            <option value="">Month</option>
                             {MONTH_OPTIONS.map((m) => (
                               <option key={m} value={m} className="bg-white dark:bg-zinc-900">
                                 {m}
@@ -2051,6 +2066,7 @@ export function ResumeCanvasView({
                             onChange={(e) => setEduStartYear(e.target.value)}
                             className="w-full px-3 py-2 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-xs font-semibold text-zinc-900 dark:text-zinc-100 focus:border-zinc-400 cursor-pointer"
                           >
+                            <option value="">Year</option>
                             {YEAR_OPTIONS.map((y) => (
                               <option key={y} value={y} className="bg-white dark:bg-zinc-900">
                                 {y}
@@ -2063,10 +2079,24 @@ export function ResumeCanvasView({
                       {/* Graduation / End Date */}
                       <div className="space-y-1.5">
                         <div className="flex items-center justify-between">
-                          <label className="text-xs font-bold text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5">
-                            <Calendar className="w-3.5 h-3.5 text-zinc-400" />
-                            Graduation Date
-                          </label>
+                          <div className="flex items-center gap-2">
+                            <label className="text-xs font-bold text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5">
+                              <Calendar className="w-3.5 h-3.5 text-zinc-400" />
+                              <span>Graduation Date (Optional)</span>
+                            </label>
+                            {(eduEndMonth || eduEndYear) && !eduIsCurrent && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setEduEndMonth("");
+                                  setEduEndYear("");
+                                }}
+                                className="text-[11px] text-zinc-400 hover:text-rose-500 font-semibold cursor-pointer transition"
+                              >
+                                Clear
+                              </button>
+                            )}
+                          </div>
                           <label className="inline-flex items-center gap-1.5 cursor-pointer text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 select-none">
                             <input
                               type="checkbox"
@@ -2090,6 +2120,7 @@ export function ResumeCanvasView({
                               onChange={(e) => setEduEndMonth(e.target.value)}
                               className="w-full px-3 py-2 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-xs font-semibold text-zinc-900 dark:text-zinc-100 focus:border-zinc-400 cursor-pointer"
                             >
+                              <option value="">Month</option>
                               {MONTH_OPTIONS.map((m) => (
                                 <option key={m} value={m} className="bg-white dark:bg-zinc-900">
                                   {m}
@@ -2101,6 +2132,7 @@ export function ResumeCanvasView({
                               onChange={(e) => setEduEndYear(e.target.value)}
                               className="w-full px-3 py-2 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-xs font-semibold text-zinc-900 dark:text-zinc-100 focus:border-zinc-400 cursor-pointer"
                             >
+                              <option value="">Year</option>
                               {YEAR_OPTIONS.map((y) => (
                                 <option key={y} value={y} className="bg-white dark:bg-zinc-900">
                                   {y}
@@ -2167,20 +2199,45 @@ export function ResumeCanvasView({
                           )}
                         </div>
 
-                        <div className="flex items-center gap-2 text-xs text-zinc-400 font-medium shrink-0 pt-0.5">
-                          <div className="flex items-center gap-1.5">
-                            <Calendar className="w-3.5 h-3.5 text-zinc-400" />
-                            <span>
-                              {edu.startMonth} {edu.startYear} —{" "}
-                              {edu.isCurrent ? "Present" : `${edu.endMonth || ""} ${edu.endYear || ""}`}
-                            </span>
-                          </div>
-                          {formatDuration(edu.startMonth, edu.startYear, edu.endMonth, edu.endYear, edu.isCurrent) && (
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 border border-zinc-200/60 dark:border-zinc-700/60">
-                              {formatDuration(edu.startMonth, edu.startYear, edu.endMonth, edu.endYear, edu.isCurrent)}
-                            </span>
-                          )}
-                        </div>
+                        {(() => {
+                          const startPart = [edu.startMonth, edu.startYear].filter(Boolean).join(" ");
+                          const endPart = edu.isCurrent
+                            ? "Present"
+                            : [edu.endMonth, edu.endYear].filter(Boolean).join(" ");
+
+                          let dateText = "";
+                          if (startPart && endPart) {
+                            dateText = `${startPart} — ${endPart}`;
+                          } else if (startPart) {
+                            dateText = `Started ${startPart}`;
+                          } else if (endPart) {
+                            dateText = edu.isCurrent ? "Present" : `${endPart}`;
+                          }
+
+                          if (!dateText) return null;
+
+                          const duration = formatDuration(
+                            edu.startMonth,
+                            edu.startYear,
+                            edu.endMonth,
+                            edu.endYear,
+                            edu.isCurrent
+                          );
+
+                          return (
+                            <div className="flex items-center gap-2 text-xs text-zinc-400 font-medium shrink-0 pt-0.5">
+                              <div className="flex items-center gap-1.5">
+                                <Calendar className="w-3.5 h-3.5 text-zinc-400" />
+                                <span>{dateText}</span>
+                              </div>
+                              {duration && (
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 border border-zinc-200/60 dark:border-zinc-700/60">
+                                  {duration}
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })()}
                       </div>
 
                       <p className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">

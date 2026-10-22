@@ -70,10 +70,10 @@ export async function createEducationAction(
       school: payload.school.trim(),
       degree: payload.degree.trim(),
       field_of_study: payload.fieldOfStudy ? payload.fieldOfStudy.trim() : null,
-      start_month: payload.startMonth || "Aug",
-      start_year: payload.startYear || "2020",
-      end_month: payload.isCurrent ? null : payload.endMonth || null,
-      end_year: payload.isCurrent ? null : payload.endYear || null,
+      start_month: payload.startMonth?.trim() || null,
+      start_year: payload.startYear?.trim() || null,
+      end_month: payload.isCurrent ? null : payload.endMonth?.trim() || null,
+      end_year: payload.isCurrent ? null : payload.endYear?.trim() || null,
       is_current: !!payload.isCurrent,
       location: payload.location ? payload.location.trim() : null,
       honors: payload.honors ? payload.honors.trim() : null,
@@ -125,10 +125,10 @@ export async function updateEducationAction(
     if (payload.school !== undefined) updateFields.school = payload.school.trim();
     if (payload.degree !== undefined) updateFields.degree = payload.degree.trim();
     if (payload.fieldOfStudy !== undefined) updateFields.field_of_study = payload.fieldOfStudy?.trim() || null;
-    if (payload.startMonth !== undefined) updateFields.start_month = payload.startMonth;
-    if (payload.startYear !== undefined) updateFields.start_year = payload.startYear;
-    if (payload.endMonth !== undefined) updateFields.end_month = payload.endMonth || null;
-    if (payload.endYear !== undefined) updateFields.end_year = payload.endYear || null;
+    if (payload.startMonth !== undefined) updateFields.start_month = payload.startMonth?.trim() || null;
+    if (payload.startYear !== undefined) updateFields.start_year = payload.startYear?.trim() || null;
+    if (payload.endMonth !== undefined) updateFields.end_month = payload.endMonth?.trim() || null;
+    if (payload.endYear !== undefined) updateFields.end_year = payload.endYear?.trim() || null;
     if (payload.isCurrent !== undefined) {
       updateFields.is_current = payload.isCurrent;
       if (payload.isCurrent) {

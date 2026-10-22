@@ -186,7 +186,8 @@ export async function POST(request: Request) {
     }).join("\n");
 
     const compactEducation = educationData.slice(0, 2).map((edu) => {
-      return `- ${edu.degree || ""} in ${edu.field_of_study || "General"} from ${edu.school || ""} (${edu.start_year || ""}-${edu.end_year || ""})`;
+      const dates = [edu.start_year, edu.end_year].filter(Boolean).join("-");
+      return `- ${edu.degree || ""} in ${edu.field_of_study || "General"} from ${edu.school || ""}${dates ? ` (${dates})` : ""}`;
     }).join("\n");
 
     const candidateProfileText = `Name: ${profileData?.name || "Candidate"}
