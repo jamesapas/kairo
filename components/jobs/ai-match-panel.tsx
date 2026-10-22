@@ -351,7 +351,7 @@ export function AIMatchPanel({
           onClick={handleStartAnalyze}
           disabled={isLoading}
           title="Re-analyze match against current profile"
-          className="px-3.5 py-1.5 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-750 text-zinc-700 dark:text-zinc-300 text-xs font-semibold transition cursor-pointer disabled:opacity-50 flex items-center gap-1.5 shadow-xs active:scale-[0.98]"
+          className="px-3.5 py-1.5 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 text-xs font-semibold transition cursor-pointer disabled:opacity-50 flex items-center gap-1.5 shadow-xs active:scale-[0.98]"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? "animate-spin text-zinc-500" : "text-zinc-400"}`} />
           <span>{analysis ? "Re-analyze" : "Analyze"}</span>

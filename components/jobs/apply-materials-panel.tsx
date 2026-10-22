@@ -20,6 +20,8 @@ import {
   X,
   MoreHorizontal,
   Plus,
+  Video,
+  MessageSquare,
 } from "lucide-react";
 import {
   ApplyContentType,
@@ -33,6 +35,7 @@ import { JobMatchAnalysis } from "@/types/ai-match";
 import { saveApplyMaterialAction } from "@/lib/actions/jobs";
 import { downloadCoverLetterPdf } from "@/lib/utils/cover-letter-pdf";
 import { downloadResumePdf } from "@/lib/utils/resume-pdf";
+import { VideoScriptView } from "./video-script-view";
 import {
   updateResumeSummary,
   addResumeSkill,
@@ -65,6 +68,7 @@ const CONTENT_TYPE_ICONS: Record<
   "resume-suggestions": ListChecks,
   "cover-letter": FileText,
   "application-message": Send,
+  "video-script": Video,
 };
 
 function renderCoverLetterContent(content: string) {
@@ -896,7 +900,10 @@ export function ApplyMaterialsPanel({
   }, [initialMaterials]);
 
   // Generate single material
-  const handleGenerateMaterial = async (type: ApplyContentType) => {
+  const handleGenerateMaterial = async (
+    type: ApplyContentType,
+    candidateNotes?: string
+  ) => {
     setIsLoading(true);
     setError(null);
     setCopied(false);
@@ -911,6 +918,7 @@ export function ApplyMaterialsPanel({
           company,
           description,
           contentType: type,
+          candidateNotes,
         }),
       });
 
@@ -926,6 +934,7 @@ export function ApplyMaterialsPanel({
           title: generated.title,
           content: generated.content,
           keyPointsUsed: generated.keyPointsUsed,
+          scriptData: generated.scriptData,
           updatedAt: generated.generatedAt,
         },
       };
@@ -961,6 +970,7 @@ export function ApplyMaterialsPanel({
         content: currentText,
         title: materialsMap[activeSubTab]?.title || APPLY_CONTENT_TYPES[activeSubTab].title,
         keyPointsUsed: materialsMap[activeSubTab]?.keyPointsUsed,
+        scriptData: materialsMap[activeSubTab]?.scriptData,
       });
 
       if (!res.success) {
@@ -977,6 +987,7 @@ export function ApplyMaterialsPanel({
           title: materialsMap[activeSubTab]?.title || APPLY_CONTENT_TYPES[activeSubTab].title,
           content: currentText,
           keyPointsUsed: materialsMap[activeSubTab]?.keyPointsUsed,
+          scriptData: materialsMap[activeSubTab]?.scriptData,
           updatedAt: new Date().toISOString(),
         },
       };
@@ -1067,7 +1078,7 @@ export function ApplyMaterialsPanel({
       )}
 
       {/* Sub-Tabs Switcher */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 p-1 bg-zinc-100 dark:bg-zinc-800/70 border border-zinc-200/80 dark:border-zinc-700/80 rounded-2xl">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 p-1 bg-zinc-100 dark:bg-zinc-800/70 border border-zinc-200/80 dark:border-zinc-700/80 rounded-2xl">
         {APPLY_CONTENT_KEYS.map((key) => {
           const config = APPLY_CONTENT_TYPES[key];
           const Icon = CONTENT_TYPE_ICONS[key];
@@ -1165,7 +1176,7 @@ export function ApplyMaterialsPanel({
                   <button
                     type="button"
                     onClick={() => setIsEditing(true)}
-                    className="h-7 px-2.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-750 text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 text-xs font-semibold transition flex items-center gap-1.5 shadow-2xs active:scale-[0.98] cursor-pointer"
+                    className="h-7 px-2.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 text-xs font-semibold transition flex items-center gap-1.5 shadow-2xs active:scale-[0.98] cursor-pointer"
                   >
                     <Edit3 className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-400" />
                     <span>Edit Resume</span>
@@ -1220,7 +1231,13 @@ export function ApplyMaterialsPanel({
                         className="w-full flex items-center gap-2.5 px-3 py-2 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100/80 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-white cursor-pointer transition"
                       >
                         <Edit3 className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-500" />
-                        <span>{activeSubTab === "resume-suggestions" ? "Edit Resume" : "Edit Text"}</span>
+                        <span>
+                          {activeSubTab === "resume-suggestions"
+                            ? "Edit Resume"
+                            : activeSubTab === "video-script"
+                            ? "Edit Script"
+                            : "Edit Text"}
+                        </span>
                       </button>
 
                     {/* Download PDF (for Cover Letter or Resume) */}
@@ -1294,7 +1311,30 @@ export function ApplyMaterialsPanel({
         </div>
 
           {/* Text Canvas / Document Container */}
-          {isEditing && activeSubTab !== "resume-suggestions" ? (
+          {activeSubTab === "video-script" ? (
+            <VideoScriptView
+              content={currentContent}
+              scriptData={materialsMap["video-script"]?.scriptData}
+              jobTitle={jobTitle}
+              company={company}
+              isEditing={isEditing}
+              onStartEdit={() => setIsEditing(true)}
+              onCancelEdit={handleCancelEdit}
+              onSaveEdit={handleSaveEdits}
+              onContentChange={(newText) => {
+                setEditedContents((prev) => ({
+                  ...prev,
+                  "video-script": newText,
+                }));
+              }}
+              isSaving={isSaving}
+              savedSuccess={savedSuccess}
+              onRegenerateWithNotes={async (notes) => {
+                await handleGenerateMaterial("video-script", notes);
+              }}
+              isRegenerating={isLoading}
+            />
+          ) : isEditing && activeSubTab !== "resume-suggestions" ? (
             <textarea
               ref={textareaRef}
               value={editedContents[activeSubTab] ?? ""}

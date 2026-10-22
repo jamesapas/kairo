@@ -12,6 +12,7 @@ import {
   ArrowRight,
   CheckSquare,
   Square,
+  Video,
 } from "lucide-react";
 import {
   ApplyContentType,
@@ -42,6 +43,7 @@ const CONTENT_TYPE_ICONS: Record<
   "resume-suggestions": ListChecks,
   "cover-letter": FileText,
   "application-message": Send,
+  "video-script": Video,
 };
 
 export function HelpMeApplyModal({
@@ -181,6 +183,7 @@ export function HelpMeApplyModal({
           title: res.title,
           content: res.content,
           keyPointsUsed: res.keyPointsUsed,
+          scriptData: res.scriptData,
           updatedAt: res.generatedAt,
         };
       }

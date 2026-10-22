@@ -191,7 +191,12 @@ export async function updateJobAction(
 export async function saveApplyMaterialAction(
   jobId: string,
   contentType: string,
-  material: { content: string; title?: string; keyPointsUsed?: string[] }
+  material: {
+    content: string;
+    title?: string;
+    keyPointsUsed?: string[];
+    scriptData?: unknown;
+  }
 ): Promise<{
   success: boolean;
   data?: Record<string, unknown>;
@@ -220,12 +225,15 @@ export async function saveApplyMaterialAction(
     }
 
     const currentMaterials = (existingJob.ai_apply_materials as Record<string, unknown>) || {};
+    const existingContentObj = (currentMaterials[contentType] as Record<string, unknown>) || {};
+
     const updatedMaterials = {
       ...currentMaterials,
       [contentType]: {
-        title: material.title,
+        title: material.title || existingContentObj.title,
         content: material.content,
-        keyPointsUsed: material.keyPointsUsed || [],
+        keyPointsUsed: material.keyPointsUsed || existingContentObj.keyPointsUsed || [],
+        scriptData: material.scriptData !== undefined ? material.scriptData : existingContentObj.scriptData,
         updatedAt: new Date().toISOString(),
       },
     };

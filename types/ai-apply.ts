@@ -1,7 +1,8 @@
 export type ApplyContentType =
   | "resume-suggestions"
   | "cover-letter"
-  | "application-message";
+  | "application-message"
+  | "video-script";
 
 export interface ApplyContentConfig {
   id: ApplyContentType;
@@ -14,6 +15,7 @@ export const APPLY_CONTENT_KEYS: ApplyContentType[] = [
   "resume-suggestions",
   "cover-letter",
   "application-message",
+  "video-script",
 ];
 
 export const APPLY_CONTENT_TYPES: Record<ApplyContentType, ApplyContentConfig> = {
@@ -35,7 +37,53 @@ export const APPLY_CONTENT_TYPES: Record<ApplyContentType, ApplyContentConfig> =
     shortLabel: "Message",
     description: "A short 2-paragraph outreach note for recruiter messages or portal notes.",
   },
+  "video-script": {
+    id: "video-script",
+    title: "AI Intro Video Script",
+    shortLabel: "Video Script",
+    description: "Job-specific 2–3 minute video script prioritizing employer questions and requirements.",
+  },
 };
+
+export type RequirementPriority =
+  | "explicit-instruction"
+  | "must-have"
+  | "responsibility"
+  | "preferred"
+  | "work-style";
+
+export type CoverageStatus = "covered" | "partial" | "missing";
+
+export interface RequirementCoverageItem {
+  id: string;
+  requirement: string;
+  priority: RequirementPriority;
+  priorityLabel: string;
+  howAddressed: string;
+  supportingEvidence: string;
+  missingInfo?: string | null;
+  status: CoverageStatus;
+}
+
+export interface VideoScriptSection {
+  id: string;
+  title: string;
+  timeRange: string;
+  estimatedSeconds: number;
+  spokenText: string;
+  requirementAddressed?: string;
+  deliveryTip?: string;
+}
+
+export interface VideoScriptData {
+  sections: VideoScriptSection[];
+  coverage: RequirementCoverageItem[];
+  totalDurationSeconds: number;
+  totalWordCount: number;
+  hasUnansweredQuestions: boolean;
+  unansweredQuestionsSummary?: string[];
+  candidateNotesUsed?: string;
+}
 
 export interface ApplyContentRequest {
   jobId?: string;
@@ -43,6 +91,7 @@ export interface ApplyContentRequest {
   company?: string;
   description?: string;
   contentType: ApplyContentType;
+  candidateNotes?: string;
 }
 
 export interface ApplyContentResponse {
@@ -51,6 +100,7 @@ export interface ApplyContentResponse {
   content: string;
   keyPointsUsed: string[];
   generatedAt: string;
+  scriptData?: VideoScriptData;
 }
 
 export interface SavedApplyMaterial {
@@ -58,6 +108,8 @@ export interface SavedApplyMaterial {
   content: string;
   keyPointsUsed?: string[];
   updatedAt: string;
+  scriptData?: VideoScriptData;
 }
 
 export type JobApplyMaterialsMap = Partial<Record<ApplyContentType, SavedApplyMaterial>>;
+

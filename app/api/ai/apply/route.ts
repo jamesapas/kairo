@@ -5,8 +5,10 @@ import {
   ApplyContentType,
   ApplyContentResponse,
   APPLY_CONTENT_TYPES,
+  VideoScriptData,
 } from "@/types/ai-apply";
 import { JobMatchAnalysis } from "@/types/ai-match";
+import { richHtmlToPlainText } from "@/lib/utils/job-description";
 
 export async function POST(request: Request) {
   try {
@@ -41,19 +43,21 @@ export async function POST(request: Request) {
       company,
       description: customDescription,
       contentType,
+      candidateNotes,
     } = body as {
       jobId?: string;
       jobTitle?: string;
       company?: string;
       description?: string;
       contentType?: ApplyContentType;
+      candidateNotes?: string;
     };
 
     if (!contentType || !APPLY_CONTENT_TYPES[contentType]) {
       return NextResponse.json(
         {
           success: false,
-          error: "A valid contentType is required (cover-letter, application-message, resume-suggestions).",
+          error: "A valid contentType is required (cover-letter, application-message, resume-suggestions, video-script).",
         },
         { status: 400 }
       );
@@ -198,7 +202,7 @@ ${compactExperiences ? `Experience:\n${compactExperiences}\n` : ""}${compactProj
       : "";
 
     // Clean and cap job description to prevent token waste from legal/footer disclaimers
-    const cleanDescription = targetDescription.trim().slice(0, 3200);
+    const cleanDescription = richHtmlToPlainText(targetDescription).trim().slice(0, 3600);
 
     // Extract candidate location from profile (only if added by user)
     const candidateLocation = profileData?.location?.trim() || "";
@@ -357,6 +361,100 @@ TECHNICAL SKILLS
 - Format strictly as:
 Category Name: Skill1, Skill2, Skill3]`;
         break;
+
+      case "video-script":
+        maxTokens = 5000;
+        systemPrompt = `You are Kairo's AI Career Co-Pilot specializing in generating high-impact, job-specific AI Intro Video Scripts.
+
+### CORE PRINCIPLE
+THE JOB DESCRIPTION DETERMINES WHAT THE CANDIDATE SHOULD TALK ABOUT. THE CANDIDATE'S PROFILE, RÉSUMÉ, AND PROJECTS PROVIDE THE EVIDENCE.
+Do not generate a generic introduction summarizing the candidate's general background. Analyze the job description first, identify what the employer cares about most, and build the script around those priorities.
+
+### 1. ANALYZE & RANK THE JOB DESCRIPTION
+Before generating the script, identify and rank:
+- Explicit application instructions: Specific questions, topics, examples, or information the employer requests in the application (e.g. "Answer: Why are you interested in this role?", "Walk us through a technical challenge", "Explain a time you caught a bug"). These take HIGHEST priority and must receive dedicated spoken time.
+- Must-have requirements: Skills, experience, and capabilities explicitly required for the role.
+- Core responsibilities: The actual work the candidate will be expected to perform.
+- Work style and expectations: Ownership, communication, independence, collaboration, code review, testing, AI-assisted development workflow.
+- Preferred qualifications: Nice-to-have skills and relevant domain experience (secondary priority unless candidate has standout evidence).
+
+### 2. MAP REQUIREMENTS TO CANDIDATE EVIDENCE
+- Use the candidate's verified profile, experiences, projects, skills, education, and any candidate notes provided.
+- For every important requirement, determine:
+  * What the employer wants to know.
+  * Which real experience or project demonstrates the capability.
+  * What the candidate specifically contributed.
+  * What outcome, implementation detail, or example makes the evidence convincing.
+  * Whether the candidate has a genuine gap that should not be misrepresented.
+- Select projects based on their relevance to the job, not simply because they are newest or most impressive.
+- STRICT RULE: NEVER invent, fabricate, or hallucinate experience, achievements, metrics, technical skills, or project functionality.
+- If the employer asks a direct question or demands information that available candidate data cannot answer:
+  * In the script, include a clear placeholder (e.g. "[Candidate Note: Briefly explain your personal motivation for Company X / your experience with Y]").
+  * Mark it as "missing" or "partial" in the requirement coverage summary.
+  * Set hasUnansweredQuestions to true and summarize the missing question. Do NOT claim the script is complete if important requested information is missing!
+
+### 3. GENERATE SCRIPT TIMINGS & ALLOCATION
+- Target 2 to 3 minutes of natural spoken delivery (~260 to 380 spoken words, ~130–150 wpm).
+- Conversational, first-person spoken English ("I", "my work on...").
+- Keep self-introduction brief (15-20 seconds max). Avoid generic filler.
+- Allocate time according to importance of employer requirements (e.g., if employer asks specific questions, allocate dedicated time; if role emphasizes API integrations, demonstrate integration experience; if AI-assisted development is emphasized, explain testing and code review workflow; if ownership is emphasized, show evidence of independent delivery).
+- Adapt structure flexibly:
+  1. Brief introduction and relevant background
+  2. Strongest relevant professional experience
+  3. One or two projects demonstrating employer's key requirements
+  4. Direct answers to any specific questions or requested examples
+  5. Relevant technical workflow, problem-solving approach, or work style
+  6. Short closing connecting candidate's strengths to the role
+- FOCUS & CONCISENESS: Output the top 4 to 6 most critical priorities in coverage (prioritize explicit questions, then core must-haves). Keep each item's 'howAddressed' and 'supportingEvidence' punchy and concise (1-2 sentences).
+
+Return JSON matching:
+{
+  "title": string, // e.g. "Intro Video Script - [Job Title] at [Company]"
+  "content": string, // Full unbroken teleprompter script formatted in clean paragraphs ready to be read aloud (clean spoken sentences, no stage directions inside speech except for placeholders)
+  "keyPointsUsed": string[], // 3-4 bullet points of verified strengths leveraged
+  "scriptData": {
+    "sections": [
+      {
+        "id": string, // "section-1", "section-2", etc.
+        "title": string, // Section title, e.g. "Introduction & Role Alignment", "Core Project: Distributed API Gateway", "Direct Answer: AI Workflow & Testing", "Closing"
+        "timeRange": string, // e.g. "0:00 - 0:25"
+        "estimatedSeconds": number, // e.g. 25
+        "spokenText": string, // Spoken dialogue for this section
+        "requirementAddressed": string, // Requirement or prompt addressed
+        "deliveryTip": string // Pacing / tone coaching tip, e.g. "Warm, confident eye contact; pause slightly after naming key metrics"
+      }
+    ],
+    "coverage": [
+      {
+        "id": string, // "cov-1", "cov-2", etc.
+        "requirement": string, // Employer requirement or specific question
+        "priority": "explicit-instruction" | "must-have" | "responsibility" | "preferred" | "work-style",
+        "priorityLabel": string, // "Application Question", "Must-Have Requirement", "Core Responsibility", "Preferred Qualification", or "Work Style"
+        "howAddressed": string, // How script demonstrates or answers it
+        "supportingEvidence": string, // Verified project, role, or skill used
+        "missingInfo": string | null, // Detail candidate should provide if missing, otherwise null
+        "status": "covered" | "partial" | "missing"
+      }
+    ],
+    "totalDurationSeconds": number, // Total spoken seconds (~120 - 180s)
+    "totalWordCount": number, // Total word count across sections
+    "hasUnansweredQuestions": boolean, // True if any explicit question or critical requirement lacks candidate evidence
+    "unansweredQuestionsSummary": string[], // List of unanswered questions / missing details
+    "candidateNotesUsed": string // Brief note on candidate inputs incorporated
+  }
+}`;
+        taskInstructions = `Generate a job-specific AI Intro Video Script for "${targetJobTitle}" at ${targetCompany || "the company"}.
+
+CANDIDATE NOTES & USER-PROVIDED DETAILS:
+${candidateNotes && candidateNotes.trim() ? candidateNotes.trim() : "None provided."}
+
+Analyze the job description carefully:
+1. Identify any explicit application instructions or questions first. Dedicate meaningful time to directly answering them.
+2. Rank must-have requirements and core responsibilities, and map the candidate's strongest verified experience and projects as convincing proof.
+3. If an employer question cannot be answered from available candidate data, include a clear placeholder and flag it in the requirement coverage summary.
+4. Target a 2–3 minute spoken delivery (~260–380 words) divided into adaptive, well-timed sections with coaching delivery tips.
+5. In coverage, focus on the top 4 to 6 critical requirements with concise 1-2 sentence evidence mappings.`;
+        break;
     }
 
     const userPrompt = `CANDIDATE PROFILE:
@@ -392,7 +490,32 @@ NOTE FOR TECHNICAL SKILLS:
       throw new Error("No response received from OpenAI.");
     }
 
-    const parsed = JSON.parse(rawResponse);
+    let parsed: any;
+    try {
+      parsed = JSON.parse(rawResponse.trim());
+    } catch {
+      // Attempt safe truncation repair if response hit ceiling
+      let repaired = rawResponse.trim();
+      if (repaired.startsWith("```")) {
+        repaired = repaired.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
+      }
+      const quoteCount = (repaired.match(/(?<!\\)"/g) || []).length;
+      if (quoteCount % 2 !== 0) repaired += '"';
+      repaired = repaired.replace(/,\s*([}\]])/g, "$1").replace(/,\s*"[^"]*"?\s*:\s*"?$/, "");
+      const openB = (repaired.match(/{/g) || []).length;
+      const closeB = (repaired.match(/}/g) || []).length;
+      const openBk = (repaired.match(/\[/g) || []).length;
+      const closeBk = (repaired.match(/\]/g) || []).length;
+      for (let i = 0; i < openBk - closeBk; i++) repaired += "]";
+      for (let i = 0; i < openB - closeB; i++) repaired += "}";
+      try {
+        parsed = JSON.parse(repaired);
+      } catch (finalErr) {
+        throw new Error(
+          "The AI generation was cut short. Please try generating again."
+        );
+      }
+    }
     let finalContent = parsed.content || "";
 
     // If generating resume, append verified database sections (PROFESSIONAL EXPERIENCE, PROJECTS, EDUCATION)
@@ -555,12 +678,33 @@ NOTE FOR TECHNICAL SKILLS:
       }
     }
 
+    if (contentType === "video-script") {
+      const scriptData = parsed.scriptData as VideoScriptData | undefined;
+      if (scriptData && Array.isArray(scriptData.sections)) {
+        const fullContent =
+          parsed.content && parsed.content.trim()
+            ? parsed.content.trim()
+            : scriptData.sections.map((s) => s.spokenText).join("\n\n");
+        finalContent = fullContent;
+        const words = fullContent.trim().split(/\s+/).filter(Boolean).length;
+        scriptData.totalWordCount = scriptData.totalWordCount || words;
+        if (!scriptData.totalDurationSeconds) {
+          scriptData.totalDurationSeconds =
+            scriptData.sections.reduce(
+              (acc, s) => acc + (s.estimatedSeconds || 0),
+              0
+            ) || Math.round((words / 140) * 60);
+        }
+      }
+    }
+
     const data: ApplyContentResponse = {
       contentType,
       title: parsed.title || APPLY_CONTENT_TYPES[contentType].title,
       content: finalContent,
       keyPointsUsed: Array.isArray(parsed.keyPointsUsed) ? parsed.keyPointsUsed : [],
       generatedAt: new Date().toISOString(),
+      scriptData: parsed.scriptData,
     };
 
     // Auto-save generated materials to database if jobId is provided
@@ -581,6 +725,7 @@ NOTE FOR TECHNICAL SKILLS:
             title: data.title,
             content: data.content,
             keyPointsUsed: data.keyPointsUsed,
+            scriptData: data.scriptData,
             updatedAt: data.generatedAt,
           },
         };
