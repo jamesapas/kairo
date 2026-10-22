@@ -1821,6 +1821,70 @@ export function ApplyMaterialsPanel({
                 />
               ) : activeSubTab === "cover-letter" ? (
                 renderCoverLetterContent(currentContent)
+              ) : activeSubTab === "application-message" ? (
+                <div className="text-xs sm:text-sm leading-relaxed font-sans space-y-3.5 text-zinc-800 dark:text-zinc-200">
+                  {currentContent.split(/\n\s*\n/).map((para, pIdx) => {
+                    const lines = para.split("\n");
+                    return (
+                      <p key={pIdx} className="leading-relaxed">
+                        {lines.map((l, lIdx) => {
+                          const resumeMatch = l.match(/^(Resume:\s*)(.*)$/i);
+                          const portfolioMatch = l.match(/^(Portfolio:\s*)(.*)$/i);
+                          if (portfolioMatch) {
+                            const val = portfolioMatch[2].trim();
+                            const isUrl = val.startsWith("http");
+                            return (
+                              <React.Fragment key={lIdx}>
+                                {lIdx > 0 && <br />}
+                                <span className="font-semibold text-zinc-950 dark:text-zinc-50">{portfolioMatch[1]}</span>
+                                {isUrl ? (
+                                  <a
+                                    href={val}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="text-blue-600 dark:text-blue-400 hover:underline"
+                                  >
+                                    {val}
+                                  </a>
+                                ) : (
+                                  <span className="text-zinc-500 italic">{val}</span>
+                                )}
+                              </React.Fragment>
+                            );
+                          }
+                          if (resumeMatch) {
+                            const val = resumeMatch[2].trim();
+                            const isUrl = val.startsWith("http");
+                            return (
+                              <React.Fragment key={lIdx}>
+                                {lIdx > 0 && <br />}
+                                <span className="font-semibold text-zinc-950 dark:text-zinc-50">{resumeMatch[1]}</span>
+                                {isUrl ? (
+                                  <a
+                                    href={val}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="text-blue-600 dark:text-blue-400 hover:underline"
+                                  >
+                                    {val}
+                                  </a>
+                                ) : (
+                                  <span className="text-zinc-500 dark:text-zinc-400">{val}</span>
+                                )}
+                              </React.Fragment>
+                            );
+                          }
+                          return (
+                            <React.Fragment key={lIdx}>
+                              {lIdx > 0 && <br />}
+                              {l}
+                            </React.Fragment>
+                          );
+                        })}
+                      </p>
+                    );
+                  })}
+                </div>
               ) : (
                 <div className="text-xs sm:text-sm leading-relaxed whitespace-pre-line font-sans">
                   {currentContent}

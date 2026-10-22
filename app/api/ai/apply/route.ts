@@ -220,6 +220,37 @@ ${compactExperiences ? `Experience:\n${compactExperiences}\n` : ""}${compactProj
       .filter(Boolean)
       .join(" | ");
 
+    // Extract portfolio URL from profile links
+    const portfolioLinkObj =
+      rawLinks.find((l: { platform?: string; label?: string; url?: string }) => {
+        const p = (l.platform || "").toLowerCase();
+        const label = (l.label || "").toLowerCase();
+        return (
+          p === "website" ||
+          p === "portfolio" ||
+          label.includes("portfolio") ||
+          label.includes("website")
+        );
+      }) ||
+      rawLinks.find((l: { platform?: string; url?: string }) => {
+        const p = (l.platform || "").toLowerCase();
+        return p !== "github" && p !== "linkedin" && p !== "twitter" && p !== "x";
+      });
+    const portfolioUrl = portfolioLinkObj?.url?.trim() || "[link]";
+
+    // Calculate verified years of experience from profile history
+    let yearsOfExp = 0;
+    const startYears = experienceData
+      .map((e) => parseInt(e.start_year || "0", 10))
+      .filter((y) => y > 1990 && y <= new Date().getFullYear());
+    if (startYears.length > 0) {
+      const earliestYear = Math.min(...startYears);
+      yearsOfExp = Math.max(1, new Date().getFullYear() - earliestYear);
+    }
+
+    const candidateFullName = profileData?.name?.trim() || "Candidate";
+    const candidateSignOff = candidateFullName === "James Karl Apas" ? "James Karl" : candidateFullName;
+
     const formattedDate = new Date().toLocaleDateString("en-US", {
       month: "long",
       day: "numeric",
@@ -310,22 +341,37 @@ ${profileData?.name || "Candidate"}`;
         break;
 
       case "application-message":
-        maxTokens = 300;
-        systemPrompt = `You are Kairo's AI Career Co-Pilot specializing in concise recruiter outreach and application notes.
-STRICT RULES:
-1. ONLY use verified skills, experiences, and education provided in the candidate context.
-2. DO NOT invent or assume any unlisted companies, tools, metrics, or credentials.
-3. Keep it punchy, professional, and directly relevant (100-140 words).
+        maxTokens = 250;
+        systemPrompt = `You write concise, natural, personalized job application emails for software professionals.
 
-Return JSON matching:
+CRITICAL REQUIREMENTS:
+1. Target length: around 80–120 words.
+2. Tone: Friendly, confident, professional. Avoid robotic wording, unnecessary introductions (no "I am writing to express my interest...", "I hope this email finds you well"), repetition, and excessive enthusiasm.
+3. Structure strictly matching:
+Hello,
+
+I'm excited to apply for the [Role] position at [Company]. With over [X] years of experience building [web/mobile/domain] applications, including experience with [relevant technologies], I believe I'm a strong fit for this role. My background in [relevant strengths] aligns with your needs, and I'm interested in contributing to [company/product mission].
+
+Resume: [link]
+Portfolio: ${portfolioUrl}
+
+Thank you for considering my application.
+
+Best regards,
+${candidateSignOff}
+
+4. Mention relevant technologies ONLY when they match the job requirements.
+5. Highlight why candidate is a strong fit without exaggerating qualifications or making generic claims.
+6. Return only the finished email ready to send. No explanations, no markdown code blocks in content, no multiple versions.
+
+Return JSON format:
 {
-  "title": string,
+  "title": "Application Message",
   "content": string,
-  "keyPointsUsed": string[] // 2-3 brief bullet points of verified candidate strengths leveraged
+  "keyPointsUsed": string[] // 2-3 brief bullet points of key candidate strengths leveraged
 }`;
-        taskInstructions = `Generate a punchy 2-paragraph outreach note (approx. 100-140 words) for recruiter messages or portal notes.
-- Brief greeting, core match points from verified skills, and interest in ${targetCompany || "this role"}.
-- Sign-off with name: "${profileData?.name || "Candidate"}".`;
+        taskInstructions = `Generate a concise, natural, tailored 80–120 word application email for "${targetJobTitle || "Role"}" at ${targetCompany || "Company"}.
+Follow the required structure, include Resume: [link] and Portfolio: ${portfolioUrl}, and sign off with "Best regards,\n${candidateSignOff}".`;
         break;
 
       case "resume-suggestions":
@@ -514,7 +560,21 @@ Analyze the job description carefully:
         break;
     }
 
-    const userPrompt = `CANDIDATE PROFILE:
+    const userPrompt =
+      contentType === "application-message"
+        ? `TARGET ROLE: ${targetJobTitle || "Role"} at ${targetCompany || "Company"}
+
+JOB REQUIREMENTS:
+${cleanDescription.slice(0, 1000).trim()}
+
+CANDIDATE CONTEXT:
+- Name: ${candidateSignOff}
+- Experience: Over ${yearsOfExp || 3} years (${experienceData.map((e) => e.job_title).filter(Boolean).slice(0, 3).join(", ") || "web and mobile applications"})
+- Matching Technologies: ${(candidateSkillsUnique.filter((sk) => `${targetJobTitle} ${cleanDescription}`.toLowerCase().includes(sk.toLowerCase())).length > 0 ? candidateSkillsUnique.filter((sk) => `${targetJobTitle} ${cleanDescription}`.toLowerCase().includes(sk.toLowerCase())) : candidateSkillsUnique).slice(0, 8).join(", ") || "Web development"}
+${targetMatchAnalysis?.keyStrengths?.length ? `- Verified Strengths: ${targetMatchAnalysis.keyStrengths.slice(0, 2).join("; ")}\n` : ""}${candidateNotes && candidateNotes.trim() ? `- Candidate Note: ${candidateNotes.trim()}\n` : ""}
+TASK:
+${taskInstructions}`
+        : `CANDIDATE PROFILE:
 ${candidateProfileText}
 
 ${matchContextText ? `${matchContextText}\n\n` : ""}TARGET ROLE: ${targetJobTitle || "Role"} at ${targetCompany || "Company"}
@@ -581,6 +641,23 @@ ${taskInstructions}${
       }
     }
     let finalContent = parsed.content || "";
+
+    if (contentType === "application-message") {
+      // Ensure portfolio link is filled with candidate's actual profile portfolio URL
+      if (portfolioUrl && portfolioUrl !== "[link]") {
+        finalContent = finalContent.replace(
+          /Portfolio:\s*(?:\[(?:link|portfolio(?:\s*link)?)\]|https?:\/\/[^\s\n]+)?/gi,
+          `Portfolio: ${portfolioUrl}`
+        );
+      }
+      // Ensure Resume: [link] exists
+      if (!/Resume:\s*/i.test(finalContent)) {
+        finalContent = finalContent.replace(
+          /(Portfolio:[^\n]+)/i,
+          `Resume: [link]\n$1`
+        );
+      }
+    }
 
     // If generating resume, append verified database sections (PROFESSIONAL EXPERIENCE, PROJECTS, EDUCATION)
     if (contentType === "resume-suggestions") {

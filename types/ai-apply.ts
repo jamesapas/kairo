@@ -35,7 +35,7 @@ export const APPLY_CONTENT_TYPES: Record<ApplyContentType, ApplyContentConfig> =
     id: "application-message",
     title: "Application Message",
     shortLabel: "Message",
-    description: "A short 2-paragraph outreach note for recruiter messages or portal notes.",
+    description: "Concise, tailored application email (80–120 words) with your portfolio and key strengths.",
   },
   "video-script": {
     id: "video-script",
