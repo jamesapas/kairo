@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import {
   AlertCircle,
   Edit3,
@@ -69,7 +69,57 @@ export function VideoScriptView({
   const speedTable = [35, 60, 95, 140, 195];
   const speedMultiplier = speedTable[scrollSpeed - 1] || 60;
 
-  const sections: VideoScriptSection[] = scriptData?.sections || [];
+  // Derive dynamic sections directly from current content so user edits are instantly reflected in teleprompter
+  const sections: VideoScriptSection[] = useMemo(() => {
+    if (!content || !content.trim()) return [];
+
+    const paragraphs = content
+      .split(/\n\s*\n/)
+      .map((p) => p.trim())
+      .filter(Boolean);
+
+    const baseSections = scriptData?.sections || [];
+
+    if (baseSections.length > 0) {
+      return paragraphs.map((para, idx) => {
+        const base = baseSections[idx];
+        const words = para.split(/\s+/).filter(Boolean).length;
+        const estSeconds = Math.max(5, Math.round((words / 140) * 60));
+
+        if (base) {
+          return {
+            ...base,
+            spokenText: para,
+            estimatedSeconds: estSeconds,
+          };
+        }
+
+        return {
+          id: `section-${idx + 1}`,
+          title: `Section ${idx + 1}`,
+          timeRange: `~${estSeconds}s`,
+          estimatedSeconds: estSeconds,
+          spokenText: para,
+          requirementAddressed: "",
+          deliveryTip: "",
+        };
+      });
+    }
+
+    return paragraphs.map((para, idx) => {
+      const words = para.split(/\s+/).filter(Boolean).length;
+      const estSeconds = Math.max(5, Math.round((words / 140) * 60));
+      return {
+        id: `section-${idx + 1}`,
+        title: `Section ${idx + 1}`,
+        timeRange: `~${estSeconds}s`,
+        estimatedSeconds: estSeconds,
+        spokenText: para,
+        requirementAddressed: "",
+        deliveryTip: "",
+      };
+    });
+  }, [content, scriptData]);
 
   // Missing application items / questions
   const missingItems = scriptData?.unansweredQuestionsSummary || [];
@@ -220,6 +270,19 @@ export function VideoScriptView({
                 Editing Video Script
               </span>
             </div>
+
+            {/* Launch Auto-Scrolling Teleprompter Popup from Edit Mode */}
+            <button
+              type="button"
+              onClick={() => {
+                setIsTeleprompterOpen(true);
+                setIsPlaying(false);
+              }}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white text-xs font-bold transition shadow-xs cursor-pointer active:scale-[0.98]"
+            >
+              <Play className="w-3.5 h-3.5 fill-current" />
+              <span>Teleprompter</span>
+            </button>
           </div>
 
           <textarea

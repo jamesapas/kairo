@@ -966,11 +966,56 @@ export function ApplyMaterialsPanel({
     setError(null);
 
     try {
+      let scriptDataToSave = materialsMap[activeSubTab]?.scriptData;
+      if (activeSubTab === "video-script" && currentText.trim()) {
+        const paragraphs = currentText
+          .split(/\n\s*\n/)
+          .map((p) => p.trim())
+          .filter(Boolean);
+        const existingSections = scriptDataToSave?.sections || [];
+        const newSections = paragraphs.map((para, idx) => {
+          const existing = existingSections[idx];
+          const words = para.split(/\s+/).filter(Boolean).length;
+          const estSeconds = Math.max(5, Math.round((words / 140) * 60));
+          if (existing) {
+            return {
+              ...existing,
+              spokenText: para,
+              estimatedSeconds: estSeconds,
+            };
+          }
+          return {
+            id: `section-${idx + 1}`,
+            title: `Section ${idx + 1}`,
+            timeRange: `~${estSeconds}s`,
+            estimatedSeconds: estSeconds,
+            spokenText: para,
+            requirementAddressed: "",
+            deliveryTip: "",
+          };
+        });
+
+        const totalWords = currentText.trim().split(/\s+/).filter(Boolean).length;
+        const totalDuration = newSections.reduce(
+          (acc, s) => acc + (s.estimatedSeconds || 0),
+          0
+        );
+
+        scriptDataToSave = {
+          coverage: scriptDataToSave?.coverage || [],
+          hasUnansweredQuestions: scriptDataToSave?.hasUnansweredQuestions || false,
+          ...(scriptDataToSave || {}),
+          sections: newSections,
+          totalWordCount: totalWords,
+          totalDurationSeconds: totalDuration,
+        };
+      }
+
       const res = await saveApplyMaterialAction(jobId, activeSubTab, {
         content: currentText,
         title: materialsMap[activeSubTab]?.title || APPLY_CONTENT_TYPES[activeSubTab].title,
         keyPointsUsed: materialsMap[activeSubTab]?.keyPointsUsed,
-        scriptData: materialsMap[activeSubTab]?.scriptData,
+        scriptData: scriptDataToSave,
       });
 
       if (!res.success) {
@@ -987,7 +1032,7 @@ export function ApplyMaterialsPanel({
           title: materialsMap[activeSubTab]?.title || APPLY_CONTENT_TYPES[activeSubTab].title,
           content: currentText,
           keyPointsUsed: materialsMap[activeSubTab]?.keyPointsUsed,
-          scriptData: materialsMap[activeSubTab]?.scriptData,
+          scriptData: scriptDataToSave,
           updatedAt: new Date().toISOString(),
         },
       };
