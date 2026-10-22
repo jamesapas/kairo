@@ -38,6 +38,7 @@ import { saveApplyMaterialAction } from "@/lib/actions/jobs";
 import { downloadCoverLetterPdf } from "@/lib/utils/cover-letter-pdf";
 import { downloadResumePdf } from "@/lib/utils/resume-pdf";
 import { VideoScriptView } from "./video-script-view";
+import { ResumePageEditor } from "./resume-page-editor";
 import {
   updateResumeSummary,
   updateResumePositionTitle,
@@ -1181,6 +1182,7 @@ export function ApplyMaterialsPanel({
   });
   const [editedContents, setEditedContents] = useState<Partial<Record<ApplyContentType, string>>>({});
   const [isEditing, setIsEditing] = useState(false);
+  const [resumeEditMode, setResumeEditMode] = useState<"visual" | "page">("visual");
   const [hiddenProjects, setHiddenProjects] = useState<ParsedProject[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -1221,6 +1223,7 @@ export function ApplyMaterialsPanel({
 
   // Auto-resize textarea to fit content without shifting page scroll position
   useEffect(() => {
+    if (!isEditing) setResumeEditMode("visual");
     if (isEditing && textareaRef.current) {
       const el = textareaRef.current;
       const scrollY = window.scrollY;
@@ -1228,7 +1231,7 @@ export function ApplyMaterialsPanel({
       el.style.height = `${Math.max(el.scrollHeight, 120)}px`;
       window.scrollTo(0, scrollY);
     }
-  }, [isEditing, activeSubTab]);
+  }, [isEditing, activeSubTab, resumeEditMode]);
 
   // Sync initialMaterials (preserves current activeSubTab so regenerating doesn't switch tabs)
   useEffect(() => {
@@ -1305,6 +1308,9 @@ export function ApplyMaterialsPanel({
 
   // Save edits
   const handleSaveEdits = async () => {
+    if (typeof document !== "undefined" && document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
     if (!jobId) return;
     const currentText = editedContents[activeSubTab] || "";
     setIsSaving(true);
@@ -1537,6 +1543,37 @@ export function ApplyMaterialsPanel({
             {isEditing ? (
               /* When Editing: Prominent Cancel & Save Actions */
               <div className="flex items-center gap-1.5 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xs p-1 rounded-xl border border-zinc-200 dark:border-zinc-700 shadow-sm">
+                {activeSubTab === "resume-suggestions" && (
+                  <div className="inline-flex items-center rounded-lg bg-zinc-100 dark:bg-zinc-800 p-0.5 text-[11px] font-semibold">
+                    {(
+                      [
+                        { id: "visual", label: "Visual" },
+                        { id: "page", label: "Docx (WYSIWYG)" },
+                      ] as const
+                    ).map((m) => {
+                      const isSelected = resumeEditMode === m.id;
+                      return (
+                        <button
+                          key={m.id}
+                          type="button"
+                          onClick={() => setResumeEditMode(m.id)}
+                          title={
+                            m.id === "visual"
+                              ? "Visual editor with drag-and-drop & suggestions"
+                              : "Edit on a realistic Letter-sized document page (WYSIWYG)"
+                          }
+                          className={`h-6 px-2.5 rounded-md transition cursor-pointer ${
+                            isSelected
+                              ? "bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 shadow-2xs font-bold"
+                              : "text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200"
+                          }`}
+                        >
+                          {m.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
                 {/* Cancel Edit Button */}
                 <button
                   type="button"
@@ -1727,7 +1764,7 @@ export function ApplyMaterialsPanel({
           ) : isEditing && activeSubTab !== "resume-suggestions" ? (
             <textarea
               ref={textareaRef}
-              value={editedContents[activeSubTab] ?? ""}
+              value={editedContents[activeSubTab] ?? currentContent ?? ""}
               onChange={(e) => {
                 const val = e.target.value;
                 setEditedContents((prev) => ({ ...prev, [activeSubTab]: val }));
@@ -1739,6 +1776,16 @@ export function ApplyMaterialsPanel({
               }}
               className="w-full text-xs sm:text-sm p-6 sm:p-8 pt-12 sm:pt-14 rounded-2xl bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-300 dark:border-zinc-600 text-zinc-900 dark:text-zinc-100 font-medium focus:border-zinc-500 focus:outline-hidden resize-none overflow-hidden leading-relaxed font-sans"
               placeholder="Edit content here..."
+            />
+          ) : isEditing && activeSubTab === "resume-suggestions" && resumeEditMode === "page" ? (
+            <ResumePageEditor
+              content={currentContent}
+              onChange={(newContent) => {
+                setEditedContents((prev) => ({
+                  ...prev,
+                  "resume-suggestions": newContent,
+                }));
+              }}
             />
           ) : (
             <div className="w-full p-6 sm:p-8 md:p-10 rounded-2xl bg-zinc-50/70 dark:bg-zinc-800/40 border border-zinc-200/80 dark:border-zinc-800 text-zinc-800 dark:text-zinc-200 select-text transition-all">
