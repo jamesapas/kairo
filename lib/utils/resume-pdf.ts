@@ -374,6 +374,10 @@ export function downloadResumePdf({
     if (colonMatch) {
       const categoryLabel = colonMatch[1] + " ";
       const skillsContent = colonMatch[2];
+      if (!skillsContent.trim()) {
+        i++;
+        continue;
+      }
 
       doc.setFont(FONT_FAMILY, "bold");
       doc.setFontSize(BODY_FONT_SIZE);

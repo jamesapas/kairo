@@ -81,6 +81,50 @@ export function updateResumeSummary(content: string, newSummary: string): string
   return `PROFESSIONAL SUMMARY\n--------------------\n${newSummary.trim()}\n\n${normalized}`;
 }
 
+// Update the Position / Role Title in the resume header (Line 2 below Candidate Name)
+export function updateResumePositionTitle(
+  content: string,
+  newPositionTitle: string
+): string {
+  const normalized = content.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+  const lines = normalized.split("\n");
+
+  let nameLineIdx = -1;
+  let roleLineIdx = -1;
+
+  for (let i = 0; i < lines.length; i++) {
+    const trimmed = lines[i].trim();
+    if (!trimmed) continue;
+    if (/^PROFESSIONAL\s+SUMMARY/i.test(trimmed)) break;
+
+    if (nameLineIdx === -1) {
+      nameLineIdx = i;
+      continue;
+    }
+
+    const isContact = trimmed.includes("@") || trimmed.includes("http") || trimmed.includes("|");
+    if (!isContact && roleLineIdx === -1) {
+      roleLineIdx = i;
+      break;
+    } else if (isContact) {
+      // Line after name is already contact info, so no role line exists yet
+      break;
+    }
+  }
+
+  if (roleLineIdx !== -1) {
+    lines[roleLineIdx] = newPositionTitle;
+    return lines.join("\n");
+  }
+
+  if (nameLineIdx !== -1) {
+    lines.splice(nameLineIdx + 1, 0, newPositionTitle);
+    return lines.join("\n");
+  }
+
+  return `${newPositionTitle}\n\n${content}`;
+}
+
 // Add a skill to an existing category or create a new category in TECHNICAL SKILLS
 export function addResumeSkill(
   content: string,
@@ -139,6 +183,75 @@ export function addResumeSkill(
   return normalized.replace(skillsSectionRegex, `${header}${newBody}\n`);
 }
 
+// Add a new skill category to TECHNICAL SKILLS
+export function addResumeSkillCategory(
+  content: string,
+  categoryName: string,
+  initialSkill?: string
+): string {
+  const cleanCat = categoryName.trim().replace(/:+$/, "").trim();
+  if (!cleanCat) return content;
+
+  const normalized = content.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+  const skillsSectionRegex = /(TECHNICAL\s+SKILLS\s*\n[-=_]+\s*\n)([\s\S]*?)(?=\n+[A-Z\s/&-]{3,}\s*(?:\n[-=_]+\s*\n|\n|$)|$)/i;
+  const match = normalized.match(skillsSectionRegex);
+
+  if (!match) return content;
+
+  const header = match[1];
+  const body = match[2];
+  const lines = body.split("\n").filter(Boolean);
+
+  // Check if category already exists (case-insensitive)
+  const existingIdx = lines.findIndex((line) => {
+    const colonMatch = line.match(/^([^:]+):\s*(.*)$/);
+    return colonMatch && colonMatch[1].trim().toLowerCase() === cleanCat.toLowerCase();
+  });
+
+  const initSkill = initialSkill?.trim() || "";
+
+  if (existingIdx !== -1) {
+    if (initSkill) {
+      return addResumeSkill(content, cleanCat, initSkill);
+    }
+    return content;
+  }
+
+  const newLine = initSkill ? `${cleanCat}: ${initSkill}` : `${cleanCat}:`;
+  lines.push(newLine);
+
+  const newBody = lines.join("\n");
+  return normalized.replace(skillsSectionRegex, `${header}${newBody}\n`);
+}
+
+// Remove an entire skill category from TECHNICAL SKILLS
+export function removeResumeSkillCategory(
+  content: string,
+  categoryName: string
+): string {
+  const cleanCat = categoryName.trim().replace(/:+$/, "").trim().toLowerCase();
+  if (!cleanCat) return content;
+
+  const normalized = content.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+  const skillsSectionRegex = /(TECHNICAL\s+SKILLS\s*\n[-=_]+\s*\n)([\s\S]*?)(?=\n+[A-Z\s/&-]{3,}\s*(?:\n[-=_]+\s*\n|\n|$)|$)/i;
+  const match = normalized.match(skillsSectionRegex);
+
+  if (!match) return content;
+
+  const header = match[1];
+  const body = match[2];
+  const lines = body.split("\n").filter(Boolean);
+
+  const newLines = lines.filter((line) => {
+    const colonMatch = line.match(/^([^:]+):\s*(.*)$/);
+    if (!colonMatch) return true;
+    return colonMatch[1].trim().toLowerCase() !== cleanCat;
+  });
+
+  const newBody = newLines.join("\n");
+  return normalized.replace(skillsSectionRegex, `${header}${newBody}\n`);
+}
+
 // Remove a skill from TECHNICAL SKILLS
 export function removeResumeSkill(
   content: string,
@@ -166,7 +279,7 @@ export function removeResumeSkill(
           .split(",")
           .map((s) => s.trim())
           .filter((s) => s.toLowerCase() !== skillToRemove.toLowerCase());
-        if (skills.length === 0) return null;
+        if (skills.length === 0) return `${catName}:`;
         return `${catName}: ${skills.join(", ")}`;
       }
       return line;

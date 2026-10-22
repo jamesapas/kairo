@@ -232,13 +232,47 @@ ${compactExperiences ? `Experience:\n${compactExperiences}\n` : ""}${compactProj
 
     switch (contentType) {
       case "cover-letter":
-        maxTokens = 900;
-        systemPrompt = `You are Kairo's AI Career Co-Pilot specializing in writing authentic, formal, executive-ready Cover Letters.
-STRICT RULES:
-1. ONLY use verified skills, experiences, and education provided in the candidate context.
-2. DO NOT invent or assume any unlisted companies, tools, metrics, or credentials.
-3. DO NOT invent imaginary street addresses, postal codes, building names, or fake recipient addresses for the company. Only use the company name (and city/location ONLY IF explicitly mentioned in the job description).
-4. Output must follow a clean, formal letter structure with Candidate Header, Date, Recipient block, Subject line ('Re: ... Application'), formal salutation, 3-4 structured body paragraphs, and formal closing.
+        maxTokens = 1400;
+        systemPrompt = `You are Kairo's AI Career Co-Pilot specializing in writing authentic, high-impact, executive-ready Cover Letters.
+
+### CORE PRINCIPLE
+THE JOB DESCRIPTION DETERMINES WHAT THE CANDIDATE SHOULD TALK ABOUT. THE CANDIDATE'S PROFILE, RÉSUMÉ, AND PROJECTS PROVIDE THE EVIDENCE.
+Do not generate a generic cover letter summarizing the candidate's general background with boilerplate filler. Analyze the job description deeply first, identify the employer's highest priorities, required tech stack, and primary domain, and build the letter directly around those needs.
+
+### 1. CLOSEST ROLE & EXPERIENCE MATCHING (CRITICAL PRIORITY)
+- IDENTIFY THE PRIMARY DOMAIN of the target role (e.g. Full Stack Developer, Frontend Developer, Backend Engineer, Mobile Developer, DevOps Engineer, etc.).
+- ALWAYS MATCH THE CLOSEST RELEVANT EXPERIENCE: When presenting the candidate's professional background, past roles, and accomplishments, ALWAYS feature and emphasize the experience that is closest in title, scope, and technical depth to the target role.
+- CRITICAL FULL-STACK EXAMPLE:
+  * If the candidate is applying for "Full Stack Developer" (or Full Stack Engineer), the letter MUST highlight the candidate's verified Full Stack engineering capabilities (both frontend client architecture AND backend APIs, databases, microservices, and server-side logic).
+  * DO NOT narrow or reduce the candidate's narrative to merely "Frontend Developer" if they have verified full-stack experience, full-stack projects, or backend skills in their profile!
+  * If their most recent job title was "Frontend Developer" or "Web Developer", but they have built full-stack projects, designed REST/GraphQL APIs, worked with databases (PostgreSQL, Supabase, MySQL, MongoDB), or engineered full-lifecycle features, you MUST frame and bridge their experience as a versatile Full-Stack Software Engineer who brings deep frontend UI craftsmanship alongside robust backend systems capability!
+  * Never downplay the candidate by pitching them with a narrower past title or specialized scope when applying for a broader role that they have verified evidence for.
+- CONVERSE DOMAIN MATCHING:
+  * If the target role is "Backend Engineer", prioritize and lead with backend architecture, APIs, data modeling, concurrency, caching, and server reliability.
+  * If the target role is "Frontend Developer", prioritize UI component architecture, client-side state management, performance optimization (Core Web Vitals), and responsive design.
+
+### 2. DEEP ALIGNMENT WITH THE JOB DESCRIPTION
+- Thoroughly extract the core requirements, technologies, and challenges emphasized in the job description:
+  * Mention the specific technologies, architectural patterns, and methodologies requested by the employer (e.g. React, Next.js, Node.js, TypeScript, PostgreSQL, REST APIs, CI/CD, responsive design).
+  * Connect the candidate's verified accomplishments directly to the employer's stated challenges (e.g., scaling APIs, building responsive web apps, improving site speed, building clean dashboards).
+  * Echo the employer's domain language and engineering values naturally (e.g., clean code, type safety, modular architecture, end-to-end ownership).
+
+### 3. BODY STRUCTURE & NARRATIVE ARCHITECTURE
+The cover letter body must be compelling, authentic, and flow naturally across 4 focused paragraphs (approx. 280-380 words):
+- Paragraph 1: Intent & Target Domain Hook
+  State enthusiastic application for "${targetJobTitle}" at ${targetCompany || "your team"}. Immediately position the candidate in terms of the target role's primary domain (e.g. "as a Full Stack Engineer with X years of experience building scalable, end-to-end web applications..."). Summarize verified core strengths that directly solve the employer's primary needs.
+- Paragraph 2: Closest Experience & Technical Deep Dive
+  Highlight the candidate's verified professional experience and projects that are closest in scope and relevance to the target position. Detail concrete accomplishments: for Full Stack, explain how they architected responsive, performant user interfaces on the frontend while simultaneously developing robust backend APIs, server logic, database schemas, and third-party integrations using verified technologies.
+- Paragraph 3: Verified Impact & Modern Engineering Workflow
+  Provide evidence of measurable impact, technical problem-solving, and workflow discipline (e.g., performance optimizations, test coverage, agile collaboration, or modern AI-assisted engineering velocity with tools like Cursor/Claude Code if relevant). Connect this evidence directly to how it will accelerate ${targetCompany || "the company"}'s upcoming engineering goals.
+- Paragraph 4: Alignment with Company Mission & Confident Call to Action
+  Express genuine motivation for ${targetCompany || "the company"}'s product, engineering focus, or vision. Reiterate commitment to delivering immediate value, and state enthusiastic anticipation to discuss how their background aligns with the team's needs in an interview.
+
+### 4. STRICT INTEGRITY RULES
+1. ONLY use verified skills, experiences, projects, and education provided in the candidate context.
+2. DO NOT invent or assume unlisted employers, metrics, credentials, or proprietary products.
+3. DO NOT invent imaginary street addresses, postal codes, or fake recipient addresses for the company. Only use the company name (and city/location ONLY IF explicitly mentioned in the job description).
+4. Strictly follow the formal business letter format: Candidate Header, Date, Recipient block, Subject line ('Re: ... Application'), formal salutation, 4 structured body paragraphs separated by double newlines, and formal sign-off.
 
 Return JSON matching:
 {
@@ -262,13 +296,13 @@ Re: ${targetJobTitle || "Role"} Application
 
 Dear Hiring Manager,
 
-[Paragraph 1: Clear application intent for the ${targetJobTitle || "role"} at ${targetCompany || "the company"}. Highlight total verified years of experience and core technical capabilities from profile.]
+[Paragraph 1: Clear application intent for the ${targetJobTitle || "role"} at ${targetCompany || "the company"}. Frame the candidate in the exact primary domain of the target role (e.g. Full Stack Developer), highlighting total verified years of experience and core technical capabilities that mirror the job posting's main requirements.]
 
-[Paragraph 2: Specific hands-on accomplishments and technical tools from candidate's verified experience (e.g. frontend/backend systems, APIs, responsive design, performance optimization) matching the role requirements.]
+[Paragraph 2: The closest, most relevant experience and verified projects. IF APPLYING FOR FULL STACK: Feature full-stack engineering achievements (both frontend client interfaces AND backend APIs, database modeling, and server-side logic). Do not reduce to frontend only. Mention concrete technical tools, architectural decisions, and production accomplishments from verified bullets.]
 
-[Paragraph 3: Motivation for joining ${targetCompany || "the team"}, alignment with the role, problem-solving mindset, and willingness to learn and contribute.]
+[Paragraph 3: Engineering problem-solving, proven impact, and workflow rigor matching the job description's challenges (e.g. application performance, robust API integrations, scalability, code quality, developer velocity). Connect this directly to how the candidate will solve problems for ${targetCompany || "the team"}.]
 
-[Paragraph 4: Thank them for considering the application, and state enthusiastic anticipation to discuss how candidate can contribute to the team.]
+[Paragraph 4: Genuine motivation for ${targetCompany || "the company"}'s product/mission and alignment with their engineering culture. Confidently reiterate readiness to make an immediate impact and state anticipation to discuss the role in an interview.]
 
 Sincerely,
 ${profileData?.name || "Candidate"}`;
@@ -487,12 +521,19 @@ JOB REQUIREMENTS:
 ${cleanDescription}
 
 TASK:
-${taskInstructions}
-
-NOTE FOR TECHNICAL SKILLS:
+${taskInstructions}${
+  contentType === "resume-suggestions"
+    ? `\n\nNOTE FOR TECHNICAL SKILLS:
 1. Select ONLY the candidate's verified skills that are related to or included in this job description.
 2. Be smart with categorization: Never output 1-2 item lines like "Version Control: Git" or "Performance Optimization: Lighthouse, Web Vitals". Combine tooling, VCS, and performance under "Tools & Performance" or "Developer Tools".
-3. Keep Languages (TypeScript, JavaScript, HTML5, CSS3) and Frameworks/Libraries (React, Next.js, Tailwind CSS) clean and distinct instead of bloated under one giant line.`;
+3. Keep Languages (TypeScript, JavaScript, HTML5, CSS3) and Frameworks/Libraries (React, Next.js, Tailwind CSS) clean and distinct instead of bloated under one giant line.`
+    : contentType === "cover-letter"
+    ? `\n\nCRITICAL INSTRUCTIONS FOR COVER LETTER:
+1. FOCUS HEAVILY ON THE JOB DESCRIPTION: Extract the employer's core priorities, required tech stack, and primary domain problems, and tailor every paragraph directly to them.
+2. CLOSEST ROLE MATCHING: Feature and speak about the candidate's experience closest in scope to "${targetJobTitle}". If applying for Full Stack Developer, speak to their Full Stack engineering capabilities (both frontend client architecture AND backend APIs/databases/architecture)—NEVER reduce or downplay to frontend only if they have full-stack evidence!
+3. AUTHENTIC EVIDENCE: Back every technical claim with verified candidate experience, projects, or accomplishments.`
+    : ""
+}`;
 
     const openai = new OpenAI({ apiKey });
 

@@ -20,6 +20,7 @@ import {
   X,
   MoreHorizontal,
   Plus,
+  Trash2,
   Video,
   MessageSquare,
 } from "lucide-react";
@@ -38,8 +39,11 @@ import { downloadResumePdf } from "@/lib/utils/resume-pdf";
 import { VideoScriptView } from "./video-script-view";
 import {
   updateResumeSummary,
+  updateResumePositionTitle,
   addResumeSkill,
   removeResumeSkill,
+  addResumeSkillCategory,
+  removeResumeSkillCategory,
   changeResumeProjectType,
   hideResumeProject,
   restoreResumeProject,
@@ -237,6 +241,136 @@ function InlineAddSkillInput({ onAdd }: { onAdd: (skill: string) => void }) {
   );
 }
 
+const SUGGESTED_SKILL_CATEGORIES = [
+  "Cloud & DevOps",
+  "Testing & QA",
+  "Databases & Storage",
+  "Tools & Infrastructure",
+  "Mobile Development",
+  "AI & Machine Learning",
+  "Architecture & Design",
+  "Security & Authentication",
+];
+
+function InlineAddSkillCategoryInput({
+  existingCategories,
+  onAddCategory,
+}: {
+  existingCategories: string[];
+  onAddCategory: (categoryName: string) => void;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [name, setName] = useState("");
+
+  const existingLower = new Set(
+    existingCategories.map((c) => c.toLowerCase().trim())
+  );
+  const availableSuggestions = SUGGESTED_SKILL_CATEGORIES.filter(
+    (s) => !existingLower.has(s.toLowerCase())
+  );
+
+  const handleCommit = (catName?: string) => {
+    const target = (catName || name).trim().replace(/:+$/, "").trim();
+    if (target) {
+      onAddCategory(target);
+    }
+    setName("");
+    setIsOpen(false);
+  };
+
+  if (!isOpen) {
+    return (
+      <button
+        type="button"
+        onClick={() => setIsOpen(true)}
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-dashed border-zinc-300 dark:border-zinc-700 hover:border-zinc-400 dark:hover:border-zinc-500 bg-zinc-50/70 dark:bg-zinc-850/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition cursor-pointer shadow-2xs group active:scale-[0.99]"
+      >
+        <Plus className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-500 group-hover:text-zinc-700 dark:group-hover:text-zinc-300 group-hover:scale-110 transition-transform" />
+        <span>Add Skill Category</span>
+      </button>
+    );
+  }
+
+  return (
+    <div className="p-3 sm:p-3.5 rounded-2xl border border-zinc-200 dark:border-zinc-750 bg-zinc-50/90 dark:bg-zinc-850/60 space-y-2.5 animate-in fade-in duration-150 shadow-xs max-w-xl">
+      <div className="flex items-center justify-between">
+        <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-600 dark:text-zinc-300">
+          New Skill Category
+        </span>
+        <button
+          type="button"
+          onClick={() => {
+            setName("");
+            setIsOpen(false);
+          }}
+          className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 p-0.5 rounded cursor-pointer"
+        >
+          <X className="w-3.5 h-3.5" />
+        </button>
+      </div>
+
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+        <input
+          type="text"
+          autoFocus
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              handleCommit();
+            } else if (e.key === "Escape") {
+              setName("");
+              setIsOpen(false);
+            }
+          }}
+          placeholder="e.g. Cloud & DevOps, Testing & QA..."
+          className="h-8 px-2.5 text-xs rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-hidden focus:ring-1.5 focus:ring-amber-500 flex-1"
+        />
+        <div className="flex items-center gap-1.5 shrink-0">
+          <button
+            type="button"
+            onClick={() => handleCommit()}
+            disabled={!name.trim()}
+            className="h-8 px-3.5 text-xs font-bold rounded-xl bg-zinc-900 dark:bg-zinc-100 hover:bg-zinc-800 dark:hover:bg-white text-white dark:text-zinc-900 disabled:opacity-40 transition cursor-pointer shadow-2xs active:scale-[0.98]"
+          >
+            Add Category
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setName("");
+              setIsOpen(false);
+            }}
+            className="h-8 px-2.5 text-xs font-semibold rounded-xl text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-750/50 transition cursor-pointer"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+
+      {availableSuggestions.length > 0 && (
+        <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+          <span className="text-[10px] uppercase font-bold tracking-wider text-zinc-400 mr-0.5">
+            Suggested:
+          </span>
+          {availableSuggestions.slice(0, 5).map((suggestion) => (
+            <button
+              key={suggestion}
+              type="button"
+              onClick={() => handleCommit(suggestion)}
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[11px] font-medium border border-zinc-200/80 dark:border-zinc-700/80 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:border-amber-400 dark:hover:border-amber-500 hover:text-amber-700 dark:hover:text-amber-300 transition cursor-pointer shadow-2xs active:scale-[0.98]"
+            >
+              <Plus className="w-2.5 h-2.5 text-zinc-400" />
+              <span>{suggestion}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function chooseCategoryForSkill(skill: string, availableCategories: string[]): string {
   if (availableCategories.length === 0) return "Technical Skills";
   const s = skill.toLowerCase();
@@ -289,10 +423,22 @@ function chooseCategoryForSkill(skill: string, availableCategories: string[]): s
         s.includes("docker") ||
         s.includes("aws") ||
         s.includes("ci/cd") ||
+        s.includes("kubernetes") ||
         s.includes("github") ||
         s.includes("jira") ||
         s.includes("linux")) &&
-      (c.includes("tool") || c.includes("devops") || c.includes("version"))
+      (c.includes("tool") || c.includes("devops") || c.includes("cloud") || c.includes("infra") || c.includes("version"))
+    ) {
+      return cat;
+    }
+    if (
+      (s.includes("jest") ||
+        s.includes("playwright") ||
+        s.includes("cypress") ||
+        s.includes("vitest") ||
+        s.includes("testing") ||
+        s.includes("qa")) &&
+      (c.includes("test") || c.includes("qa") || c.includes("quality"))
     ) {
       return cat;
     }
@@ -394,19 +540,68 @@ function ResumeDocumentView({
   }
 
   if (headerLines.length > 0) {
+    let candidateName = "";
+    let positionTitle = "";
+    const contactLines: string[] = [];
+
+    for (const line of headerLines) {
+      if (!candidateName) {
+        candidateName = line;
+        continue;
+      }
+      const isContact = line.includes("@") || line.includes("http") || line.includes("|");
+      if (!positionTitle && !isContact) {
+        positionTitle = line;
+      } else {
+        contactLines.push(line);
+      }
+    }
+
     return (
       <div className="space-y-6 font-sans text-zinc-900 dark:text-zinc-100 px-1 sm:px-2">
         {/* ATS Resume Header */}
-        <div className="text-center space-y-1 pb-2">
+        <div className="text-center space-y-1.5 pb-2">
           <h3 className="text-base sm:text-lg font-bold tracking-tight uppercase text-zinc-950 dark:text-zinc-50">
-            {headerLines[0]}
+            {candidateName}
           </h3>
-          {headerLines[1] && (
-            <p className="text-xs sm:text-sm font-normal text-zinc-800 dark:text-zinc-200">
-              {headerLines[1]}
-            </p>
+
+          {isEditing ? (
+            <div className="max-w-md mx-auto pt-0.5 space-y-1">
+              <input
+                type="text"
+                value={positionTitle}
+                onChange={(e) => {
+                  const updated = updateResumePositionTitle(content, e.target.value);
+                  onContentChange?.(updated);
+                }}
+                placeholder={jobTitle ? `Target role: ${jobTitle}` : "Position / Role Title (e.g. Senior Full-Stack Developer)"}
+                className="text-center font-medium text-xs sm:text-sm py-1 px-3 rounded-lg border border-dashed border-zinc-300 dark:border-zinc-750 bg-white/70 dark:bg-zinc-900/60 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-hidden focus:ring-1 focus:ring-amber-500 w-full"
+              />
+              {jobTitle && positionTitle.toLowerCase() !== jobTitle.toLowerCase() && (
+                <div className="flex items-center justify-center gap-1.5 text-[11px] text-zinc-400 dark:text-zinc-500">
+                  <span>Match target job:</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const updated = updateResumePositionTitle(content, jobTitle);
+                      onContentChange?.(updated);
+                    }}
+                    className="text-amber-600 dark:text-amber-400 hover:underline font-semibold cursor-pointer"
+                  >
+                    &ldquo;{jobTitle}&rdquo;
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            positionTitle && (
+              <p className="text-xs sm:text-sm font-normal text-zinc-800 dark:text-zinc-200">
+                {positionTitle}
+              </p>
+            )
           )}
-          {headerLines.slice(2).map((l, i) => {
+
+          {contactLines.map((l, i) => {
             const parts = l.split("|").map((s) => s.trim()).filter(Boolean);
             return (
               <div key={i} className="flex flex-wrap justify-center items-center gap-1.5 text-xs sm:text-sm font-normal text-zinc-800 dark:text-zinc-200 pt-0.5">
@@ -524,11 +719,31 @@ function ResumeDocumentView({
                               );
 
                               return (
-                                <div key={pIdx} className="space-y-1.5 py-1">
+                                <div key={pIdx} className="group/cat space-y-1.5 py-1 px-1 -mx-1 rounded-lg hover:bg-zinc-100/50 dark:hover:bg-zinc-800/30 transition">
                                   <div className="flex flex-wrap items-center gap-1.5">
-                                    <strong className="font-bold text-zinc-950 dark:text-zinc-50 text-xs sm:text-sm mr-1">
-                                      {colonMatch[1]}
-                                    </strong>
+                                    <div className="inline-flex items-center gap-1 mr-1">
+                                      <strong className="font-bold text-zinc-950 dark:text-zinc-50 text-xs sm:text-sm">
+                                        {colonMatch[1]}
+                                      </strong>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          const updated = removeResumeSkillCategory(content, catName);
+                                          onContentChange?.(updated);
+                                        }}
+                                        className="opacity-0 group-hover/cat:opacity-100 text-zinc-400 hover:text-rose-500 p-0.5 rounded transition cursor-pointer"
+                                        title={`Delete category "${catName}"`}
+                                      >
+                                        <Trash2 className="w-3 h-3" />
+                                      </button>
+                                    </div>
+
+                                    {skills.length === 0 && (
+                                      <span className="text-[11px] text-zinc-400 dark:text-zinc-500 italic mr-1">
+                                        No skills yet —
+                                      </span>
+                                    )}
+
                                     {skills.map((skill, sIdx) => (
                                       <span
                                         key={sIdx}
@@ -578,6 +793,8 @@ function ResumeDocumentView({
                               );
                             }
 
+                            if (skills.length === 0) return null;
+
                             return (
                               <p key={pIdx}>
                                 <strong className="font-bold text-zinc-950 dark:text-zinc-50">
@@ -592,6 +809,19 @@ function ResumeDocumentView({
 
                           return <p key={pIdx}>{p}</p>;
                         })}
+
+                        {/* Add Skill Category in Edit Mode */}
+                        {isEditing && (
+                          <div className="pt-2">
+                            <InlineAddSkillCategoryInput
+                              existingCategories={categoryNames}
+                              onAddCategory={(newCat) => {
+                                const updated = addResumeSkillCategory(content, newCat);
+                                onContentChange?.(updated);
+                              }}
+                            />
+                          </div>
+                        )}
                       </div>
                     );
                   })()
