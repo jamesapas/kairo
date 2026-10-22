@@ -69,16 +69,31 @@ export function VideoScriptView({
   const speedTable = [35, 60, 95, 140, 195];
   const speedMultiplier = speedTable[scrollSpeed - 1] || 60;
 
+function formatSectionTitle(title: string): string {
+  if (!title) return "";
+  return title.replace(/^(\d+[\.\)]\s*|Section\s+\d+[:\s-]*)/i, "").trim();
+}
+
   // Derive dynamic sections directly from current content so user edits are instantly reflected in teleprompter
   const sections: VideoScriptSection[] = useMemo(() => {
-    if (!content || !content.trim()) return [];
+    const baseSections = scriptData?.sections || [];
+    if (!content || !content.trim()) return baseSections;
+
+    // Check if content matches baseSections joined together
+    const baseJoined = baseSections
+      .map((s) => s.spokenText.trim())
+      .filter(Boolean)
+      .join("\n\n");
+
+    // If unmodified, preserve baseSections directly so titles and content never drift
+    if (baseSections.length > 0 && content.trim() === baseJoined) {
+      return baseSections;
+    }
 
     const paragraphs = content
       .split(/\n\s*\n/)
       .map((p) => p.trim())
       .filter(Boolean);
-
-    const baseSections = scriptData?.sections || [];
 
     if (baseSections.length > 0) {
       return paragraphs.map((para, idx) => {
@@ -363,7 +378,7 @@ export function VideoScriptView({
                         {sIdx + 1}
                       </span>
                       <h4 className="text-sm sm:text-base font-bold text-zinc-900 dark:text-zinc-100">
-                        {sec.title}
+                        {formatSectionTitle(sec.title)}
                       </h4>
                     </div>
 
@@ -539,7 +554,7 @@ export function VideoScriptView({
                     <div className="flex items-center gap-3 text-xs tracking-wider uppercase font-bold text-zinc-400 border-b border-zinc-800 pb-2">
                       <span className="text-amber-400">Section {idx + 1}</span>
                       <span>•</span>
-                      <span>{sec.title}</span>
+                      <span>{formatSectionTitle(sec.title)}</span>
                       {sec.timeRange && (
                         <>
                           <span>•</span>

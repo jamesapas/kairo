@@ -370,15 +370,43 @@ Category Name: Skill1, Skill2, Skill3]`;
 THE JOB DESCRIPTION DETERMINES WHAT THE CANDIDATE SHOULD TALK ABOUT. THE CANDIDATE'S PROFILE, RÉSUMÉ, AND PROJECTS PROVIDE THE EVIDENCE.
 Do not generate a generic introduction summarizing the candidate's general background. Analyze the job description first, identify what the employer cares about most, and build the script around those priorities.
 
-### 1. ANALYZE & RANK THE JOB DESCRIPTION
-Before generating the script, identify and rank:
-- Explicit application instructions: Specific questions, topics, examples, or information the employer requests in the application (e.g. "Answer: Why are you interested in this role?", "Walk us through a technical challenge", "Explain a time you caught a bug"). These take HIGHEST priority and must receive dedicated spoken time.
-- Must-have requirements: Skills, experience, and capabilities explicitly required for the role.
-- Core responsibilities: The actual work the candidate will be expected to perform.
-- Work style and expectations: Ownership, communication, independence, collaboration, code review, testing, AI-assisted development workflow.
-- Preferred qualifications: Nice-to-have skills and relevant domain experience (secondary priority unless candidate has standout evidence).
+### 1. EXPLICIT APPLICATION & INTRO VIDEO QUESTIONS (HIGHEST PRIORITY)
+- Many job postings include explicit instructions, questions, or screening prompts for candidates to answer in their intro video (e.g., sections labeled "APPLICATION REQUIREMENTS", "INTRO VIDEO (1-2 MINUTES)", "SCREENING QUESTIONS", "PLEASE ANSWER IN YOUR VIDEO:").
+- SCAN & DETECT ALL EXPLICIT QUESTIONS: You MUST thoroughly scan the job description for questions such as:
+  * "Describe your experience with [Technologies, e.g. React.js and TypeScript]"
+  * "Describe a software project you contributed to and your role in the project"
+  * "Have you used AI-assisted development tools such as ChatGPT, Claude, GitHub Copilot, or Cursor? If so, explain how."
+  * "What is your preferred hourly rate or salary expectation?"
+  * "What is your availability to start?"
+- DEDICATED SPOKEN SECTIONS: When the employer asks explicit questions, the video script MUST dedicate specific sections to answering each question directly, intelligently, and thoroughly!
+- ACCURATE SECTION TITLES: Give each section a clean title matching the exact question answered (e.g. "Experience with React & TypeScript", "Project Contribution & Role", "AI-Assisted Development Workflow", "Compensation & Availability").
+- SALARY / RATE HANDLING: If the employer asks for hourly rate or salary expectation:
+  * Check candidate profile or candidate notes. If provided, state it clearly.
+  * If not explicitly stated, include a polite, professional, confident response with an editable placeholder tag:
+    "Regarding compensation, my preferred rate is around [Insert Rate, e.g. $X/hr or aligned with your posted budget], and I am available to start immediately."
+  * NEVER ignore the salary question if asked by the employer!
 
-### 2. MAP REQUIREMENTS TO CANDIDATE EVIDENCE
+### 2. CLOSEST ROLE & EXPERIENCE MATCHING
+- IDENTIFY THE PRIMARY DOMAIN of the target role (e.g. Full Stack Developer, Frontend Developer, Backend Engineer, Mobile Developer, DevOps, etc.).
+- ALWAYS MATCH THE CLOSEST RELEVANT EXPERIENCE: When introducing the candidate's professional background and previous roles, ALWAYS feature and speak about the experience that is closest in title, scope, and technical depth to the target role.
+- CRITICAL EXAMPLE: If the target job is "Full Stack Developer", you MUST speak about the candidate's Full Stack engineering experience (both frontend client-side and backend APIs/architecture/database), NOT merely a Frontend role! If applying for a "Backend" role, focus on backend services, APIs, and databases.
+- Never downplay the candidate by introducing them with a narrower past title if they have held a title or experience that directly matches the target role!
+
+### 3. AI-ASSISTED DEVELOPMENT TOOLS VS. BACKEND AI APIs (CRITICAL DISTINCTION)
+- Understand what "AI-assisted development tools" means:
+  * AI-ASSISTED DEVELOPMENT TOOLS are DEVELOPER WORKFLOW AND AGENTIC CODING TOOLS used by the software engineer to accelerate and enhance their development lifecycle:
+    - Cursor AI (IDE with Composer, agentic multi-file editing, codebase indexing, semantic search, fast refactoring)
+    - Claude Code (Anthropic's agentic CLI coding tool for automated repo exploration, test-driven iteration, git workflows)
+    - GitHub Copilot (inline completions, workspace chat, PR generation)
+    - ChatGPT / Claude web (architectural brainstorming, algorithm design, debugging tricky race conditions, regex/SQL optimization)
+    - Windsurf, v0, Supermaven
+  * WHAT THEY ARE NOT: DO NOT confuse "AI-assisted development tools" with "integrating LLM APIs" (like calling OpenAI API, Anthropic Claude API, Google Gemini API, or LangChain into an app). Integrating an API is a product feature, NOT an AI-assisted development workflow!
+- HOW TO ANSWER: When the employer asks "Have you used AI-assisted development tools?", speak to the candidate's actual engineering workflow:
+  * Mention modern tools like Cursor AI and Claude Code alongside Copilot/ChatGPT.
+  * Explain practical usage: rapid boilerplate scaffolding, architecture sanity checks, generating edge-case unit and integration tests, refactoring complex code, and diagnosing tricky bugs.
+  * Emphasize engineering rigor: "I use AI tools to multiply velocity and explore solution spaces, while maintaining full ownership of code quality, type safety, architecture decisions, and security review."
+
+### 4. MAP REQUIREMENTS TO CANDIDATE EVIDENCE
 - Use the candidate's verified profile, experiences, projects, skills, education, and any candidate notes provided.
 - For every important requirement, determine:
   * What the employer wants to know.
@@ -386,26 +414,20 @@ Before generating the script, identify and rank:
   * What the candidate specifically contributed.
   * What outcome, implementation detail, or example makes the evidence convincing.
   * Whether the candidate has a genuine gap that should not be misrepresented.
-- Select projects based on their relevance to the job, not simply because they are newest or most impressive.
 - STRICT RULE: NEVER invent, fabricate, or hallucinate experience, achievements, metrics, technical skills, or project functionality.
-- If the employer asks a direct question or demands information that available candidate data cannot answer:
+- If the employer asks a direct question that candidate data cannot answer:
   * In the script, include a clear placeholder (e.g. "[Candidate Note: Briefly explain your personal motivation for Company X / your experience with Y]").
   * Mark it as "missing" or "partial" in the requirement coverage summary.
-  * Set hasUnansweredQuestions to true and summarize the missing question. Do NOT claim the script is complete if important requested information is missing!
+  * Set hasUnansweredQuestions to true and summarize the missing question.
 
-### 3. GENERATE SCRIPT TIMINGS & ALLOCATION
-- Target 2 to 3 minutes of natural spoken delivery (~260 to 380 spoken words, ~130–150 wpm).
-- Conversational, first-person spoken English ("I", "my work on...").
-- Keep self-introduction brief (15-20 seconds max). Avoid generic filler.
-- Allocate time according to importance of employer requirements (e.g., if employer asks specific questions, allocate dedicated time; if role emphasizes API integrations, demonstrate integration experience; if AI-assisted development is emphasized, explain testing and code review workflow; if ownership is emphasized, show evidence of independent delivery).
-- Adapt structure flexibly:
-  1. Brief introduction and relevant background
-  2. Strongest relevant professional experience
-  3. One or two projects demonstrating employer's key requirements
-  4. Direct answers to any specific questions or requested examples
-  5. Relevant technical workflow, problem-solving approach, or work style
-  6. Short closing connecting candidate's strengths to the role
-- FOCUS & CONCISENESS: Output the top 4 to 6 most critical priorities in coverage (prioritize explicit questions, then core must-haves). Keep each item's 'howAddressed' and 'supportingEvidence' punchy and concise (1-2 sentences).
+### 5. SCRIPT ALLOCATION & SECTION INTEGRITY
+- Target duration: If employer specifies a duration (e.g. "1-2 minutes"), STRICTLY target ~160 to 260 words (~60-120 seconds). If not specified, target 2 to 3 minutes (~260 to 380 words).
+- Conversational, first-person spoken English ("I", "my work on..."). Keep sentences punchy, natural, and rhythmic for reading aloud.
+- STRICT SECTION TITLE RULES:
+  * Clean titles WITHOUT numbering (e.g. write "Introduction & Role Alignment", "Core Project: Kairo", "AI-Assisted Workflow", NOT "1. Introduction" or "2. Core Project: Kairo").
+  * STRICT CONTENT ALIGNMENT: Every section's 'title' MUST accurately describe the exact content spoken in 'spokenText'. NEVER title a section 'Core Project: [X]' unless that section's 'spokenText' exclusively discusses project [X]!
+  * Arrange 'sections' in chronological delivery order.
+  * 'content' string must match the exact spoken dialogue of all sections joined by double newlines.
 
 Return JSON matching:
 {
@@ -416,10 +438,10 @@ Return JSON matching:
     "sections": [
       {
         "id": string, // "section-1", "section-2", etc.
-        "title": string, // Section title, e.g. "Introduction & Role Alignment", "Core Project: Distributed API Gateway", "Direct Answer: AI Workflow & Testing", "Closing"
+        "title": string, // Clean section title WITHOUT numbers, e.g. "Introduction & Role Alignment", "Relevant Experience: Full Stack Architecture", "Core Project: Kairo", "Direct Answer: AI Workflow & Testing", "Compensation & Availability", "Closing"
         "timeRange": string, // e.g. "0:00 - 0:25"
         "estimatedSeconds": number, // e.g. 25
-        "spokenText": string, // Spoken dialogue for this section
+        "spokenText": string, // Spoken dialogue for this section - MUST strictly match the section title
         "requirementAddressed": string, // Requirement or prompt addressed
         "deliveryTip": string // Pacing / tone coaching tip, e.g. "Warm, confident eye contact; pause slightly after naming key metrics"
       }
@@ -680,11 +702,20 @@ NOTE FOR TECHNICAL SKILLS:
 
     if (contentType === "video-script") {
       const scriptData = parsed.scriptData as VideoScriptData | undefined;
-      if (scriptData && Array.isArray(scriptData.sections)) {
-        const fullContent =
-          parsed.content && parsed.content.trim()
-            ? parsed.content.trim()
-            : scriptData.sections.map((s) => s.spokenText).join("\n\n");
+      if (scriptData && Array.isArray(scriptData.sections) && scriptData.sections.length > 0) {
+        // Clean section titles from accidental AI numbers (e.g. "2. Core Project: Kairo" -> "Core Project: Kairo")
+        scriptData.sections = scriptData.sections.map((sec, idx) => ({
+          ...sec,
+          id: sec.id || `section-${idx + 1}`,
+          title: (sec.title || `Section ${idx + 1}`).replace(/^(\d+[\.\)]\s*|Section\s+\d+[:\s-]*)/i, "").trim(),
+          spokenText: (sec.spokenText || "").trim(),
+        }));
+
+        // ALWAYS build finalContent directly from sections to guarantee 100% synchronization
+        const fullContent = scriptData.sections
+          .map((s) => s.spokenText)
+          .filter(Boolean)
+          .join("\n\n");
         finalContent = fullContent;
         const words = fullContent.trim().split(/\s+/).filter(Boolean).length;
         scriptData.totalWordCount = scriptData.totalWordCount || words;
