@@ -574,6 +574,10 @@ function ResumeDocumentView({
     }
 
     const isSectionHeader =
+      !line.includes("|") &&
+      !line.startsWith("•") &&
+      !line.startsWith("-") &&
+      !line.startsWith("*") &&
       line.match(/^[A-Z\s/&-]{3,}$/) &&
       (line.includes("SUMMARY") ||
         line.includes("SKILL") ||

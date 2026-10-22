@@ -448,51 +448,76 @@ export function parseResumeProjects(content: string): ParsedProject[] {
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
+    if (!line) continue;
+    if (line.match(/^[-=_]{3,}$/)) continue;
 
-    if (line.match(/^KEY\s+PROJECTS?/i)) {
-      finalizeProject();
-      currentCategory = "key";
-      continue;
-    } else if (line.match(/^SIDE\s+PROJECTS?/i)) {
-      finalizeProject();
-      currentCategory = "side";
-      continue;
-    } else if (line.match(/^CAPSTONE\s+PROJECTS?/i)) {
-      finalizeProject();
-      currentCategory = "capstone";
-      continue;
-    } else if (line.match(/PROJECTS?/i) && !line.includes("EXPERIENCE") && !line.includes("EDUCATION")) {
-      finalizeProject();
-      currentCategory = "key";
-      continue;
-    } else if (
-      line.match(/^[A-Z\s/&-]{3,}$/) &&
-      (line.includes("EXPERIENCE") || line.includes("EDUCATION") || line.includes("SKILL") || line.includes("SUMMARY"))
-    ) {
-      finalizeProject();
-      currentCategory = null;
-      continue;
+    const nextLine = lines[i + 1]?.trim();
+    const hasUnderline = !!(nextLine && /^[-=_]{3,}$/.test(nextLine));
+
+    // Section header check (uppercase header, optionally followed by underline)
+    const isHeaderCandidate =
+      !line.includes("|") &&
+      !line.startsWith("•") &&
+      !line.startsWith("-") &&
+      !line.startsWith("*") &&
+      (hasUnderline || /^[A-Z\s/&-]{3,}$/.test(line));
+
+    if (isHeaderCandidate) {
+      if (/^KEY\s+PROJECTS?$/i.test(line)) {
+        finalizeProject();
+        currentCategory = "key";
+        if (hasUnderline) i++;
+        continue;
+      } else if (/^SIDE\s+PROJECTS?$/i.test(line)) {
+        finalizeProject();
+        currentCategory = "side";
+        if (hasUnderline) i++;
+        continue;
+      } else if (/^CAPSTONE\s+PROJECTS?$/i.test(line)) {
+        finalizeProject();
+        currentCategory = "capstone";
+        if (hasUnderline) i++;
+        continue;
+      } else if (/^(?:[A-Z/&-]+\s+)*PROJECTS?$/i.test(line) && !line.includes("EXPERIENCE")) {
+        finalizeProject();
+        currentCategory = "key";
+        if (hasUnderline) i++;
+        continue;
+      } else if (
+        /^(?:PROFESSIONAL\s+)?SUMMARY$/i.test(line) ||
+        /^(?:TECHNICAL\s+)?SKILLS?$/i.test(line) ||
+        /^(?:PROFESSIONAL\s+)?EXPERIENCE$/i.test(line) ||
+        /^EDUCATION$/i.test(line) ||
+        hasUnderline
+      ) {
+        finalizeProject();
+        currentCategory = null;
+        if (hasUnderline) i++;
+        continue;
+      }
     }
 
     if (!currentCategory) continue;
-    if (line.match(/^[-=_]{3,}$/)) continue;
-    if (!line) continue;
+
+    // Check if line is bullet point
+    if (line.startsWith("•") || line.startsWith("-") || line.startsWith("*")) {
+      if (currentProject) {
+        const bulletText = line.replace(/^[•\-*]\s*/, "").trim();
+        currentProject.bullets = [...(currentProject.bullets || []), bulletText];
+        currentRawLines.push(line);
+      }
+      continue;
+    }
 
     // Check if line is project title
-    if (!line.startsWith("•") && !line.startsWith("-")) {
-      finalizeProject();
-      const parts = line.split("|").map((s) => s.trim());
-      currentProject = {
-        title: parts[0],
-        link: parts[1] || undefined,
-        bullets: [],
-      };
-      currentRawLines.push(line);
-    } else if (currentProject) {
-      const bulletText = line.replace(/^[•-]\s*/, "");
-      currentProject.bullets = [...(currentProject.bullets || []), bulletText];
-      currentRawLines.push(line);
-    }
+    finalizeProject();
+    const parts = line.split("|").map((s) => s.trim());
+    currentProject = {
+      title: parts[0],
+      link: parts[1] || undefined,
+      bullets: [],
+    };
+    currentRawLines.push(line);
   }
 
   finalizeProject();
@@ -589,9 +614,7 @@ export function autoDetectResumeProjectTypes(
 // Helper to rebuild resume with reorganized projects
 function reassembleResumeProjects(content: string, projects: ParsedProject[]): string {
   const normalized = content.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
-
-  // Regex matching all project sections (KEY PROJECTS, SIDE PROJECTS, CAPSTONE PROJECT, PROJECTS)
-  const allProjectsRegex = /(?:\n+(?:KEY\s+PROJECTS?|SIDE\s+PROJECTS?|CAPSTONE\s+PROJECTS?|[A-Z\s/&-]*PROJECTS?)\s*\n[-=_]+\s*\n[\s\S]*?)(?=\n+[A-Z\s/&-]{3,}\s*(?:\n[-=_]+\s*\n|\n|$)|$)/gi;
+  const lines = normalized.split("\n");
 
   const renderProject = (p: ParsedProject) => {
     const titleLine = p.link ? `${p.title} | ${p.link}` : p.title;
@@ -605,37 +628,98 @@ function reassembleResumeProjects(content: string, projects: ParsedProject[]): s
 
   const newSectionParts: string[] = [];
   if (keyProjects.length > 0) {
-    newSectionParts.push(`\n\nKEY PROJECTS\n------------\n${keyProjects.map(renderProject).join("\n\n")}`);
+    newSectionParts.push(`KEY PROJECTS\n------------\n${keyProjects.map(renderProject).join("\n\n")}`);
   }
   if (sideProjects.length > 0) {
-    newSectionParts.push(`\n\nSIDE PROJECTS\n-------------\n${sideProjects.map(renderProject).join("\n\n")}`);
+    newSectionParts.push(`SIDE PROJECTS\n-------------\n${sideProjects.map(renderProject).join("\n\n")}`);
   }
   if (capstoneProjects.length > 0) {
     const header = capstoneProjects.length > 1 ? "CAPSTONE PROJECTS" : "CAPSTONE PROJECT";
     const underline = "-".repeat(header.length);
-    newSectionParts.push(`\n\n${header}\n${underline}\n${capstoneProjects.map(renderProject).join("\n\n")}`);
+    newSectionParts.push(`${header}\n${underline}\n${capstoneProjects.map(renderProject).join("\n\n")}`);
   }
 
-  const replacement = newSectionParts.join("");
+  const replacement = newSectionParts.join("\n\n");
 
-  if (allProjectsRegex.test(normalized)) {
-    // Replace existing project sections with newly organized ones
-    let replaced = false;
-    const result = normalized.replace(allProjectsRegex, () => {
-      if (!replaced) {
-        replaced = true;
-        return replacement;
+  const isProjectHeaderLine = (line: string) => {
+    const trimmed = line.trim();
+    return (
+      /^KEY\s+PROJECTS?$/i.test(trimmed) ||
+      /^SIDE\s+PROJECTS?$/i.test(trimmed) ||
+      /^CAPSTONE\s+PROJECTS?$/i.test(trimmed) ||
+      /^(?:[A-Z/&-]+\s+)*PROJECTS?$/i.test(trimmed)
+    );
+  };
+
+  const isAnySectionHeaderLine = (idx: number) => {
+    const line = lines[idx]?.trim();
+    if (!line) return false;
+    const nextLine = lines[idx + 1]?.trim();
+    const hasUnderline = !!(nextLine && /^[-=_]{3,}$/.test(nextLine));
+    return (
+      !line.includes("|") &&
+      !line.startsWith("•") &&
+      !line.startsWith("-") &&
+      !line.startsWith("*") &&
+      (hasUnderline || /^[A-Z\s/&-]{3,}$/.test(line)) &&
+      (
+        hasUnderline ||
+        /^(?:PROFESSIONAL\s+)?SUMMARY$/i.test(line) ||
+        /^(?:TECHNICAL\s+)?SKILLS?$/i.test(line) ||
+        /^(?:PROFESSIONAL\s+)?EXPERIENCE$/i.test(line) ||
+        /^EDUCATION$/i.test(line)
+      )
+    );
+  };
+
+  // Find start and end line of existing project sections
+  let firstProjHeaderLine = -1;
+  let afterLastProjSectionLine = -1;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    const nextLine = lines[i + 1]?.trim();
+    const hasUnderline = !!(nextLine && /^[-=_]{3,}$/.test(nextLine));
+
+    if (isProjectHeaderLine(line) && (hasUnderline || /^[A-Z\s/&-]{3,}$/.test(line))) {
+      if (firstProjHeaderLine === -1) {
+        firstProjHeaderLine = i;
       }
-      return "";
-    });
-    return result.trim();
+      if (hasUnderline) i++;
+      continue;
+    }
+
+    // If we have already entered the project sections, check if a non-project section header begins
+    if (firstProjHeaderLine !== -1 && isAnySectionHeaderLine(i)) {
+      afterLastProjSectionLine = i;
+      break;
+    }
+  }
+
+  if (firstProjHeaderLine !== -1) {
+    const beforeLines = lines.slice(0, firstProjHeaderLine);
+    const afterLines = afterLastProjSectionLine !== -1 ? lines.slice(afterLastProjSectionLine) : [];
+
+    const beforeText = beforeLines.join("\n").trimEnd();
+    const afterText = afterLines.join("\n").trimStart();
+
+    if (replacement.length === 0) {
+      return afterText ? `${beforeText}\n\n${afterText}`.trim() : beforeText.trim();
+    }
+
+    if (afterText) {
+      return `${beforeText}\n\n${replacement}\n\n${afterText}`.trim();
+    }
+    return `${beforeText}\n\n${replacement}`.trim();
   }
 
   // Fallback: append before EDUCATION or at end
-  const eduRegex = /(\n+EDUCATION\s*\n[-=_]+\s*\n)/i;
-  if (eduRegex.test(normalized)) {
-    return normalized.replace(eduRegex, `${replacement}$1`).trim();
+  const eduMatch = normalized.match(/\n+EDUCATION\s*\n[-=_]+\s*\n/i);
+  if (eduMatch && eduMatch.index !== undefined) {
+    const before = normalized.slice(0, eduMatch.index).trimEnd();
+    const after = normalized.slice(eduMatch.index).trimStart();
+    return `${before}\n\n${replacement}\n\n${after}`.trim();
   }
 
-  return `${normalized}${replacement}`.trim();
+  return `${normalized.trimEnd()}\n\n${replacement}`.trim();
 }
