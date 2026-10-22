@@ -547,30 +547,15 @@ function formatSectionTitle(title: string): string {
             }}
             className="flex-1 overflow-y-auto scrollbar-thin px-6 sm:px-12 py-36 select-text"
           >
-            <div className="max-w-3xl mx-auto space-y-12">
+            <div className="max-w-3xl mx-auto space-y-8">
               {sections.length > 0 ? (
                 sections.map((sec, idx) => (
-                  <div key={sec.id || idx} className="space-y-4">
-                    {/* Section Label & Time */}
-                    <div className="flex items-center gap-3 text-xs tracking-wider uppercase font-bold text-zinc-400 border-b border-zinc-800 pb-2">
-                      <span className="text-amber-400">Section {idx + 1}</span>
-                      <span>•</span>
-                      <span>{formatSectionTitle(sec.title)}</span>
-                      {sec.timeRange && (
-                        <>
-                          <span>•</span>
-                          <span className="text-zinc-500">{sec.timeRange}</span>
-                        </>
-                      )}
-                    </div>
-
-                    {/* Spoken Text */}
-                    <p
-                      className={`${fontSizes[fontSizeIndex].class} text-zinc-100 font-sans tracking-wide font-normal`}
-                    >
-                      {sec.spokenText}
-                    </p>
-                  </div>
+                  <p
+                    key={sec.id || idx}
+                    className={`${fontSizes[fontSizeIndex].class} text-zinc-100 font-sans tracking-wide font-normal`}
+                  >
+                    {sec.spokenText}
+                  </p>
                 ))
               ) : (
                 <div
