@@ -33,6 +33,7 @@ import { GuestPreviewCard } from "./guest-preview-card";
 
 interface JobTableProps {
   jobs: JobApplication[];
+  selectedStatus?: string;
   isLoading?: boolean;
   onSelectJob: (job: JobApplication) => void;
   onEditJob: (job: JobApplication) => void;
@@ -373,6 +374,7 @@ function getPageNumbers(current: number, total: number): (number | "...")[] {
 
 export function JobTable({
   jobs,
+  selectedStatus = "all",
   isLoading = false,
   isGuest = false,
   onSelectJob,
@@ -386,22 +388,42 @@ export function JobTable({
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
-  // Group jobs into sections: Pinned, Active, Rejected
-  const pinnedJobs = useMemo(
-    () => jobs.filter((j) => j.isPinned && j.status !== "rejected"),
-    [jobs]
-  );
-  const activeJobs = useMemo(
-    () => jobs.filter((j) => !j.isPinned && j.status !== "rejected"),
-    [jobs]
-  );
-  const rejectedJobs = useMemo(
-    () => jobs.filter((j) => j.status === "rejected"),
+  const isArchiveView =
+    selectedStatus === "archived" ||
+    selectedStatus === "rejected" ||
+    selectedStatus === "declined" ||
+    selectedStatus === "withdrawn";
+
+  // Archived jobs list
+  const archiveJobs = useMemo(
+    () =>
+      jobs.filter(
+        (j) =>
+          j.status === "rejected" ||
+          j.status === "declined" ||
+          j.status === "withdrawn"
+      ),
     [jobs]
   );
 
-  const totalActive = activeJobs.length;
-  const totalPages = Math.max(1, Math.ceil(totalActive / pageSize));
+  // Main table list: non-archived jobs, with pinned jobs pinned at the top
+  const mainJobs = useMemo(() => {
+    const active = jobs.filter(
+      (j) =>
+        j.status !== "rejected" &&
+        j.status !== "declined" &&
+        j.status !== "withdrawn"
+    );
+    return [...active].sort((a, b) => {
+      if (a.isPinned && !b.isPinned) return -1;
+      if (!a.isPinned && b.isPinned) return 1;
+      return 0;
+    });
+  }, [jobs]);
+
+  const displayList = isArchiveView ? archiveJobs : mainJobs;
+  const totalItems = displayList.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
   const safeCurrentPage = Math.min(currentPage, totalPages);
 
   // Reset or clamp page if list shrinks
@@ -411,12 +433,17 @@ export function JobTable({
     }
   }, [currentPage, totalPages]);
 
-  const startIndex = (safeCurrentPage - 1) * pageSize;
-  const paginatedActiveJobs = useMemo(() => {
-    return activeJobs.slice(startIndex, startIndex + pageSize);
-  }, [activeJobs, startIndex, pageSize]);
+  // Reset page when switching between archive and active view
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedStatus]);
 
-  const endIndex = Math.min(startIndex + paginatedActiveJobs.length, totalActive);
+  const startIndex = (safeCurrentPage - 1) * pageSize;
+  const paginatedJobs = useMemo(() => {
+    return displayList.slice(startIndex, startIndex + pageSize);
+  }, [displayList, startIndex, pageSize]);
+
+  const endIndex = Math.min(startIndex + paginatedJobs.length, totalItems);
 
   if (isLoading) {
     return (
@@ -634,209 +661,141 @@ export function JobTable({
     });
   };
 
-  return (
-    <div className="space-y-6">
-      {/* Pinned Section (if any) */}
-      {pinnedJobs.length > 0 && (
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 px-1">
-            <div className="p-1 rounded-md bg-rose-100 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400">
-              <Pin className="w-3 h-3 fill-rose-600 text-rose-600" />
-            </div>
-            <h3 className="text-xs font-bold uppercase tracking-wider text-rose-900 dark:text-rose-400">
-              Pinned ({pinnedJobs.length})
-            </h3>
-          </div>
-          <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-rose-200/90 dark:border-rose-900/50 shadow-[0_2px_8px_rgba(244,63,94,0.06)] overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[1000px] text-left border-collapse table-fixed">
-                <thead>
-                  <tr className="border-b border-rose-100 dark:border-rose-900/50 bg-rose-50/40 dark:bg-rose-950/20 text-[10px] uppercase font-bold tracking-wider text-zinc-500 dark:text-zinc-400">
-                    <th className="py-3 pl-4 pr-1 w-14 text-center"></th>
-                    <th className="py-3 px-4 w-[340px]">Role & Company</th>
-                    <th className="py-3 px-2.5 w-[135px]">Status</th>
-                    <th className="py-3 px-2.5 w-[125px]">Platform</th>
-                    <th className="py-3 px-2.5 w-[90px]">Workplace</th>
-                    <th className="py-3 px-2.5 w-[115px]">Salary</th>
-                    <th className="py-3 px-2.5 w-[90px]">Applied</th>
-                    <th className="py-3 px-4 w-12 text-right"></th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800 text-xs">
-                  {renderJobRows(pinnedJobs)}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      )}
+  const renderTableFooter = () => (
+    <div className="bg-white dark:bg-zinc-900 px-4 py-2.5 border-t border-zinc-100 dark:border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+      {/* Left: Summary & Rows Selector */}
+      <div className="flex items-center gap-3 text-zinc-500 dark:text-zinc-400 font-medium">
+        <span>
+          Showing{" "}
+          <span className="text-zinc-900 dark:text-zinc-100 font-semibold">
+            {totalItems === 0 ? 0 : startIndex + 1}–{endIndex}
+          </span>{" "}
+          of{" "}
+          <span className="text-zinc-900 dark:text-zinc-100 font-semibold">
+            {totalItems}
+          </span>
+        </span>
 
-      {/* Main Applications Section with Clean Table Footer */}
-      <div className="space-y-2">
-        {pinnedJobs.length > 0 && activeJobs.length > 0 && (
-          <div className="flex items-center gap-2 px-1">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-600 dark:text-zinc-400">
-              Applications ({activeJobs.length})
-            </h3>
-          </div>
-        )}
-        <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200/90 dark:border-zinc-800 shadow-xs overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[1000px] text-left border-collapse table-fixed">
-              <thead>
-                <tr className="border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50/80 dark:bg-zinc-800/80 text-[10px] uppercase font-bold tracking-wider text-zinc-400 dark:text-zinc-500">
-                  <th className="py-3 pl-4 pr-1 w-14 text-center"></th>
-                  <th className="py-3 px-4 w-[340px]">Role & Company</th>
-                  <th className="py-3 px-2.5 w-[135px]">Status</th>
-                  <th className="py-3 px-2.5 w-[125px]">Platform</th>
-                  <th className="py-3 px-2.5 w-[90px]">Workplace</th>
-                  <th className="py-3 px-2.5 w-[115px]">Salary</th>
-                  <th className="py-3 px-2.5 w-[90px]">Applied</th>
-                  <th className="py-3 px-4 w-12 text-right"></th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800 text-xs">
-                {activeJobs.length === 0 ? (
-                  <tr>
-                    <td colSpan={8} className="py-10 text-center text-zinc-400 dark:text-zinc-500 text-xs">
-                      No matching applications found.
-                    </td>
-                  </tr>
-                ) : (
-                  renderJobRows(paginatedActiveJobs)
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Lowkey Minimalist Table Footer */}
-          <div className="bg-white dark:bg-zinc-900 px-4 py-2.5 border-t border-zinc-100 dark:border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-            {/* Left: Summary & Rows Selector */}
-            <div className="flex items-center gap-3 text-zinc-500 dark:text-zinc-400 font-medium">
-              <span>
-                Showing <span className="text-zinc-900 dark:text-zinc-100 font-semibold">{totalActive === 0 ? 0 : startIndex + 1}–{endIndex}</span> of{" "}
-                <span className="text-zinc-900 dark:text-zinc-100 font-semibold">{totalActive}</span>
-              </span>
-
-              <div className="flex items-center gap-1.5 pl-3 border-l border-zinc-200 dark:border-zinc-700">
-                <span className="text-[11px] text-zinc-400 dark:text-zinc-500">Show:</span>
-                <select
-                  value={pageSize}
-                  onChange={(e) => {
-                    setPageSize(Number(e.target.value));
-                    setCurrentPage(1);
-                  }}
-                  className="h-8 bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100/80 dark:hover:bg-zinc-700 border border-zinc-200 dark:border-zinc-700 text-zinc-800 dark:text-zinc-200 rounded-lg px-2 text-xs font-semibold focus:outline-none transition cursor-pointer"
-                >
-                  <option value={5}>5 / page</option>
-                  <option value={10}>10 / page</option>
-                  <option value={25}>25 / page</option>
-                  <option value={50}>50 / page</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Right: Lowkey Consistent Navigation Controls */}
-            <div className="flex items-center gap-2 self-end sm:self-auto">
-              {/* Page Info Badge with Matching h-8 Height */}
-              <div className="h-8 px-2.5 rounded-lg bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200/80 dark:border-zinc-700 text-xs font-medium text-zinc-500 dark:text-zinc-400 flex items-center gap-1 shrink-0">
-                <span>Page</span>
-                <span className="font-bold text-zinc-900 dark:text-zinc-100">{safeCurrentPage}</span>
-                <span className="text-zinc-400 dark:text-zinc-600">/</span>
-                <span className="font-semibold text-zinc-700 dark:text-zinc-300">{totalPages}</span>
-              </div>
-
-              {/* Navigation Capsule with Matching h-8 Height */}
-              <div className="h-8 px-1 rounded-lg bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200/80 dark:border-zinc-700 flex items-center gap-0.5 shrink-0">
-                {/* Jump to First Page */}
-                <button
-                  type="button"
-                  onClick={() => setCurrentPage(1)}
-                  disabled={safeCurrentPage === 1}
-                  className="h-6 w-6 rounded-md flex items-center justify-center hover:bg-white dark:hover:bg-zinc-700 hover:text-zinc-900 dark:hover:text-zinc-100 disabled:opacity-25 disabled:cursor-not-allowed disabled:hover:bg-transparent text-zinc-500 dark:text-zinc-400 transition cursor-pointer"
-                  title="First page"
-                >
-                  <ChevronsLeft className="w-3.5 h-3.5" />
-                </button>
-
-                {/* Previous Page */}
-                <button
-                  type="button"
-                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                  disabled={safeCurrentPage === 1}
-                  className="h-6 px-1.5 rounded-md flex items-center gap-0.5 text-xs font-medium hover:bg-white dark:hover:bg-zinc-700 hover:text-zinc-900 dark:hover:text-zinc-100 disabled:opacity-25 disabled:cursor-not-allowed disabled:hover:bg-transparent text-zinc-600 dark:text-zinc-300 transition cursor-pointer"
-                  title="Previous page"
-                >
-                  <ChevronLeft className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline text-[11px]">Prev</span>
-                </button>
-
-                {/* Page Numbers */}
-                <div className="flex items-center gap-0.5 px-0.5">
-                  {getPageNumbers(safeCurrentPage, totalPages).map((p, idx) => {
-                    if (p === "...") {
-                      return (
-                        <span
-                          key={`ellipsis-${idx}`}
-                          className="px-1 text-zinc-400 dark:text-zinc-600 font-mono text-xs select-none"
-                        >
-                          ...
-                        </span>
-                      );
-                    }
-                    const isCurrent = p === safeCurrentPage;
-                    return (
-                      <button
-                        type="button"
-                        key={p}
-                        onClick={() => setCurrentPage(p as number)}
-                        className={`min-w-[24px] h-6 px-1.5 rounded-md text-xs font-semibold transition cursor-pointer flex items-center justify-center select-none ${
-                          isCurrent
-                            ? "bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-bold"
-                            : "text-zinc-600 dark:text-zinc-400 hover:bg-white dark:hover:bg-zinc-700 hover:text-zinc-900 dark:hover:text-zinc-100"
-                        }`}
-                      >
-                        {p}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* Next Page */}
-                <button
-                  type="button"
-                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={safeCurrentPage === totalPages}
-                  className="h-6 px-1.5 rounded-md flex items-center gap-0.5 text-xs font-medium hover:bg-white dark:hover:bg-zinc-700 hover:text-zinc-900 dark:hover:text-zinc-100 disabled:opacity-25 disabled:cursor-not-allowed disabled:hover:bg-transparent text-zinc-600 dark:text-zinc-300 transition cursor-pointer"
-                  title="Next page"
-                >
-                  <span className="hidden sm:inline text-[11px]">Next</span>
-                  <ChevronRight className="w-3.5 h-3.5" />
-                </button>
-
-                {/* Jump to Last Page */}
-                <button
-                  type="button"
-                  onClick={() => setCurrentPage(totalPages)}
-                  disabled={safeCurrentPage === totalPages}
-                  className="h-6 w-6 rounded-md flex items-center justify-center hover:bg-white dark:hover:bg-zinc-700 hover:text-zinc-900 dark:hover:text-zinc-100 disabled:opacity-25 disabled:cursor-not-allowed disabled:hover:bg-transparent text-zinc-500 dark:text-zinc-400 transition cursor-pointer"
-                  title="Last page"
-                >
-                  <ChevronsRight className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
-          </div>
+        <div className="flex items-center gap-1.5 pl-3 border-l border-zinc-200 dark:border-zinc-700">
+          <span className="text-[11px] text-zinc-400 dark:text-zinc-500">Show:</span>
+          <select
+            value={pageSize}
+            onChange={(e) => {
+              setPageSize(Number(e.target.value));
+              setCurrentPage(1);
+            }}
+            className="h-8 bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100/80 dark:hover:bg-zinc-700 border border-zinc-200 dark:border-zinc-700 text-zinc-800 dark:text-zinc-200 rounded-lg px-2 text-xs font-semibold focus:outline-hidden transition cursor-pointer"
+          >
+            <option value={5}>5 / page</option>
+            <option value={10}>10 / page</option>
+            <option value={25}>25 / page</option>
+            <option value={50}>50 / page</option>
+          </select>
         </div>
       </div>
 
-      {/* Rejected Section at the bottom */}
-      {rejectedJobs.length > 0 && (
-        <div className="space-y-2 pt-2">
+      {/* Right: Lowkey Consistent Navigation Controls */}
+      <div className="flex items-center gap-2 self-end sm:self-auto">
+        {/* Page Info Badge with Matching h-8 Height */}
+        <div className="h-8 px-2.5 rounded-lg bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200/80 dark:border-zinc-700 text-xs font-medium text-zinc-500 dark:text-zinc-400 flex items-center gap-1 shrink-0">
+          <span>Page</span>
+          <span className="font-bold text-zinc-900 dark:text-zinc-100">{safeCurrentPage}</span>
+          <span className="text-zinc-400 dark:text-zinc-600">/</span>
+          <span className="font-semibold text-zinc-700 dark:text-zinc-300">{totalPages}</span>
+        </div>
+
+        {/* Navigation Capsule with Matching h-8 Height */}
+        <div className="h-8 px-1 rounded-lg bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200/80 dark:border-zinc-700 flex items-center gap-0.5 shrink-0">
+          {/* Jump to First Page */}
+          <button
+            type="button"
+            onClick={() => setCurrentPage(1)}
+            disabled={safeCurrentPage === 1}
+            className="h-6 w-6 rounded-md flex items-center justify-center hover:bg-white dark:hover:bg-zinc-700 hover:text-zinc-900 dark:hover:text-zinc-100 disabled:opacity-25 disabled:cursor-not-allowed disabled:hover:bg-transparent text-zinc-500 dark:text-zinc-400 transition cursor-pointer"
+            title="First page"
+          >
+            <ChevronsLeft className="w-3.5 h-3.5" />
+          </button>
+
+          {/* Previous Page */}
+          <button
+            type="button"
+            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            disabled={safeCurrentPage === 1}
+            className="h-6 px-1.5 rounded-md flex items-center gap-0.5 text-xs font-medium hover:bg-white dark:hover:bg-zinc-700 hover:text-zinc-900 dark:hover:text-zinc-100 disabled:opacity-25 disabled:cursor-not-allowed disabled:hover:bg-transparent text-zinc-600 dark:text-zinc-300 transition cursor-pointer"
+            title="Previous page"
+          >
+            <ChevronLeft className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline text-[11px]">Prev</span>
+          </button>
+
+          {/* Page Numbers */}
+          <div className="flex items-center gap-0.5 px-0.5">
+            {getPageNumbers(safeCurrentPage, totalPages).map((p, idx) => {
+              if (p === "...") {
+                return (
+                  <span
+                    key={`ellipsis-${idx}`}
+                    className="px-1 text-zinc-400 dark:text-zinc-600 font-mono text-xs select-none"
+                  >
+                    ...
+                  </span>
+                );
+              }
+              const isCurrent = p === safeCurrentPage;
+              return (
+                <button
+                  type="button"
+                  key={p}
+                  onClick={() => setCurrentPage(p as number)}
+                  className={`min-w-[24px] h-6 px-1.5 rounded-md text-xs font-semibold transition cursor-pointer flex items-center justify-center select-none ${
+                    isCurrent
+                      ? "bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-bold"
+                      : "text-zinc-600 dark:text-zinc-400 hover:bg-white dark:hover:bg-zinc-700 hover:text-zinc-900 dark:hover:text-zinc-100"
+                  }`}
+                >
+                  {p}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Next Page */}
+          <button
+            type="button"
+            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+            disabled={safeCurrentPage === totalPages}
+            className="h-6 px-1.5 rounded-md flex items-center gap-0.5 text-xs font-medium hover:bg-white dark:hover:bg-zinc-700 hover:text-zinc-900 dark:hover:text-zinc-100 disabled:opacity-25 disabled:cursor-not-allowed disabled:hover:bg-transparent text-zinc-600 dark:text-zinc-300 transition cursor-pointer"
+            title="Next page"
+          >
+            <span className="hidden sm:inline text-[11px]">Next</span>
+            <ChevronRight className="w-3.5 h-3.5" />
+          </button>
+
+          {/* Jump to Last Page */}
+          <button
+            type="button"
+            onClick={() => setCurrentPage(totalPages)}
+            disabled={safeCurrentPage === totalPages}
+            className="h-6 w-6 rounded-md flex items-center justify-center hover:bg-white dark:hover:bg-zinc-700 hover:text-zinc-900 dark:hover:text-zinc-100 disabled:opacity-25 disabled:cursor-not-allowed disabled:hover:bg-transparent text-zinc-500 dark:text-zinc-400 transition cursor-pointer"
+            title="Last page"
+          >
+            <ChevronsRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="space-y-6">
+      {isArchiveView ? (
+        /* Archives Table (Only shown when selected status is archived or rejected) */
+        <div className="space-y-2">
           <div className="flex items-center gap-2 px-1">
-            <span className="w-2 h-2 rounded-full bg-rose-400/70 dark:bg-rose-500/40" />
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-500">
-              Archived / Rejected ({rejectedJobs.length})
+            <span className="w-2 h-2 rounded-full bg-rose-400/80 dark:bg-rose-500/50" />
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+              Archived / Rejected ({totalItems})
             </h3>
           </div>
           <div className="bg-zinc-50/40 dark:bg-zinc-950/40 rounded-2xl border border-zinc-200/70 dark:border-zinc-800/40 shadow-none overflow-hidden">
@@ -855,10 +814,53 @@ export function JobTable({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-200/50 dark:divide-zinc-800/30 text-xs">
-                  {renderJobRows(rejectedJobs, true)}
+                  {paginatedJobs.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="py-12 text-center text-zinc-400 dark:text-zinc-500 text-xs">
+                        No archived or rejected applications found.
+                      </td>
+                    </tr>
+                  ) : (
+                    renderJobRows(paginatedJobs, true)
+                  )}
                 </tbody>
               </table>
             </div>
+            {renderTableFooter()}
+          </div>
+        </div>
+      ) : (
+        /* Main Applications Table (Pinned + Active combined in one table) */
+        <div className="space-y-2">
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200/90 dark:border-zinc-800 shadow-xs overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[1000px] text-left border-collapse table-fixed">
+                <thead>
+                  <tr className="border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50/80 dark:bg-zinc-800/80 text-[10px] uppercase font-bold tracking-wider text-zinc-400 dark:text-zinc-500">
+                    <th className="py-3 pl-4 pr-1 w-14 text-center"></th>
+                    <th className="py-3 px-4 w-[340px]">Role & Company</th>
+                    <th className="py-3 px-2.5 w-[135px]">Status</th>
+                    <th className="py-3 px-2.5 w-[125px]">Platform</th>
+                    <th className="py-3 px-2.5 w-[90px]">Workplace</th>
+                    <th className="py-3 px-2.5 w-[115px]">Salary</th>
+                    <th className="py-3 px-2.5 w-[90px]">Applied</th>
+                    <th className="py-3 px-4 w-12 text-right"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800 text-xs">
+                  {paginatedJobs.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="py-12 text-center text-zinc-400 dark:text-zinc-500 text-xs">
+                        No matching applications found.
+                      </td>
+                    </tr>
+                  ) : (
+                    renderJobRows(paginatedJobs)
+                  )}
+                </tbody>
+              </table>
+            </div>
+            {renderTableFooter()}
           </div>
         </div>
       )}

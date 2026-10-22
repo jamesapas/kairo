@@ -479,7 +479,7 @@ export function JobDashboard({
             }}
             onFilterThisWeek={() => setWeekOnlyFilter((prev) => !prev)}
             onFilterInterviewing={() =>
-              setStatusFilter((curr) =>
+              setStatusFilter((curr: JobStatus | "all") =>
                 curr === "interviewing" ? "all" : "interviewing"
               )
             }
@@ -586,6 +586,7 @@ export function JobDashboard({
         {viewMode === "table" ? (
           <JobTable
             jobs={filteredJobs}
+            selectedStatus={statusFilter}
             isLoading={isLoading}
             isGuest={guestMode}
             onSelectJob={(job) => {
