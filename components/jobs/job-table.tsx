@@ -20,6 +20,7 @@ import {
   Copy,
   Check,
   Link2,
+  RotateCcw,
 } from "lucide-react";
 import {
   JobApplication,
@@ -42,6 +43,8 @@ interface JobTableProps {
   onTogglePin: (id: string) => void;
   onAddNew: () => void;
   isGuest?: boolean;
+  hasActiveFilters?: boolean;
+  onClearFilters?: () => void;
 }
 
 export function MatchCircularProgress({
@@ -377,6 +380,8 @@ export function JobTable({
   selectedStatus = "all",
   isLoading = false,
   isGuest = false,
+  hasActiveFilters = false,
+  onClearFilters,
   onSelectJob,
   onEditJob,
   onDeleteJob,
@@ -817,7 +822,19 @@ export function JobTable({
                   {paginatedJobs.length === 0 ? (
                     <tr>
                       <td colSpan={8} className="py-12 text-center text-zinc-400 dark:text-zinc-500 text-xs">
-                        No archived or rejected applications found.
+                        <div className="flex flex-col items-center justify-center gap-2">
+                          <p>No archived or rejected applications found.</p>
+                          {hasActiveFilters && onClearFilters && (
+                            <button
+                              type="button"
+                              onClick={onClearFilters}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 hover:bg-rose-100 dark:hover:bg-rose-900/60 transition cursor-pointer"
+                            >
+                              <RotateCcw className="w-3.5 h-3.5" />
+                              Clear active filters
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ) : (
@@ -851,7 +868,19 @@ export function JobTable({
                   {paginatedJobs.length === 0 ? (
                     <tr>
                       <td colSpan={8} className="py-12 text-center text-zinc-400 dark:text-zinc-500 text-xs">
-                        No matching applications found.
+                        <div className="flex flex-col items-center justify-center gap-2">
+                          <p>No matching applications found.</p>
+                          {hasActiveFilters && onClearFilters && (
+                            <button
+                              type="button"
+                              onClick={onClearFilters}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 hover:bg-rose-100 dark:hover:bg-rose-900/60 transition cursor-pointer"
+                            >
+                              <RotateCcw className="w-3.5 h-3.5" />
+                              Clear active filters
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ) : (

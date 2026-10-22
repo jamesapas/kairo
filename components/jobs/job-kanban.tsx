@@ -10,6 +10,7 @@ import {
   Edit3,
   Star,
   Pin,
+  RotateCcw,
 } from "lucide-react";
 import {
   JobApplication,
@@ -29,6 +30,8 @@ interface JobKanbanProps {
   onEditJob: (job: JobApplication) => void;
   onDeleteJob: (id: string) => void;
   onStatusChange: (id: string, newStatus: JobStatus) => void;
+  hasActiveFilters?: boolean;
+  onClearFilters?: () => void;
 }
 
 const KANBAN_COLUMNS: JobStatus[] = [
@@ -45,6 +48,8 @@ const KANBAN_COLUMNS: JobStatus[] = [
 export function JobKanban({
   jobs,
   isLoading = false,
+  hasActiveFilters = false,
+  onClearFilters,
   onSelectJob,
   onEditJob,
   onDeleteJob,
@@ -108,6 +113,24 @@ export function JobKanban({
             </div>
           );
         })}
+      </div>
+    );
+  }
+
+  if (!isLoading && hasActiveFilters && jobs.length === 0) {
+    return (
+      <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200/90 dark:border-zinc-800 p-12 text-center shadow-xs">
+        <p className="text-xs text-zinc-400 dark:text-zinc-500">No matching applications found.</p>
+        {onClearFilters && (
+          <button
+            type="button"
+            onClick={onClearFilters}
+            className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 hover:bg-rose-100 dark:hover:bg-rose-900/60 transition cursor-pointer"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            Clear active filters
+          </button>
+        )}
       </div>
     );
   }

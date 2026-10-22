@@ -21,6 +21,7 @@ import {
   ArrowUpDown,
   Filter,
   Briefcase,
+  RotateCcw,
 } from "lucide-react";
 import {
   JobApplication,
@@ -50,6 +51,8 @@ import { DashboardHeader } from "./dashboard-header";
 import { useAuthModal } from "@/components/auth/auth-modal-context";
 
 type SortOption = "date-desc" | "date-asc" | "company-asc" | "title-asc";
+
+const PLATFORM_FILTER_STORAGE_KEY = "kairo-platform-filter";
 
 interface JobDashboardProps {
   userEmail?: string;
@@ -148,6 +151,45 @@ export function JobDashboard({
   const [sortBy, setSortBy] = useState<SortOption>("date-desc");
   const [viewMode, setViewMode] = useState<"table" | "kanban">("table");
   const [weekOnlyFilter, setWeekOnlyFilter] = useState(false);
+
+  useEffect(() => {
+    try {
+      const savedPlatform = localStorage.getItem(PLATFORM_FILTER_STORAGE_KEY);
+      if (
+        savedPlatform &&
+        (savedPlatform === "all" || (PLATFORM_OPTIONS as readonly string[]).includes(savedPlatform))
+      ) {
+        setPlatformFilter(savedPlatform);
+      }
+    } catch {}
+  }, []);
+
+  const handlePlatformFilterChange = (val: string) => {
+    setPlatformFilter(val);
+    try {
+      localStorage.setItem(PLATFORM_FILTER_STORAGE_KEY, val);
+    } catch {}
+  };
+
+  const activeFiltersCount =
+    (searchQuery.trim() ? 1 : 0) +
+    (statusFilter !== "all" ? 1 : 0) +
+    (platformFilter !== "all" ? 1 : 0) +
+    (workplaceFilter !== "all" ? 1 : 0) +
+    (weekOnlyFilter ? 1 : 0);
+
+  const hasActiveFilters = activeFiltersCount > 0;
+
+  const handleClearFilters = () => {
+    setSearchQuery("");
+    setStatusFilter("all");
+    setPlatformFilter("all");
+    setWorkplaceFilter("all");
+    setWeekOnlyFilter(false);
+    try {
+      localStorage.setItem(PLATFORM_FILTER_STORAGE_KEY, "all");
+    } catch {}
+  };
 
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -535,7 +577,7 @@ export function JobDashboard({
 
             <CustomSelect<string>
               value={platformFilter}
-              onChange={(val) => setPlatformFilter(val)}
+              onChange={handlePlatformFilterChange}
               options={platformOptions}
               width="170px"
             />
@@ -553,6 +595,21 @@ export function JobDashboard({
               options={sortOptions}
               width="160px"
             />
+
+            {hasActiveFilters && (
+              <button
+                type="button"
+                onClick={handleClearFilters}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-rose-200/90 dark:border-rose-900/40 bg-rose-50/80 dark:bg-rose-950/30 text-rose-700 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-900/50 hover:border-rose-300 dark:hover:border-rose-800 text-xs font-semibold cursor-pointer transition shadow-2xs"
+                title="Clear all active filters"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Clear filters</span>
+                <span className="w-4 h-4 rounded-full bg-rose-200/80 dark:bg-rose-900/80 text-[10px] font-bold flex items-center justify-center text-rose-800 dark:text-rose-200">
+                  {activeFiltersCount}
+                </span>
+              </button>
+            )}
 
             {/* View Switcher: Table / Board */}
             <div className="flex items-center p-0.5 rounded-xl bg-zinc-100 dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700 ml-0.5">
@@ -589,6 +646,8 @@ export function JobDashboard({
             selectedStatus={statusFilter}
             isLoading={isLoading}
             isGuest={guestMode}
+            hasActiveFilters={hasActiveFilters}
+            onClearFilters={handleClearFilters}
             onSelectJob={(job) => {
               if (guestMode) {
                 openAuthModal("login");
@@ -623,6 +682,8 @@ export function JobDashboard({
           <JobKanban
             jobs={filteredJobs}
             isLoading={isLoading}
+            hasActiveFilters={hasActiveFilters}
+            onClearFilters={handleClearFilters}
             onSelectJob={(job) => {
               if (guestMode) {
                 openAuthModal("login");
