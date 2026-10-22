@@ -53,7 +53,7 @@ export function VideoScriptView({
 
   // Teleprompter Modal State
   const [isPlaying, setIsPlaying] = useState(false);
-  const [scrollSpeed, setScrollSpeed] = useState<number>(2); // 1 to 5
+  const [scrollSpeed, setScrollSpeed] = useState<number>(1); // 1 to 5 (starts at 1x)
   const [fontSizeIndex, setFontSizeIndex] = useState<number>(2); // 0 = S, 1 = M, 2 = L, 3 = XL
   const teleprompterScrollRef = useRef<HTMLDivElement>(null);
   const scrollPosRef = useRef<number>(0);
@@ -65,9 +65,10 @@ export function VideoScriptView({
     { label: "XL", class: "text-4xl leading-loose" },
   ];
 
-  // Distinct pixels-per-second values: strictly ascending and accurate
-  const speedTable = [35, 60, 95, 140, 195];
-  const speedMultiplier = speedTable[scrollSpeed - 1] || 60;
+  // Distinct pixels-per-second values: calibrated for comfortable spoken pacing
+  // 1x = ~16px/s (~130 words/min natural speech pace), progressing smoothly up to 5x
+  const speedTable = [16, 28, 45, 70, 110];
+  const speedMultiplier = speedTable[scrollSpeed - 1] || 16;
 
 function formatSectionTitle(title: string): string {
   if (!title) return "";
