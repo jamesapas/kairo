@@ -37,6 +37,10 @@ export function SettingsView() {
   const [educations, setEducations] = useState<UserEducation[]>([]);
   const [projects, setProjects] = useState<UserProject[]>([]);
   const [skills, setSkills] = useState<UserSkill[]>([]);
+  const [totalSkills, setTotalSkills] = useState<number>(0);
+  const [skillsPage, setSkillsPage] = useState<number>(1);
+  const [hasMoreSkills, setHasMoreSkills] = useState<boolean>(false);
+  const [loadingMoreSkills, setLoadingMoreSkills] = useState<boolean>(false);
 
   const [savedSnapshot, setSavedSnapshot] = useState<string>("");
 
@@ -97,14 +101,32 @@ export function SettingsView() {
       setLoadingProjects(false);
     });
 
-    // 5. Fetch Skills independently
-    getSkillsAction().then((skillRes) => {
+    // 5. Fetch Skills independently (initial batch for faster fetching)
+    getSkillsAction(1, 20).then((skillRes) => {
       if (skillRes.success && skillRes.data) {
         setSkills(skillRes.data);
+        setTotalSkills(skillRes.total ?? skillRes.data.length);
+        setHasMoreSkills(skillRes.hasMore ?? false);
       }
       setLoadingSkills(false);
     });
   }, []);
+
+  const handleLoadMoreSkills = async () => {
+    if (loadingMoreSkills || !hasMoreSkills) return;
+    setLoadingMoreSkills(true);
+    const nextPage = skillsPage + 1;
+    const skillRes = await getSkillsAction(nextPage, 20);
+    if (skillRes.success && skillRes.data) {
+      setSkills((prev) => [...prev, ...(skillRes.data || [])]);
+      setSkillsPage(nextPage);
+      setHasMoreSkills(skillRes.hasMore ?? false);
+      if (skillRes.total !== undefined) {
+        setTotalSkills(skillRes.total);
+      }
+    }
+    setLoadingMoreSkills(false);
+  };
 
   // Check if current details differ from last saved state
   const isDirty =
@@ -210,6 +232,11 @@ export function SettingsView() {
         setProjects={setProjects}
         skills={skills}
         setSkills={setSkills}
+        totalSkills={totalSkills}
+        setTotalSkills={setTotalSkills}
+        hasMoreSkills={hasMoreSkills}
+        loadingMoreSkills={loadingMoreSkills}
+        onLoadMoreSkills={handleLoadMoreSkills}
         loadingProfile={loadingProfile}
         loadingExp={loadingExp}
         loadingEdu={loadingEdu}

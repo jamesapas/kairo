@@ -4,9 +4,14 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { UserSkill, UserSkillRow, mapRowToSkill } from "@/types/skill";
 
-export async function getSkillsAction(): Promise<{
+export async function getSkillsAction(
+  page: number = 1,
+  limit: number = 20
+): Promise<{
   success: boolean;
   data?: UserSkill[];
+  total?: number;
+  hasMore?: boolean;
   error?: string;
 }> {
   try {
@@ -20,20 +25,35 @@ export async function getSkillsAction(): Promise<{
       return { success: false, error: "Not authenticated" };
     }
 
-    const { data, error } = await supabase
+    const from = Math.max(0, (page - 1) * limit);
+    const to = from + limit - 1;
+
+    let query = supabase
       .from("user_skills")
-      .select("*")
+      .select("*", { count: "exact" })
       .eq("user_id", user.id)
       .order("created_at", { ascending: true });
+
+    if (limit > 0) {
+      query = query.range(from, to);
+    }
+
+    const { data, error, count } = await query;
 
     if (error) {
       console.error("Error fetching skills:", error);
       return { success: false, error: error.message };
     }
 
+    const total = count ?? (data || []).length;
+    const mapped = (data || []).map((row) => mapRowToSkill(row as UserSkillRow));
+    const hasMore = limit > 0 ? total > from + mapped.length : false;
+
     return {
       success: true,
-      data: (data || []).map((row) => mapRowToSkill(row as UserSkillRow)),
+      data: mapped,
+      total,
+      hasMore,
     };
   } catch (err: unknown) {
     console.error("Unexpected error fetching skills:", err);

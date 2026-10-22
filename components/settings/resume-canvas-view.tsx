@@ -33,6 +33,7 @@ import {
   Calendar,
   Award,
   FileText,
+  ChevronDown,
 } from "lucide-react";
 import { ProfileLink } from "@/types/profile";
 import { UserExperience, WorkplaceType } from "@/types/experience";
@@ -400,6 +401,11 @@ interface ResumeCanvasViewProps {
   setProjects: React.Dispatch<React.SetStateAction<UserProject[]>>;
   skills: UserSkill[];
   setSkills: React.Dispatch<React.SetStateAction<UserSkill[]>>;
+  totalSkills?: number;
+  setTotalSkills?: React.Dispatch<React.SetStateAction<number>>;
+  hasMoreSkills?: boolean;
+  loadingMoreSkills?: boolean;
+  onLoadMoreSkills?: () => Promise<void>;
   loadingProfile?: boolean;
   loadingExp?: boolean;
   loadingEdu?: boolean;
@@ -432,6 +438,11 @@ export function ResumeCanvasView({
   setProjects,
   skills,
   setSkills,
+  totalSkills,
+  setTotalSkills,
+  hasMoreSkills = false,
+  loadingMoreSkills = false,
+  onLoadMoreSkills,
   loadingProfile = false,
   loadingExp = false,
   loadingEdu = false,
@@ -836,6 +847,7 @@ export function ResumeCanvasView({
   const [addingSkill, setAddingSkill] = useState(false);
   const [isSkillDropdownOpen, setIsSkillDropdownOpen] = useState(false);
   const [highlightedSkillIndex, setHighlightedSkillIndex] = useState(-1);
+  const [showAllSuggestions, setShowAllSuggestions] = useState(false);
   const skillInputRef = useRef<HTMLInputElement>(null);
   const skillDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -878,6 +890,7 @@ export function ResumeCanvasView({
     const res = await createSkillAction(trimmed);
     if (res.success && res.data) {
       setSkills((prev) => [...prev, res.data!]);
+      setTotalSkills?.((prev) => prev + 1);
       setNewSkillInput("");
       setIsSkillDropdownOpen(false);
     }
@@ -886,6 +899,7 @@ export function ResumeCanvasView({
 
   const handleDeleteSkill = async (skillId: string) => {
     setSkills((prev) => prev.filter((s) => s.id !== skillId));
+    setTotalSkills?.((prev) => Math.max(0, prev - 1));
     await deleteSkillAction(skillId);
   };
 
@@ -1724,7 +1738,7 @@ export function ResumeCanvasView({
                   Skills
                 </h2>
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-zinc-100 dark:bg-zinc-800 border border-zinc-200/70 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300">
-                  {skills.length}
+                  {totalSkills !== undefined ? totalSkills : skills.length}
                 </span>
               </div>
             </div>
@@ -1837,9 +1851,9 @@ export function ResumeCanvasView({
 
             {/* 1. Added Skills (On Top) */}
             {skills.length > 0 && (
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <p className="text-[10px] uppercase font-bold tracking-wider text-zinc-400">
-                  Active Skills ({skills.length}):
+                  Active Skills ({totalSkills !== undefined ? totalSkills : skills.length}):
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {skills.map((skill) => (
@@ -1859,6 +1873,35 @@ export function ResumeCanvasView({
                     </div>
                   ))}
                 </div>
+
+                {/* View More Button for Paginated Active Skills */}
+                {hasMoreSkills && (
+                  <div className="pt-1 flex items-center">
+                    <button
+                      type="button"
+                      onClick={onLoadMoreSkills}
+                      disabled={loadingMoreSkills}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-zinc-100 hover:bg-zinc-200/80 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 border border-zinc-200/80 dark:border-zinc-700 transition cursor-pointer shadow-2xs active:scale-[0.98] disabled:opacity-60"
+                    >
+                      {loadingMoreSkills ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin text-zinc-500" />
+                          <span>Loading skills...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>
+                            View more{" "}
+                            {totalSkills && totalSkills > skills.length
+                              ? `(${totalSkills - skills.length} remaining)`
+                              : ""}
+                          </span>
+                          <ChevronDown className="w-3.5 h-3.5 text-zinc-400" />
+                        </>
+                      )}
+                    </button>
+                  </div>
+                )}
               </div>
             )}
 
@@ -1873,13 +1916,37 @@ export function ResumeCanvasView({
 
               if (unaddedPresets.length === 0) return null;
 
+              const visiblePresets = showAllSuggestions
+                ? unaddedPresets
+                : unaddedPresets.slice(0, 16);
+
               return (
                 <div className="space-y-2 pt-2 border-t border-zinc-100 dark:border-zinc-800">
-                  <p className="text-[10px] uppercase font-bold tracking-wider text-zinc-400">
-                    Suggestions ({unaddedPresets.length}):
-                  </p>
+                  <div className="flex items-center justify-between">
+                    <p className="text-[10px] uppercase font-bold tracking-wider text-zinc-400">
+                      Suggestions ({unaddedPresets.length}):
+                    </p>
+                    {unaddedPresets.length > 16 && (
+                      <button
+                        type="button"
+                        onClick={() => setShowAllSuggestions((prev) => !prev)}
+                        className="text-[11px] font-semibold text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200 flex items-center gap-1 transition cursor-pointer"
+                      >
+                        <span>
+                          {showAllSuggestions
+                            ? "Show less"
+                            : `View all (${unaddedPresets.length})`}
+                        </span>
+                        <ChevronDown
+                          className={`w-3 h-3 transition-transform duration-200 ${
+                            showAllSuggestions ? "rotate-180" : ""
+                          }`}
+                        />
+                      </button>
+                    )}
+                  </div>
                   <div className="flex flex-wrap gap-1.5">
-                    {unaddedPresets.map((preset) => (
+                    {visiblePresets.map((preset) => (
                       <button
                         key={preset.name}
                         type="button"
