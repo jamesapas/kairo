@@ -62,7 +62,6 @@ import {
   deleteSkillAction,
 } from "@/lib/actions/skill";
 import {
-  PREDEFINED_SKILLS,
   searchSkillSuggestions,
 } from "@/lib/constants/skills";
 import { CustomSelect, CustomSelectOption } from "@/components/jobs/custom-select";
@@ -847,7 +846,6 @@ export function ResumeCanvasView({
   const [addingSkill, setAddingSkill] = useState(false);
   const [isSkillDropdownOpen, setIsSkillDropdownOpen] = useState(false);
   const [highlightedSkillIndex, setHighlightedSkillIndex] = useState(-1);
-  const [showAllSuggestions, setShowAllSuggestions] = useState(false);
   const skillInputRef = useRef<HTMLInputElement>(null);
   const skillDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -1905,62 +1903,7 @@ export function ResumeCanvasView({
               </div>
             )}
 
-            {/* 2. Quick Suggestions (Unadded Only, Below) */}
-            {(() => {
-              const unaddedPresets = PREDEFINED_SKILLS.filter(
-                (preset) =>
-                  !skills.some(
-                    (s) => s.name.toLowerCase() === preset.name.toLowerCase()
-                  )
-              );
 
-              if (unaddedPresets.length === 0) return null;
-
-              const visiblePresets = showAllSuggestions
-                ? unaddedPresets
-                : unaddedPresets.slice(0, 16);
-
-              return (
-                <div className="space-y-2 pt-2 border-t border-zinc-100 dark:border-zinc-800">
-                  <div className="flex items-center justify-between">
-                    <p className="text-[10px] uppercase font-bold tracking-wider text-zinc-400">
-                      Suggestions ({unaddedPresets.length}):
-                    </p>
-                    {unaddedPresets.length > 16 && (
-                      <button
-                        type="button"
-                        onClick={() => setShowAllSuggestions((prev) => !prev)}
-                        className="text-[11px] font-semibold text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200 flex items-center gap-1 transition cursor-pointer"
-                      >
-                        <span>
-                          {showAllSuggestions
-                            ? "Show less"
-                            : `View all (${unaddedPresets.length})`}
-                        </span>
-                        <ChevronDown
-                          className={`w-3 h-3 transition-transform duration-200 ${
-                            showAllSuggestions ? "rotate-180" : ""
-                          }`}
-                        />
-                      </button>
-                    )}
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {visiblePresets.map((preset) => (
-                      <button
-                        key={preset.name}
-                        type="button"
-                        onClick={() => handleAddSkill(preset.name)}
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-zinc-50/90 dark:bg-zinc-850/60 text-zinc-700 dark:text-zinc-300 border border-zinc-200/80 dark:border-zinc-750 hover:border-zinc-400 dark:hover:border-zinc-600 hover:bg-white dark:hover:bg-zinc-800 transition cursor-pointer shadow-2xs group active:scale-[0.98]"
-                      >
-                        <span>{preset.name}</span>
-                        <Plus className="w-2.5 h-2.5 text-zinc-400 group-hover:text-zinc-700 dark:group-hover:text-zinc-200" />
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              );
-            })()}
           </div>
         </div>
       )}

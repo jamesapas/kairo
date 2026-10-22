@@ -219,20 +219,6 @@ export function SkillsSectionSkeleton() {
             ))}
           </div>
         </div>
-
-        {/* Suggestions Skeleton */}
-        <div className="space-y-2 pt-2 border-t border-zinc-100 dark:border-zinc-800">
-          <div className="w-32 h-3 rounded bg-zinc-200 dark:bg-zinc-800" />
-          <div className="flex flex-wrap gap-1.5">
-            {[20, 24, 18, 22, 24, 20].map((w, i) => (
-              <div
-                key={i}
-                style={{ width: `${w * 4}px` }}
-                className="h-[26px] rounded-lg bg-zinc-100 dark:bg-zinc-800 border border-zinc-200/70 dark:border-zinc-700"
-              />
-            ))}
-          </div>
-        </div>
       </div>
     </div>
   );
