@@ -285,7 +285,7 @@ export function JobDetailPage({ jobId }: JobDetailPageProps) {
             <p className="text-sm text-zinc-500 mt-1">This application may have been deleted or doesn't exist.</p>
           </div>
           <Link
-            href="/"
+            href="/dashboard"
             className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-sm font-medium hover:opacity-90 transition-opacity"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -311,7 +311,7 @@ export function JobDetailPage({ jobId }: JobDetailPageProps) {
           {/* Breadcrumb Navigation */}
           <div className="flex items-center gap-2 text-xs font-medium text-zinc-500 dark:text-zinc-400">
             <Link
-              href="/"
+              href="/dashboard"
               className="hover:text-zinc-900 dark:hover:text-zinc-100 flex items-center gap-1.5 transition"
             >
               <ArrowLeft className="w-3.5 h-3.5" />

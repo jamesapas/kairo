@@ -181,6 +181,7 @@ export function AuthModal({
         } else {
           setSuccessMsg("Account created! Logging you in...");
           handleClose();
+          router.push("/dashboard");
           router.refresh();
         }
       }
@@ -195,6 +196,7 @@ export function AuthModal({
         setLoading(false);
       } else {
         handleClose();
+        router.push("/dashboard");
         router.refresh();
       }
     }

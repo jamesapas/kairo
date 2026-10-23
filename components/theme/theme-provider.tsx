@@ -45,71 +45,19 @@ function disableTransitionsDuringThemeSwitch() {
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>("system");
-  const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">("light");
-  const [mounted, setMounted] = useState(false);
-
   useEffect(() => {
-    const saved = localStorage.getItem("kairo-theme") as Theme | null;
-    if (saved && (saved === "light" || saved === "dark" || saved === "system")) {
-      setThemeState(saved);
-    }
-    setMounted(true);
+    document.documentElement.classList.add("dark");
   }, []);
 
-  useEffect(() => {
-    if (!mounted) return;
-
-    const root = document.documentElement;
-    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-
-    const applyTheme = () => {
-      let activeTheme: "light" | "dark" = "light";
-
-      if (theme === "system") {
-        activeTheme = mediaQuery.matches ? "dark" : "light";
-      } else {
-        activeTheme = theme;
-      }
-
-      setResolvedTheme(activeTheme);
-
-      const restoreTransitions = disableTransitionsDuringThemeSwitch();
-
-      if (activeTheme === "dark") {
-        root.classList.add("dark");
-      } else {
-        root.classList.remove("dark");
-      }
-
-      restoreTransitions();
-    };
-
-    applyTheme();
-    localStorage.setItem("kairo-theme", theme);
-
-    const listener = () => {
-      if (theme === "system") applyTheme();
-    };
-
-    mediaQuery.addEventListener("change", listener);
-    return () => mediaQuery.removeEventListener("change", listener);
-  }, [theme, mounted]);
-
-  const setTheme = (newTheme: Theme) => {
-    setThemeState(newTheme);
-  };
-
-  const toggleTheme = () => {
-    if (resolvedTheme === "dark") {
-      setTheme("light");
-    } else {
-      setTheme("dark");
-    }
-  };
-
   return (
-    <ThemeContext.Provider value={{ theme, resolvedTheme, setTheme, toggleTheme }}>
+    <ThemeContext.Provider
+      value={{
+        theme: "dark",
+        resolvedTheme: "dark",
+        setTheme: () => {},
+        toggleTheme: () => {},
+      }}
+    >
       {children}
     </ThemeContext.Provider>
   );

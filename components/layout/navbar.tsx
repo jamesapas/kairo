@@ -12,7 +12,6 @@ import {
   Settings,
 } from "lucide-react";
 import { KairoLogo } from "@/components/ui/logo";
-import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { useAuthModal } from "@/components/auth/auth-modal-context";
 
 interface NavbarProps {
@@ -96,6 +95,7 @@ export function Navbar({ userEmail: initialEmail }: NavbarProps = {}) {
     setUserEmail(undefined);
     setAvatarUrl(undefined);
     setLoggingOut(false);
+    router.push("/");
     router.refresh();
   };
 
@@ -104,7 +104,7 @@ export function Navbar({ userEmail: initialEmail }: NavbarProps = {}) {
       <div className="max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         {/* Left: Brand + Workspace Breadcrumb with Live Sync Dot */}
         <div className="flex items-center gap-3">
-          <Link href="/" className="flex items-center gap-2 cursor-pointer hover:opacity-85 transition">
+          <Link href="/dashboard" className="flex items-center gap-2 cursor-pointer hover:opacity-85 transition">
             <KairoLogo className="w-7 h-7 rounded-lg" size={32} />
             <span className="text-sm font-bold tracking-tight text-zinc-900 dark:text-zinc-100 leading-none">
               Kairo
@@ -128,11 +128,8 @@ export function Navbar({ userEmail: initialEmail }: NavbarProps = {}) {
           )}
         </div>
 
-        {/* Right: Theme Toggle & User Auth / Account */}
+        {/* Right: User Auth / Account */}
         <div className="flex items-center gap-2.5">
-          {/* Theme Changer */}
-          <ThemeToggle />
-
           {userEmail ? (
             /* User Avatar & Account Popover */
             <div className="relative" ref={menuRef}>

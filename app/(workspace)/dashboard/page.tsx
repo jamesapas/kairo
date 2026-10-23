@@ -4,7 +4,7 @@ import { JobApplicationRow, mapRowToJob } from "@/types/job";
 
 export const dynamic = "force-dynamic";
 
-export default async function Page() {
+export default async function DashboardPage() {
   const supabase = await createClient();
   const {
     data: { user },

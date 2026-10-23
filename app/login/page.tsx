@@ -123,7 +123,7 @@ export default function LoginPage() {
           setLoading(false);
         } else {
           setSuccessMsg("Account created! Logging you in...");
-          router.push("/");
+          router.push("/dashboard");
           router.refresh();
         }
       }
@@ -137,7 +137,7 @@ export default function LoginPage() {
         setErrorMsg(error.message || "Failed to sign in. Please check your credentials.");
         setLoading(false);
       } else {
-        router.push("/");
+        router.push("/dashboard");
         router.refresh();
       }
     }

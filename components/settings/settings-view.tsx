@@ -183,7 +183,7 @@ export function SettingsView() {
       {/* Header & Breadcrumb - Always rendered immediately without skeleton delay */}
       <div className="space-y-3">
         <div className="flex items-center gap-2 text-xs font-semibold text-zinc-400 dark:text-zinc-500">
-          <Link href="/" className="hover:text-zinc-700 dark:hover:text-zinc-300 transition">
+          <Link href="/dashboard" className="hover:text-zinc-700 dark:hover:text-zinc-300 transition">
             Workspace
           </Link>
           <ChevronRight className="w-3.5 h-3.5" />

@@ -43,20 +43,20 @@ export async function updateSession(request: NextRequest) {
   }
 
   const isHomePage = request.nextUrl.pathname === "/";
+  const isDashboardPage = request.nextUrl.pathname.startsWith("/dashboard");
 
-  // Check if user is logged in
-  if (!user && !isLoginPage && !isHomePage) {
-    // Redirect unauthenticated user accessing protected routes to / with auth modal
+  // If user is already logged in and tries to access / or /login, redirect directly to /dashboard
+  if (user && (isHomePage || isLoginPage)) {
     const url = request.nextUrl.clone();
-    url.pathname = "/";
-    url.searchParams.set("auth", "login");
+    url.pathname = "/dashboard";
     return NextResponse.redirect(url);
   }
 
-  // If user is already logged in and tries to access /login, redirect to dashboard /
-  if (user && isLoginPage) {
+  // Check if unauthenticated user is trying to access protected routes (e.g. /settings, /jobs)
+  if (!user && !isLoginPage && !isHomePage && !isDashboardPage) {
     const url = request.nextUrl.clone();
     url.pathname = "/";
+    url.searchParams.set("auth", "login");
     return NextResponse.redirect(url);
   }
 
