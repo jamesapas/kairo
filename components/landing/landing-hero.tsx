@@ -1,7 +1,6 @@
 "use client";
 
-import React from "react";
-import { useAuthModal } from "@/components/auth/auth-modal-context";
+import Link from "next/link";
 import {
   ArrowRight,
   CheckCircle2,
@@ -9,7 +8,6 @@ import {
 } from "lucide-react";
 
 export function LandingHero() {
-  const { openAuthModal } = useAuthModal();
 
   return (
     <section className="relative pt-32 sm:pt-40 pb-20 overflow-hidden">
@@ -39,14 +37,13 @@ export function LandingHero() {
 
         {/* Call-to-Action Buttons */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 pt-2">
-          <button
-            type="button"
-            onClick={() => openAuthModal("register")}
+          <Link
+            href="/signup"
             className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-7 py-3.5 rounded-2xl bg-zinc-950 dark:bg-zinc-100 hover:bg-zinc-800 dark:hover:bg-white text-white dark:text-zinc-950 text-sm font-bold shadow-lg shadow-zinc-900/10 dark:shadow-zinc-100/5 transition-all duration-200 cursor-pointer active:scale-98 group"
           >
             <span>Get Started for Free</span>
             <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-          </button>
+          </Link>
         </div>
 
         {/* Micro-Trust Copy */}

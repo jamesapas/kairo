@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { KairoLogo } from "@/components/ui/logo";
-import { useAuthModal } from "@/components/auth/auth-modal-context";
 import {
   Menu,
   X,
@@ -11,7 +10,6 @@ import {
 } from "lucide-react";
 
 export function LandingNavbar() {
-  const { openAuthModal } = useAuthModal();
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -83,22 +81,20 @@ export function LandingNavbar() {
 
           {/* Right Actions: Sign In, Get Started */}
           <div className="hidden sm:flex items-center gap-2.5 z-10">
-            <button
-              type="button"
-              onClick={() => openAuthModal("login")}
+            <Link
+              href="/login"
               className="px-3.5 py-1.5 text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-zinc-100 transition cursor-pointer"
             >
               Sign In
-            </button>
+            </Link>
 
-            <button
-              type="button"
-              onClick={() => openAuthModal("register")}
+            <Link
+              href="/signup"
               className="relative inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-600 hover:from-blue-500 hover:via-indigo-500 hover:to-blue-500 shadow-sm shadow-blue-500/20 hover:shadow-blue-500/30 transition-all cursor-pointer active:scale-98"
             >
               <span>Get Started</span>
               <ArrowRight className="w-3.5 h-3.5" />
-            </button>
+            </Link>
           </div>
 
           {/* Mobile Right Bar: Menu Hamburger */}
@@ -131,28 +127,22 @@ export function LandingNavbar() {
             </div>
 
             <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800 space-y-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  openAuthModal("login");
-                }}
-                className="w-full py-2.5 rounded-xl text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700/80 cursor-pointer"
+              <Link
+                href="/login"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block text-center w-full py-2.5 rounded-xl text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700/80 cursor-pointer"
               >
                 Sign In
-              </button>
+              </Link>
 
-              <button
-                type="button"
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  openAuthModal("register");
-                }}
+              <Link
+                href="/signup"
+                onClick={() => setMobileMenuOpen(false)}
                 className="w-full py-2.5 rounded-xl text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500 shadow-md shadow-blue-600/20 flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <span>Get Started Free</span>
                 <ArrowRight className="w-3.5 h-3.5" />
-              </button>
+              </Link>
             </div>
           </div>
         )}

@@ -2,7 +2,6 @@
 
 import React, { createContext, useContext, useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
-import { AuthModal } from "./auth-modal";
 
 interface AuthModalContextType {
   isOpen: boolean;
@@ -40,6 +39,7 @@ function AuthSearchParamsHandler({
 }
 
 export function AuthModalProvider({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [mode, setMode] = useState<"login" | "register">("login");
   const [reason, setReason] = useState<string | undefined>();
@@ -47,7 +47,11 @@ export function AuthModalProvider({ children }: { children: React.ReactNode }) {
   const openAuthModal = (newMode: "login" | "register" = "login", newReason?: string) => {
     setMode(newMode);
     setReason(newReason);
-    setIsOpen(true);
+    const target = newMode === "register" ? "/signup" : "/login";
+    const params = new URLSearchParams();
+    if (newReason) params.set("reason", newReason);
+    const query = params.toString() ? `?${params.toString()}` : "";
+    router.push(`${target}${query}`);
   };
 
   const closeAuthModal = () => {
@@ -70,13 +74,6 @@ export function AuthModalProvider({ children }: { children: React.ReactNode }) {
       </Suspense>
 
       {children}
-
-      <AuthModal
-        isOpen={isOpen}
-        onClose={closeAuthModal}
-        initialMode={mode}
-        reason={reason}
-      />
     </AuthModalContext.Provider>
   );
 }

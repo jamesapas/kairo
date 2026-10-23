@@ -12,7 +12,7 @@ import {
   Settings,
 } from "lucide-react";
 import { KairoLogo } from "@/components/ui/logo";
-import { useAuthModal } from "@/components/auth/auth-modal-context";
+import { FullscreenLoader } from "@/components/ui/fullscreen-loader";
 
 interface NavbarProps {
   userEmail?: string;
@@ -21,7 +21,6 @@ interface NavbarProps {
 
 export function Navbar({ userEmail: initialEmail }: NavbarProps = {}) {
   const router = useRouter();
-  const { openAuthModal } = useAuthModal();
   const [userEmail, setUserEmail] = useState<string | undefined>(initialEmail);
   const [avatarUrl, setAvatarUrl] = useState<string | undefined>();
   const [loggingOut, setLoggingOut] = useState(false);
@@ -90,17 +89,27 @@ export function Navbar({ userEmail: initialEmail }: NavbarProps = {}) {
   const handleSignOut = async () => {
     setLoggingOut(true);
     setMenuOpen(false);
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    setUserEmail(undefined);
-    setAvatarUrl(undefined);
-    setLoggingOut(false);
-    router.push("/");
-    router.refresh();
+    try {
+      const supabase = createClient();
+      await supabase.auth.signOut();
+      setUserEmail(undefined);
+      setAvatarUrl(undefined);
+      router.push("/");
+      router.refresh();
+    } catch {
+      setLoggingOut(false);
+    }
   };
 
   return (
-    <header className="sticky top-0 z-30 w-full bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border-b border-zinc-200/80 dark:border-zinc-800">
+    <>
+      {loggingOut && (
+        <FullscreenLoader
+          title="Signing out..."
+          subtitle="Safely ending your session and redirecting..."
+        />
+      )}
+      <header className="sticky top-0 z-30 w-full bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border-b border-zinc-200/80 dark:border-zinc-800">
       <div className="max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         {/* Left: Brand + Workspace Breadcrumb with Live Sync Dot */}
         <div className="flex items-center gap-3">
@@ -197,24 +206,23 @@ export function Navbar({ userEmail: initialEmail }: NavbarProps = {}) {
           ) : (
             /* Guest Actions */
             <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => openAuthModal("login")}
+              <Link
+                href="/login"
                 className="px-3 py-1.5 rounded-xl text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition cursor-pointer"
               >
                 Sign In
-              </button>
-              <button
-                type="button"
-                onClick={() => openAuthModal("register")}
+              </Link>
+              <Link
+                href="/signup"
                 className="px-3.5 py-1.5 rounded-xl bg-zinc-900 dark:bg-zinc-100 hover:bg-zinc-800 dark:hover:bg-white text-white dark:text-zinc-900 text-xs font-semibold transition cursor-pointer shadow-2xs active:scale-[0.98]"
               >
                 Create Account
-              </button>
+              </Link>
             </div>
           )}
         </div>
       </div>
     </header>
+    </>
   );
 }

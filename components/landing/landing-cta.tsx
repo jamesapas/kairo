@@ -1,12 +1,9 @@
 "use client";
 
-import React from "react";
-import { useAuthModal } from "@/components/auth/auth-modal-context";
+import Link from "next/link";
 import { ArrowRight, CheckCircle2 } from "lucide-react";
 
 export function LandingCta() {
-  const { openAuthModal } = useAuthModal();
-
   return (
     <section className="py-20 sm:py-28 relative">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -26,22 +23,20 @@ export function LandingCta() {
 
             {/* CTAs */}
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 pt-4">
-              <button
-                type="button"
-                onClick={() => openAuthModal("register")}
+              <Link
+                href="/signup"
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl bg-white hover:bg-zinc-100 text-zinc-950 text-sm font-bold shadow-xl shadow-white/10 transition cursor-pointer active:scale-98"
               >
                 <span>Get Started for Free</span>
                 <ArrowRight className="w-4 h-4" />
-              </button>
+              </Link>
 
-              <button
-                type="button"
-                onClick={() => openAuthModal("login")}
+              <Link
+                href="/login"
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl bg-white/10 hover:bg-white/15 text-white text-sm font-bold border border-white/15 backdrop-blur-md transition cursor-pointer active:scale-98"
               >
                 <span>Sign In</span>
-              </button>
+              </Link>
             </div>
 
             <div className="pt-2 flex flex-wrap items-center justify-center gap-4 text-xs text-zinc-400">

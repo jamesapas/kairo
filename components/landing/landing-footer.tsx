@@ -3,11 +3,9 @@
 import React from "react";
 import Link from "next/link";
 import { KairoLogo } from "@/components/ui/logo";
-import { useAuthModal } from "@/components/auth/auth-modal-context";
 import { Globe, Heart } from "lucide-react";
 
 export function LandingFooter() {
-  const { openAuthModal } = useAuthModal();
 
   return (
     <footer className="border-t border-zinc-200/80 dark:border-zinc-800 bg-white/60 dark:bg-zinc-950/60 backdrop-blur-md pt-16 pb-12">
@@ -92,22 +90,20 @@ export function LandingFooter() {
             </div>
             <ul className="space-y-2 text-xs text-zinc-500 dark:text-zinc-400">
               <li>
-                <button
-                  type="button"
-                  onClick={() => openAuthModal("login")}
-                  className="hover:text-zinc-900 dark:hover:text-zinc-200 transition cursor-pointer"
+                <Link
+                  href="/login"
+                  className="hover:text-zinc-900 dark:hover:text-zinc-200 transition"
                 >
                   Sign In
-                </button>
+                </Link>
               </li>
               <li>
-                <button
-                  type="button"
-                  onClick={() => openAuthModal("register")}
-                  className="hover:text-zinc-900 dark:hover:text-zinc-200 transition cursor-pointer"
+                <Link
+                  href="/signup"
+                  className="hover:text-zinc-900 dark:hover:text-zinc-200 transition"
                 >
                   Create Account
-                </button>
+                </Link>
               </li>
               <li>
                 <a href="#faq" className="hover:text-zinc-900 dark:hover:text-zinc-200 transition">
