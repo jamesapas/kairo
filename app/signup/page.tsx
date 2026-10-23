@@ -82,8 +82,7 @@ function SignupForm() {
           setIsSuccessConfirmation(true);
           setLoading(false);
         } else {
-          router.push(redirectUrl);
-          router.refresh();
+          window.location.href = redirectUrl;
         }
       }
     } catch {

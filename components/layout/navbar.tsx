@@ -89,14 +89,20 @@ export function Navbar({ userEmail: initialEmail }: NavbarProps = {}) {
   const handleSignOut = async () => {
     setLoggingOut(true);
     setMenuOpen(false);
+
+    // Safety timeout in case of network issues
+    const safetyTimeout = setTimeout(() => {
+      setLoggingOut(false);
+      window.location.href = "/";
+    }, 4000);
+
     try {
       const supabase = createClient();
       await supabase.auth.signOut();
-      setUserEmail(undefined);
-      setAvatarUrl(undefined);
-      router.push("/");
-      router.refresh();
+      clearTimeout(safetyTimeout);
+      window.location.href = "/";
     } catch {
+      clearTimeout(safetyTimeout);
       setLoggingOut(false);
     }
   };

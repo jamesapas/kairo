@@ -46,7 +46,6 @@ export async function updateSession(request: NextRequest) {
   }
 
   const isHomePage = request.nextUrl.pathname === "/";
-  const isDashboardPage = request.nextUrl.pathname.startsWith("/dashboard");
 
   // If user is already logged in and tries to access / or /login or /signup, redirect directly to /dashboard
   if (user && (isHomePage || isAuthPage)) {
@@ -55,8 +54,8 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Check if unauthenticated user is trying to access protected routes (e.g. /settings, /jobs)
-  if (!user && !isAuthPage && !isHomePage && !isDashboardPage) {
+  // Check if unauthenticated user is trying to access protected routes (e.g. /dashboard, /settings, /jobs)
+  if (!user && !isAuthPage && !isHomePage) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);

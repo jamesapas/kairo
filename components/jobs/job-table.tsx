@@ -30,7 +30,6 @@ import {
 } from "@/types/job";
 import { StatusDropdown } from "./status-dropdown";
 import { PlatformIcon } from "./platform-badge";
-import { GuestPreviewCard } from "./guest-preview-card";
 
 interface JobTableProps {
   jobs: JobApplication[];
@@ -42,7 +41,6 @@ interface JobTableProps {
   onStatusChange: (id: string, newStatus: JobStatus) => void;
   onTogglePin: (id: string) => void;
   onAddNew: () => void;
-  isGuest?: boolean;
   hasActiveFilters?: boolean;
   onClearFilters?: () => void;
 }
@@ -379,7 +377,6 @@ export function JobTable({
   jobs,
   selectedStatus = "all",
   isLoading = false,
-  isGuest = false,
   hasActiveFilters = false,
   onClearFilters,
   onSelectJob,
@@ -539,10 +536,6 @@ export function JobTable({
   }
 
   if (jobs.length === 0) {
-    if (isGuest) {
-      return <GuestPreviewCard />;
-    }
-
     return (
       <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200/90 dark:border-zinc-800 p-12 text-center flex flex-col items-center justify-center space-y-3 shadow-sm">
         <div className="w-12 h-12 rounded-2xl bg-zinc-100 dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700 flex items-center justify-center text-zinc-400 dark:text-zinc-500">

@@ -48,7 +48,6 @@ import { PlatformIcon } from "./platform-badge";
 import { JobStatsOverview } from "./job-stats-overview";
 import { StreakModal } from "./streak-modal";
 import { DashboardHeader } from "./dashboard-header";
-import { useAuthModal } from "@/components/auth/auth-modal-context";
 
 type SortOption = "date-desc" | "date-asc" | "company-asc" | "title-asc";
 
@@ -58,43 +57,31 @@ interface JobDashboardProps {
   userEmail?: string;
   userName?: string;
   initialJobs?: JobApplication[];
-  isGuest?: boolean;
 }
 
 export function JobDashboard({
   userEmail: initialUserEmail,
   userName: initialUserName,
   initialJobs,
-  isGuest = false,
 }: JobDashboardProps = {}) {
   const router = useRouter();
-  const { openAuthModal } = useAuthModal();
   const { start: startTopLoader } = useTopLoader();
-  const [guestMode, setGuestMode] = useState(isGuest);
   const [jobs, setJobs] = useState<JobApplication[]>(initialJobs || []);
   const [userEmail, setUserEmail] = useState<string | undefined>(initialUserEmail);
   const [userName, setUserName] = useState<string | undefined>(initialUserName);
-  const [isLoading, setIsLoading] = useState(!isGuest && (!initialJobs || initialJobs.length === 0));
+  const [isLoading, setIsLoading] = useState(!initialJobs || initialJobs.length === 0);
 
   // Sync props when server re-renders or updates
   useEffect(() => {
-    setGuestMode(isGuest);
-    if (isGuest) {
-      setJobs([]);
-      setUserEmail(undefined);
-      setUserName(undefined);
-      setIsLoading(false);
-      return;
-    }
     if (initialUserEmail) setUserEmail(initialUserEmail);
     if (initialUserName) setUserName(initialUserName);
     if (initialJobs) {
       setJobs(initialJobs);
       setIsLoading(false);
     }
-  }, [initialJobs, isGuest, initialUserEmail, initialUserName]);
+  }, [initialJobs, initialUserEmail, initialUserName]);
 
-  // Optimistic real-time auth listener
+  // Real-time auth listener
   useEffect(() => {
     const supabase = createClient();
 
@@ -102,14 +89,11 @@ export function JobDashboard({
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === "SIGNED_OUT" || !session?.user) {
-        // Optimistically clear jobs and user immediately
         setJobs([]);
         setUserEmail(undefined);
         setUserName(undefined);
-        setGuestMode(true);
         setIsLoading(false);
       } else if (session?.user) {
-        setGuestMode(false);
         setUserEmail(session.user.email);
 
         supabase
@@ -480,45 +464,19 @@ export function JobDashboard({
             userEmail={userEmail}
             userName={userName}
             isLoading={isLoading}
-            isGuest={guestMode}
             onAddNew={() => {
-              if (guestMode) {
-                openAuthModal(
-                  "login",
-                  "Sign in or create an account to start tracking job applications"
-                );
-                return;
-              }
               setEditingJob(null);
               setIsModalOpen(true);
             }}
             onExportCSV={handleExportCSV}
-            onOpenStreakModal={() => {
-              if (guestMode) {
-                openAuthModal(
-                  "register",
-                  "Create an account to start tracking daily application streaks!"
-                );
-                return;
-              }
-              setIsStreakModalOpen(true);
-            }}
+            onOpenStreakModal={() => setIsStreakModalOpen(true)}
           />
 
           {/* Stats Overview Metric Cards */}
           <JobStatsOverview
             jobs={jobs}
             isLoading={isLoading}
-            onOpenStreakModal={() => {
-              if (guestMode) {
-                openAuthModal(
-                  "register",
-                  "Create an account to start tracking daily application streaks!"
-                );
-                return;
-              }
-              setIsStreakModalOpen(true);
-            }}
+            onOpenStreakModal={() => setIsStreakModalOpen(true)}
             onFilterThisWeek={() => setWeekOnlyFilter((prev) => !prev)}
             onFilterInterviewing={() =>
               setStatusFilter((curr: JobStatus | "all") =>
@@ -645,21 +603,10 @@ export function JobDashboard({
             jobs={filteredJobs}
             selectedStatus={statusFilter}
             isLoading={isLoading}
-            isGuest={guestMode}
             hasActiveFilters={hasActiveFilters}
             onClearFilters={handleClearFilters}
-            onSelectJob={(job) => {
-              if (guestMode) {
-                openAuthModal("login");
-                return;
-              }
-              handleSelectJob(job);
-            }}
+            onSelectJob={handleSelectJob}
             onEditJob={(job) => {
-              if (guestMode) {
-                openAuthModal("login");
-                return;
-              }
               setEditingJob(job);
               setIsModalOpen(true);
             }}
@@ -667,13 +614,6 @@ export function JobDashboard({
             onStatusChange={handleStatusChange}
             onTogglePin={handleTogglePin}
             onAddNew={() => {
-              if (guestMode) {
-                openAuthModal(
-                  "login",
-                  "Sign in or create an account to start tracking job applications"
-                );
-                return;
-              }
               setEditingJob(null);
               setIsModalOpen(true);
             }}
@@ -684,35 +624,13 @@ export function JobDashboard({
             isLoading={isLoading}
             hasActiveFilters={hasActiveFilters}
             onClearFilters={handleClearFilters}
-            onSelectJob={(job) => {
-              if (guestMode) {
-                openAuthModal("login");
-                return;
-              }
-              handleSelectJob(job);
-            }}
+            onSelectJob={handleSelectJob}
             onEditJob={(job) => {
-              if (guestMode) {
-                openAuthModal("login");
-                return;
-              }
               setEditingJob(job);
               setIsModalOpen(true);
             }}
-            onDeleteJob={(id) => {
-              if (guestMode) {
-                openAuthModal("login");
-                return;
-              }
-              handleDeleteJob(id);
-            }}
-            onStatusChange={(id, newStatus) => {
-              if (guestMode) {
-                openAuthModal("login");
-                return;
-              }
-              handleStatusChange(id, newStatus);
-            }}
+            onDeleteJob={handleDeleteJob}
+            onStatusChange={handleStatusChange}
           />
         )}
       </main>

@@ -67,8 +67,7 @@ function LoginForm() {
         );
         setLoading(false);
       } else {
-        router.push(redirectUrl);
-        router.refresh();
+        window.location.href = redirectUrl;
       }
     } catch {
       setErrorMsg("A network or server error occurred. Please try again.");
