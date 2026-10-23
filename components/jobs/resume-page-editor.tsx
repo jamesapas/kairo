@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { Plus, Trash2, FileText, Sparkles, HelpCircle } from "lucide-react";
+import { Plus, Trash2, FileText, Sparkles, HelpCircle, Camera } from "lucide-react";
 
 interface EditableProps {
   value: string;
@@ -93,9 +93,23 @@ const focusLine = (index: number, atEnd = false) => {
 export function ResumePageEditor({
   content,
   onChange,
+  includePhoto = false,
+  photoUrl,
+  photoSize = "md",
+  onTogglePhoto,
+  onPhotoSizeChange,
+  onUploadPhoto,
+  onRemovePhoto,
 }: {
   content: string;
   onChange: (next: string) => void;
+  includePhoto?: boolean;
+  photoUrl?: string | null;
+  photoSize?: "sm" | "md" | "lg";
+  onTogglePhoto?: () => void;
+  onPhotoSizeChange?: (size: "sm" | "md" | "lg") => void;
+  onUploadPhoto?: (file: File) => void;
+  onRemovePhoto?: () => void;
 }) {
   const [showTips, setShowTips] = useState(false);
   const lines = content.replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n");
@@ -148,6 +162,46 @@ export function ResumePageEditor({
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Toggle Photo Button */}
+          {onTogglePhoto && (
+            <div className="inline-flex items-center gap-1">
+              <button
+                type="button"
+                onClick={onTogglePhoto}
+                className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md border text-[11px] font-medium shadow-2xs transition cursor-pointer ${
+                  includePhoto
+                    ? "bg-amber-50 dark:bg-amber-950/60 border-amber-300 dark:border-amber-700 text-amber-800 dark:text-amber-200"
+                    : "bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700"
+                }`}
+                title={includePhoto ? "Candidate photo is included on resume" : "Include candidate photo on resume"}
+              >
+                <Camera className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                <span>Photo: {includePhoto ? "Included" : "None"}</span>
+              </button>
+
+              {/* Photo Size Selector when Photo is Enabled */}
+              {includePhoto && onPhotoSizeChange && (
+                <div className="inline-flex items-center rounded-md bg-white dark:bg-zinc-800 p-0.5 border border-zinc-200 dark:border-zinc-700 text-[10px] font-semibold">
+                  {(["sm", "md", "lg"] as const).map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => onPhotoSizeChange(s)}
+                      className={`px-1.5 py-0.5 rounded uppercase transition cursor-pointer ${
+                        photoSize === s
+                          ? "bg-amber-100 dark:bg-amber-900/60 text-amber-900 dark:text-amber-200 font-bold"
+                          : "text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200"
+                      }`}
+                      title={`Photo Size: ${s === "sm" ? "Small (76px / 22mm)" : s === "md" ? "Medium (92px / 28mm)" : "Large (112px / 34mm)"}`}
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Quick Add Section Dropdown / Helpers */}
           <div className="relative inline-flex items-center gap-1.5">
             <button
@@ -211,6 +265,103 @@ export function ResumePageEditor({
             if (i < headerEnd) {
               if (!line) return null;
               const pos = headerLineIdxs.indexOf(i);
+
+              if (includePhoto) {
+                // Render the left-aligned layout with square photo on the left
+                if (pos !== 0) return null;
+
+                const photoDimPx = photoSize === "sm" ? 76 : photoSize === "lg" ? 112 : 92;
+
+                return (
+                  <div key="photo-header" className="flex items-center gap-4 mb-8 pb-3 border-b border-zinc-200/90">
+                    {/* Square Photo on Left */}
+                    <div className="relative group/avatar shrink-0">
+                      {photoUrl ? (
+                        <div className="relative">
+                          <img
+                            src={photoUrl}
+                            alt="Candidate Photo"
+                            style={{ width: `${photoDimPx}px`, height: `${photoDimPx}px` }}
+                            className="rounded-xs object-cover border border-zinc-300 shadow-xs"
+                          />
+                          <div className="absolute inset-0 bg-black/45 rounded-xs opacity-0 group-hover/avatar:opacity-100 transition-opacity flex items-center justify-center gap-1.5">
+                            <label
+                              className="p-1.5 rounded-md bg-white text-zinc-800 hover:bg-zinc-100 cursor-pointer shadow-xs transition"
+                              title="Change photo"
+                            >
+                              <Camera className="w-3.5 h-3.5" />
+                              <input
+                                type="file"
+                                accept="image/png,image/jpeg,image/webp"
+                                className="hidden"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) onUploadPhoto?.(file);
+                                }}
+                              />
+                            </label>
+                            {onRemovePhoto && (
+                              <button
+                                type="button"
+                                onClick={onRemovePhoto}
+                                className="p-1.5 rounded-md bg-rose-600 text-white hover:bg-rose-700 cursor-pointer shadow-xs transition"
+                                title="Remove photo"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ) : (
+                        <label
+                          style={{ width: `${photoDimPx}px`, height: `${photoDimPx}px` }}
+                          className="flex flex-col items-center justify-center rounded-xs border-2 border-dashed border-zinc-300 hover:border-amber-500 bg-zinc-50 hover:bg-amber-50/50 text-zinc-400 hover:text-amber-600 cursor-pointer transition group"
+                        >
+                          <Camera className="w-5 h-5 mb-0.5 group-hover:scale-110 transition-transform" />
+                          <span className="text-[10px] font-semibold">Upload Photo</span>
+                          <input
+                            type="file"
+                            accept="image/png,image/jpeg,image/webp"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) onUploadPhoto?.(file);
+                            }}
+                          />
+                        </label>
+                      )}
+                    </div>
+
+                    {/* Left-Aligned Heading Details on Right */}
+                    <div className="flex-1 min-w-0 text-left space-y-0.5">
+                      {headerLineIdxs.map((hIdx, p) => {
+                        const hLine = lines[hIdx].trim();
+                        if (!hLine) return null;
+                        const hStyle =
+                          p === 0
+                            ? "text-[23px] leading-[28px] font-bold tracking-tight uppercase mb-0.5"
+                            : p === 1
+                            ? "text-[15.5px] leading-[21px] font-medium text-zinc-800 mb-0.5"
+                            : "text-[13px] leading-[18px] text-zinc-700";
+                        return (
+                          <div key={hIdx} className={`text-left ${hStyle}`}>
+                            <Editable
+                              value={hLine}
+                              lineIndex={hIdx}
+                              onCommit={(v) => setLine(hIdx, v)}
+                              onEnter={() => insertAfter(hIdx, "")}
+                              onBackspaceEmpty={() => removeLine(hIdx)}
+                              placeholder={p === 0 ? "Candidate Name" : p === 1 ? "Target Role" : "Contact Info"}
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              }
+
+              // Default centered header when no photo
               const style =
                 pos === 0
                   ? "text-[23px] leading-[28px] font-bold tracking-tight uppercase mb-1"

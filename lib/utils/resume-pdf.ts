@@ -1,23 +1,99 @@
 import { jsPDF } from "jspdf";
 
+export type ResumePhotoSize = "sm" | "md" | "lg" | number;
+
+export const RESUME_PHOTO_SIZES_MM: Record<"sm" | "md" | "lg", number> = {
+  sm: 22.0, // Small (~22mm / ~0.87in)
+  md: 28.0, // Medium (~28mm / ~1.10in)
+  lg: 34.0, // Large (~34mm / ~1.34in)
+};
+
 export interface ResumePdfOptions {
   content: string;
   candidateName?: string;
   jobTitle?: string;
   fileName?: string;
+  includePhoto?: boolean;
+  photoUrl?: string | null;
+  photoSize?: ResumePhotoSize;
+}
+
+/**
+ * Prepares a square cropped image as a base64 JPEG data URL.
+ * Handles both data URLs and remote URLs with CORS fallback.
+ */
+async function prepareSquarePhoto(url: string, sizePx = 360): Promise<string | null> {
+  if (typeof window === "undefined" || !url) return null;
+
+  return new Promise((resolve) => {
+    const processImg = (imgEl: HTMLImageElement) => {
+      try {
+        const naturalW = imgEl.naturalWidth || imgEl.width;
+        const naturalH = imgEl.naturalHeight || imgEl.height;
+        if (!naturalW || !naturalH) return resolve(null);
+
+        const minDim = Math.min(naturalW, naturalH);
+        const canvas = document.createElement("canvas");
+        canvas.width = sizePx;
+        canvas.height = sizePx;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return resolve(null);
+
+        // Center square crop
+        const sx = (naturalW - minDim) / 2;
+        const sy = (naturalH - minDim) / 2;
+        ctx.drawImage(imgEl, sx, sy, minDim, minDim, 0, 0, sizePx, sizePx);
+
+        resolve(canvas.toDataURL("image/jpeg", 0.95));
+      } catch (err) {
+        if (url.startsWith("data:")) {
+          resolve(url);
+        } else {
+          console.warn("Could not extract canvas data for photo:", err);
+          resolve(null);
+        }
+      }
+    };
+
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => processImg(img);
+    img.onerror = async () => {
+      // If direct image loading failed due to CORS, attempt fetch as blob
+      try {
+        const res = await fetch(url, { mode: "cors" });
+        const blob = await res.blob();
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const fallbackImg = new Image();
+          fallbackImg.onload = () => processImg(fallbackImg);
+          fallbackImg.onerror = () => resolve(null);
+          fallbackImg.src = reader.result as string;
+        };
+        reader.onerror = () => resolve(null);
+        reader.readAsDataURL(blob);
+      } catch {
+        resolve(null);
+      }
+    };
+    img.src = url;
+  });
 }
 
 /**
  * Generates an ATS-friendly, single-column Resume PDF in Arial/Helvetica.
- * Features centered header (Name, Target Role, Contact Links), uppercase section headings
+ * Features centered header (Photo, Name, Target Role, Contact Links), uppercase section headings
  * with horizontal divider rules, and clean typography.
  */
-export function downloadResumePdf({
+export async function downloadResumePdf({
   content,
   candidateName,
   jobTitle,
   fileName,
-}: ResumePdfOptions): void {
+  includePhoto = false,
+  photoUrl,
+  photoSize = "md",
+}: ResumePdfOptions): Promise<void> {
   if (!content || !content.trim()) return;
 
   const doc = new jsPDF({
@@ -77,100 +153,229 @@ export function downloadResumePdf({
   }
 
   if (headerLines.length > 0) {
-    // Line 1: Name (Centered, Bold, 18pt)
-    const nameLine = headerLines[0];
-    doc.setFont(FONT_FAMILY, "bold");
-    doc.setFontSize(NAME_FONT_SIZE);
-    doc.setTextColor(0, 0, 0);
-    doc.text(nameLine, centerX, cursorY, { align: "center" });
-    cursorY += 7.2;
-
-    // Line 2: Role Title (Centered, Normal, 12pt)
-    if (headerLines.length > 1) {
-      const roleLine = headerLines[1];
-      doc.setFont(FONT_FAMILY, "normal");
-      doc.setFontSize(ROLE_FONT_SIZE);
-      doc.setTextColor(0, 0, 0);
-      doc.text(roleLine, centerX, cursorY, { align: "center" });
-      cursorY += 5.4;
-    }
-
-    // Line 3+: Contact Info & Links (Centered, 10pt, Clickable)
-    if (headerLines.length > 2) {
-      for (let h = 2; h < headerLines.length; h++) {
-        const contactLine = headerLines[h];
-        doc.setFont(FONT_FAMILY, "normal");
-        doc.setFontSize(CONTACT_FONT_SIZE);
-        doc.setTextColor(0, 0, 0);
-
-        const rawItems = contactLine.split("|").map((s) => s.trim()).filter(Boolean);
-        if (rawItems.length === 0) continue;
-
-        const items = rawItems.map((text) => {
-          let url: string | null = null;
-          if (text.includes("@") && !text.includes("/")) {
-            url = `https://mail.google.com/mail/u/0/?fs=1&to=${encodeURIComponent(text)}&tf=cm`;
-          } else if (text.includes(".") || text.startsWith("http")) {
-            url = text.startsWith("http") ? text : `https://${text}`;
-          } else if (/^\+?[\d\s\-().]{7,}$/.test(text) && text.replace(/\D/g, "").length >= 7) {
-            url = `tel:${text.replace(/[\s\-().]/g, "")}`;
-          }
-          return {
-            text,
-            url,
-            width: doc.getTextWidth(text),
-          };
-        });
-
-        const sep = " | ";
-        const sepWidth = doc.getTextWidth(sep);
-
-        // Group into rows if it exceeds printableWidth
-        const rows: typeof items[] = [];
-        let currentRow: typeof items = [];
-        let currentWidth = 0;
-
-        for (const item of items) {
-          const needed = currentRow.length === 0 ? item.width : currentWidth + sepWidth + item.width;
-          if (currentRow.length > 0 && needed > printableWidth) {
-            rows.push(currentRow);
-            currentRow = [item];
-            currentWidth = item.width;
-          } else {
-            currentRow.push(item);
-            currentWidth = needed;
-          }
-        }
-        if (currentRow.length > 0) {
-          rows.push(currentRow);
-        }
-
-        for (let r = 0; r < rows.length; r++) {
-          const rowItems = rows[r];
-          const totalRowWidth =
-            rowItems.reduce((acc, it) => acc + it.width, 0) + (rowItems.length - 1) * sepWidth;
-          let startX = centerX - totalRowWidth / 2;
-
-          for (let j = 0; j < rowItems.length; j++) {
-            const it = rowItems[j];
-            if (j > 0) {
-              doc.text(sep, startX, cursorY);
-              startX += sepWidth;
-            }
-            if (it.url) {
-              doc.textWithLink(it.text, startX, cursorY, { url: it.url });
-              doc.link(startX, cursorY - 3.0, it.width, 4.0, { url: it.url });
-            } else {
-              doc.text(it.text, startX, cursorY);
-            }
-            startX += it.width;
-          }
-          cursorY += 4.8;
-        }
+    let squarePhotoData: string | null = null;
+    if (includePhoto && photoUrl) {
+      try {
+        squarePhotoData = await prepareSquarePhoto(photoUrl, 360);
+      } catch (photoErr) {
+        console.warn("Failed to prepare photo for resume PDF:", photoErr);
       }
     }
 
-    cursorY += 5.5; // Space before first section
+    const hasPhoto = Boolean(squarePhotoData);
+
+    if (hasPhoto) {
+      // 1A. Left-Aligned Layout: Square Photo on the left, Name/Title/Contacts on the right
+      const PHOTO_SIZE =
+        typeof photoSize === "number"
+          ? photoSize
+          : RESUME_PHOTO_SIZES_MM[photoSize] || RESUME_PHOTO_SIZES_MM.md;
+      const PHOTO_GAP = 5.0; // 5mm gap between photo and text
+      const photoX = marginX;
+      const photoY = cursorY;
+      const textStartX = marginX + PHOTO_SIZE + PHOTO_GAP;
+      const textPrintableWidth = printableWidth - (PHOTO_SIZE + PHOTO_GAP);
+
+      // Draw square photo
+      doc.addImage(squarePhotoData!, "JPEG", photoX, photoY, PHOTO_SIZE, PHOTO_SIZE, undefined, "FAST");
+      // Subtle crisp square border around photo
+      doc.setDrawColor(215, 215, 220);
+      doc.setLineWidth(0.25);
+      doc.rect(photoX, photoY, PHOTO_SIZE, PHOTO_SIZE, "S");
+
+      let textCursorY = photoY + 5.2;
+
+      // Line 1: Name (Left-aligned, Bold, 18pt)
+      const nameLine = headerLines[0];
+      doc.setFont(FONT_FAMILY, "bold");
+      doc.setFontSize(NAME_FONT_SIZE);
+      doc.setTextColor(0, 0, 0);
+      doc.text(nameLine, textStartX, textCursorY, { align: "left" });
+      textCursorY += 6.5;
+
+      // Line 2: Role Title (Left-aligned, Normal, 12pt)
+      if (headerLines.length > 1) {
+        const roleLine = headerLines[1];
+        doc.setFont(FONT_FAMILY, "normal");
+        doc.setFontSize(ROLE_FONT_SIZE);
+        doc.setTextColor(0, 0, 0);
+        doc.text(roleLine, textStartX, textCursorY, { align: "left" });
+        textCursorY += 5.2;
+      }
+
+      // Line 3+: Contact Info & Links (Left-aligned, 10pt, Clickable)
+      if (headerLines.length > 2) {
+        for (let h = 2; h < headerLines.length; h++) {
+          const contactLine = headerLines[h];
+          doc.setFont(FONT_FAMILY, "normal");
+          doc.setFontSize(CONTACT_FONT_SIZE);
+          doc.setTextColor(0, 0, 0);
+
+          const rawItems = contactLine.split("|").map((s) => s.trim()).filter(Boolean);
+          if (rawItems.length === 0) continue;
+
+          const items = rawItems.map((text) => {
+            let url: string | null = null;
+            if (text.includes("@") && !text.includes("/")) {
+              url = `https://mail.google.com/mail/u/0/?fs=1&to=${encodeURIComponent(text)}&tf=cm`;
+            } else if (text.includes(".") || text.startsWith("http")) {
+              url = text.startsWith("http") ? text : `https://${text}`;
+            } else if (/^\+?[\d\s\-().]{7,}$/.test(text) && text.replace(/\D/g, "").length >= 7) {
+              url = `tel:${text.replace(/[\s\-().]/g, "")}`;
+            }
+            return {
+              text,
+              url,
+              width: doc.getTextWidth(text),
+            };
+          });
+
+          const sep = " | ";
+          const sepWidth = doc.getTextWidth(sep);
+
+          // Group into rows if it exceeds textPrintableWidth
+          const rows: typeof items[] = [];
+          let currentRow: typeof items = [];
+          let currentWidth = 0;
+
+          for (const item of items) {
+            const needed = currentRow.length === 0 ? item.width : currentWidth + sepWidth + item.width;
+            if (currentRow.length > 0 && needed > textPrintableWidth) {
+              rows.push(currentRow);
+              currentRow = [item];
+              currentWidth = item.width;
+            } else {
+              currentRow.push(item);
+              currentWidth = needed;
+            }
+          }
+          if (currentRow.length > 0) {
+            rows.push(currentRow);
+          }
+
+          for (let r = 0; r < rows.length; r++) {
+            const rowItems = rows[r];
+            let startX = textStartX;
+
+            for (let j = 0; j < rowItems.length; j++) {
+              const it = rowItems[j];
+              if (j > 0) {
+                doc.text(sep, startX, textCursorY);
+                startX += sepWidth;
+              }
+              if (it.url) {
+                doc.textWithLink(it.text, startX, textCursorY, { url: it.url });
+                doc.link(startX, textCursorY - 3.0, it.width, 4.0, { url: it.url });
+              } else {
+                doc.text(it.text, startX, textCursorY);
+              }
+              startX += it.width;
+            }
+            textCursorY += 4.5;
+          }
+        }
+      }
+
+      // Extra top space above the first section (e.g. PROFESSIONAL SUMMARY) when photo is included
+      const TOP_SPACE_ABOVE_SUMMARY = 11.0; // mm gap before summary divider
+      cursorY = Math.max(photoY + PHOTO_SIZE, textCursorY) + TOP_SPACE_ABOVE_SUMMARY;
+    } else {
+      // 1B. Centered Layout (Default ATS when no photo)
+      // Line 1: Name (Centered, Bold, 18pt)
+      const nameLine = headerLines[0];
+      doc.setFont(FONT_FAMILY, "bold");
+      doc.setFontSize(NAME_FONT_SIZE);
+      doc.setTextColor(0, 0, 0);
+      doc.text(nameLine, centerX, cursorY, { align: "center" });
+      cursorY += 7.2;
+
+      // Line 2: Role Title (Centered, Normal, 12pt)
+      if (headerLines.length > 1) {
+        const roleLine = headerLines[1];
+        doc.setFont(FONT_FAMILY, "normal");
+        doc.setFontSize(ROLE_FONT_SIZE);
+        doc.setTextColor(0, 0, 0);
+        doc.text(roleLine, centerX, cursorY, { align: "center" });
+        cursorY += 5.4;
+      }
+
+      // Line 3+: Contact Info & Links (Centered, 10pt, Clickable)
+      if (headerLines.length > 2) {
+        for (let h = 2; h < headerLines.length; h++) {
+          const contactLine = headerLines[h];
+          doc.setFont(FONT_FAMILY, "normal");
+          doc.setFontSize(CONTACT_FONT_SIZE);
+          doc.setTextColor(0, 0, 0);
+
+          const rawItems = contactLine.split("|").map((s) => s.trim()).filter(Boolean);
+          if (rawItems.length === 0) continue;
+
+          const items = rawItems.map((text) => {
+            let url: string | null = null;
+            if (text.includes("@") && !text.includes("/")) {
+              url = `https://mail.google.com/mail/u/0/?fs=1&to=${encodeURIComponent(text)}&tf=cm`;
+            } else if (text.includes(".") || text.startsWith("http")) {
+              url = text.startsWith("http") ? text : `https://${text}`;
+            } else if (/^\+?[\d\s\-().]{7,}$/.test(text) && text.replace(/\D/g, "").length >= 7) {
+              url = `tel:${text.replace(/[\s\-().]/g, "")}`;
+            }
+            return {
+              text,
+              url,
+              width: doc.getTextWidth(text),
+            };
+          });
+
+          const sep = " | ";
+          const sepWidth = doc.getTextWidth(sep);
+
+          // Group into rows if it exceeds printableWidth
+          const rows: typeof items[] = [];
+          let currentRow: typeof items = [];
+          let currentWidth = 0;
+
+          for (const item of items) {
+            const needed = currentRow.length === 0 ? item.width : currentWidth + sepWidth + item.width;
+            if (currentRow.length > 0 && needed > printableWidth) {
+              rows.push(currentRow);
+              currentRow = [item];
+              currentWidth = item.width;
+            } else {
+              currentRow.push(item);
+              currentWidth = needed;
+            }
+          }
+          if (currentRow.length > 0) {
+            rows.push(currentRow);
+          }
+
+          for (let r = 0; r < rows.length; r++) {
+            const rowItems = rows[r];
+            const totalRowWidth =
+              rowItems.reduce((acc, it) => acc + it.width, 0) + (rowItems.length - 1) * sepWidth;
+            let startX = centerX - totalRowWidth / 2;
+
+            for (let j = 0; j < rowItems.length; j++) {
+              const it = rowItems[j];
+              if (j > 0) {
+                doc.text(sep, startX, cursorY);
+                startX += sepWidth;
+              }
+              if (it.url) {
+                doc.textWithLink(it.text, startX, cursorY, { url: it.url });
+                doc.link(startX, cursorY - 3.0, it.width, 4.0, { url: it.url });
+              } else {
+                doc.text(it.text, startX, cursorY);
+              }
+              startX += it.width;
+            }
+            cursorY += 4.8;
+          }
+        }
+      }
+
+      cursorY += 5.5; // Space before first section
+    }
   }
 
   // 2. Process Sections & Body (e.g. PROFESSIONAL SUMMARY, TECHNICAL SKILLS, PROFESSIONAL EXPERIENCE, PROJECTS, EDUCATION)

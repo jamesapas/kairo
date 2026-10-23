@@ -24,6 +24,7 @@ import {
   Video,
   MessageSquare,
   GripVertical,
+  Camera,
 } from "lucide-react";
 import {
   ApplyContentType,
@@ -35,8 +36,9 @@ import {
 import { JobStatus } from "@/types/job";
 import { JobMatchAnalysis } from "@/types/ai-match";
 import { saveApplyMaterialAction } from "@/lib/actions/jobs";
+import { getProfileAction, uploadAvatarAction } from "@/lib/actions/profile";
 import { downloadCoverLetterPdf } from "@/lib/utils/cover-letter-pdf";
-import { downloadResumePdf } from "@/lib/utils/resume-pdf";
+import { downloadResumePdf, ResumePhotoSize } from "@/lib/utils/resume-pdf";
 import { VideoScriptView } from "./video-script-view";
 import { ResumePageEditor } from "./resume-page-editor";
 import {
@@ -528,6 +530,13 @@ interface ResumeDocumentViewProps {
   description?: string;
   matchAnalysis?: JobMatchAnalysis | null;
   hiddenProjects?: ParsedProject[];
+  includePhoto?: boolean;
+  photoUrl?: string | null;
+  photoSize?: "sm" | "md" | "lg";
+  onTogglePhoto?: () => void;
+  onPhotoSizeChange?: (size: "sm" | "md" | "lg") => void;
+  onUploadPhoto?: (file: File) => void;
+  onRemovePhoto?: () => void;
   onContentChange?: (newContent: string) => void;
   onHideProject?: (project: ParsedProject) => void;
   onRestoreProject?: (project: ParsedProject) => void;
@@ -540,6 +549,13 @@ function ResumeDocumentView({
   description,
   matchAnalysis,
   hiddenProjects = [],
+  includePhoto = false,
+  photoUrl,
+  photoSize = "md",
+  onTogglePhoto,
+  onPhotoSizeChange,
+  onUploadPhoto,
+  onRemovePhoto,
   onContentChange,
   onHideProject,
   onRestoreProject,
@@ -629,80 +645,230 @@ function ResumeDocumentView({
     return (
       <div className="space-y-6 font-sans text-zinc-900 dark:text-zinc-100 px-1 sm:px-2">
         {/* ATS Resume Header */}
-        <div className="text-center space-y-1.5 pb-2">
-          <h3 className="text-base sm:text-lg font-bold tracking-tight uppercase text-zinc-950 dark:text-zinc-50">
-            {candidateName}
-          </h3>
-
-          {isEditing ? (
-            <div className="max-w-md mx-auto pt-0.5 space-y-1">
-              <input
-                type="text"
-                value={positionTitle}
-                onChange={(e) => {
-                  const updated = updateResumePositionTitle(content, e.target.value);
-                  onContentChange?.(updated);
-                }}
-                placeholder={jobTitle ? `Target role: ${jobTitle}` : "Position / Role Title (e.g. Senior Full-Stack Developer)"}
-                className="text-center font-medium text-xs sm:text-sm py-1 px-3 rounded-lg border border-dashed border-zinc-300 dark:border-zinc-750 bg-white/70 dark:bg-zinc-900/60 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-hidden focus:ring-1 focus:ring-amber-500 w-full"
-              />
-              {jobTitle && positionTitle.toLowerCase() !== jobTitle.toLowerCase() && (
-                <div className="flex items-center justify-center gap-1.5 text-[11px] text-zinc-400 dark:text-zinc-500">
-                  <span>Match target job:</span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const updated = updateResumePositionTitle(content, jobTitle);
-                      onContentChange?.(updated);
-                    }}
-                    className="text-amber-600 dark:text-amber-400 hover:underline font-semibold cursor-pointer"
-                  >
-                    &ldquo;{jobTitle}&rdquo;
-                  </button>
+        {includePhoto ? (
+          <div className="flex flex-row items-center gap-4 sm:gap-6 pb-6 mb-4 border-b border-zinc-200/80 dark:border-zinc-800">
+            {/* Square Photo on the Left */}
+            <div className="relative group/avatar shrink-0">
+              {photoUrl ? (
+                <div className="relative">
+                  <img
+                    src={photoUrl}
+                    alt="Candidate Photo"
+                    className={`${
+                      photoSize === "sm"
+                        ? "w-16 h-16 sm:w-20 sm:h-20"
+                        : photoSize === "lg"
+                        ? "w-24 h-24 sm:w-28 sm:h-28"
+                        : "w-20 h-20 sm:w-24 sm:h-24"
+                    } rounded-xs sm:rounded-sm object-cover border border-zinc-200 dark:border-zinc-700 shadow-xs`}
+                  />
+                  {isEditing && (
+                    <div className="absolute inset-0 bg-black/45 rounded-xs sm:rounded-sm opacity-0 group-hover/avatar:opacity-100 transition-opacity flex items-center justify-center gap-1.5">
+                      <label
+                        className="p-1.5 rounded-md bg-white text-zinc-800 hover:bg-zinc-100 cursor-pointer shadow-xs transition"
+                        title="Change photo"
+                      >
+                        <Camera className="w-3.5 h-3.5" />
+                        <input
+                          type="file"
+                          accept="image/png,image/jpeg,image/webp"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) onUploadPhoto?.(file);
+                          }}
+                        />
+                      </label>
+                      {onRemovePhoto && (
+                        <button
+                          type="button"
+                          onClick={onRemovePhoto}
+                          className="p-1.5 rounded-md bg-rose-600 text-white hover:bg-rose-700 cursor-pointer shadow-xs transition"
+                          title="Remove photo"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
+              ) : (
+                <label
+                  className={`flex flex-col items-center justify-center ${
+                    photoSize === "sm"
+                      ? "w-16 h-16 sm:w-20 sm:h-20"
+                      : photoSize === "lg"
+                      ? "w-24 h-24 sm:w-28 sm:h-28"
+                      : "w-20 h-20 sm:w-24 sm:h-24"
+                  } rounded-xs sm:rounded-sm border-2 border-dashed border-zinc-300 dark:border-zinc-700 hover:border-amber-500 bg-zinc-100/60 dark:bg-zinc-800/60 hover:bg-amber-50 dark:hover:bg-amber-950/20 text-zinc-500 hover:text-amber-600 dark:hover:text-amber-400 cursor-pointer transition group`}
+                >
+                  <Camera className="w-5 h-5 mb-0.5 group-hover:scale-110 transition-transform" />
+                  <span className="text-[10px] font-semibold">Upload</span>
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) onUploadPhoto?.(file);
+                    }}
+                  />
+                </label>
               )}
             </div>
-          ) : (
-            positionTitle && (
-              <p className="text-xs sm:text-sm font-normal text-zinc-800 dark:text-zinc-200">
-                {positionTitle}
-              </p>
-            )
-          )}
 
-          {contactLines.map((l, i) => {
-            const parts = l.split("|").map((s) => s.trim()).filter(Boolean);
-            return (
-              <div key={i} className="flex flex-wrap justify-center items-center gap-1.5 text-xs sm:text-sm font-normal text-zinc-800 dark:text-zinc-200 pt-0.5">
-                {parts.map((p, pIdx) => {
-                  let href: string | null = null;
-                  if (p.includes("@") && !p.includes("/")) {
-                    href = `https://mail.google.com/mail/u/0/?fs=1&to=${encodeURIComponent(p)}&tf=cm`;
-                  } else if (p.includes(".") || p.startsWith("http")) {
-                    href = p.startsWith("http") ? p : `https://${p}`;
-                  }
-                  return (
-                    <span key={pIdx} className="inline-flex items-center gap-1.5">
-                      {pIdx > 0 && <span className="text-zinc-400 select-none">|</span>}
-                      {href ? (
-                        <a
-                          href={href}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="hover:underline text-blue-600 dark:text-blue-400"
-                        >
-                          {p}
-                        </a>
-                      ) : (
-                        <span>{p}</span>
-                      )}
-                    </span>
-                  );
-                })}
+            {/* Left-Aligned Heading Details on the Right */}
+            <div className="flex-1 min-w-0 text-left space-y-1">
+              <h3 className="text-base sm:text-lg font-bold tracking-tight uppercase text-zinc-950 dark:text-zinc-50">
+                {candidateName}
+              </h3>
+
+              {isEditing ? (
+                <div className="max-w-md pt-0.5 space-y-1">
+                  <input
+                    type="text"
+                    value={positionTitle}
+                    onChange={(e) => {
+                      const updated = updateResumePositionTitle(content, e.target.value);
+                      onContentChange?.(updated);
+                    }}
+                    placeholder={jobTitle ? `Target role: ${jobTitle}` : "Position / Role Title (e.g. Senior Full-Stack Developer)"}
+                    className="text-left font-medium text-xs sm:text-sm py-1 px-3 rounded-lg border border-dashed border-zinc-300 dark:border-zinc-750 bg-white/70 dark:bg-zinc-900/60 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-hidden focus:ring-1 focus:ring-amber-500 w-full"
+                  />
+                  {jobTitle && positionTitle.toLowerCase() !== jobTitle.toLowerCase() && (
+                    <div className="flex items-center justify-start gap-1.5 text-[11px] text-zinc-400 dark:text-zinc-500">
+                      <span>Match target job:</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const updated = updateResumePositionTitle(content, jobTitle);
+                          onContentChange?.(updated);
+                        }}
+                        className="text-amber-600 dark:text-amber-400 hover:underline font-semibold cursor-pointer"
+                      >
+                        &ldquo;{jobTitle}&rdquo;
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                positionTitle && (
+                  <p className="text-xs sm:text-sm font-normal text-zinc-800 dark:text-zinc-200">
+                    {positionTitle}
+                  </p>
+                )
+              )}
+
+              {contactLines.map((l, i) => {
+                const parts = l.split("|").map((s) => s.trim()).filter(Boolean);
+                return (
+                  <div key={i} className="flex flex-wrap justify-start items-center gap-1.5 text-xs sm:text-sm font-normal text-zinc-800 dark:text-zinc-200 pt-0.5">
+                    {parts.map((p, pIdx) => {
+                      let href: string | null = null;
+                      if (p.includes("@") && !p.includes("/")) {
+                        href = `https://mail.google.com/mail/u/0/?fs=1&to=${encodeURIComponent(p)}&tf=cm`;
+                      } else if (p.includes(".") || p.startsWith("http")) {
+                        href = p.startsWith("http") ? p : `https://${p}`;
+                      }
+                      return (
+                        <span key={pIdx} className="inline-flex items-center gap-1.5">
+                          {pIdx > 0 && <span className="text-zinc-400 select-none">|</span>}
+                          {href ? (
+                            <a
+                              href={href}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="hover:underline text-blue-600 dark:text-blue-400"
+                            >
+                              {p}
+                            </a>
+                          ) : (
+                            <span>{p}</span>
+                          )}
+                        </span>
+                      );
+                    })}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ) : (
+          <div className="text-center space-y-1.5 pb-2">
+            <h3 className="text-base sm:text-lg font-bold tracking-tight uppercase text-zinc-950 dark:text-zinc-50">
+              {candidateName}
+            </h3>
+
+            {isEditing ? (
+              <div className="max-w-md mx-auto pt-0.5 space-y-1">
+                <input
+                  type="text"
+                  value={positionTitle}
+                  onChange={(e) => {
+                    const updated = updateResumePositionTitle(content, e.target.value);
+                    onContentChange?.(updated);
+                  }}
+                  placeholder={jobTitle ? `Target role: ${jobTitle}` : "Position / Role Title (e.g. Senior Full-Stack Developer)"}
+                  className="text-center font-medium text-xs sm:text-sm py-1 px-3 rounded-lg border border-dashed border-zinc-300 dark:border-zinc-750 bg-white/70 dark:bg-zinc-900/60 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-hidden focus:ring-1 focus:ring-amber-500 w-full"
+                />
+                {jobTitle && positionTitle.toLowerCase() !== jobTitle.toLowerCase() && (
+                  <div className="flex items-center justify-center gap-1.5 text-[11px] text-zinc-400 dark:text-zinc-500">
+                    <span>Match target job:</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const updated = updateResumePositionTitle(content, jobTitle);
+                        onContentChange?.(updated);
+                      }}
+                      className="text-amber-600 dark:text-amber-400 hover:underline font-semibold cursor-pointer"
+                    >
+                      &ldquo;{jobTitle}&rdquo;
+                    </button>
+                  </div>
+                )}
               </div>
-            );
-          })}
-        </div>
+            ) : (
+              positionTitle && (
+                <p className="text-xs sm:text-sm font-normal text-zinc-800 dark:text-zinc-200">
+                  {positionTitle}
+                </p>
+              )
+            )}
+
+            {contactLines.map((l, i) => {
+              const parts = l.split("|").map((s) => s.trim()).filter(Boolean);
+              return (
+                <div key={i} className="flex flex-wrap justify-center items-center gap-1.5 text-xs sm:text-sm font-normal text-zinc-800 dark:text-zinc-200 pt-0.5">
+                  {parts.map((p, pIdx) => {
+                    let href: string | null = null;
+                    if (p.includes("@") && !p.includes("/")) {
+                      href = `https://mail.google.com/mail/u/0/?fs=1&to=${encodeURIComponent(p)}&tf=cm`;
+                    } else if (p.includes(".") || p.startsWith("http")) {
+                      href = p.startsWith("http") ? p : `https://${p}`;
+                    }
+                    return (
+                      <span key={pIdx} className="inline-flex items-center gap-1.5">
+                        {pIdx > 0 && <span className="text-zinc-400 select-none">|</span>}
+                        {href ? (
+                          <a
+                            href={href}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="hover:underline text-blue-600 dark:text-blue-400"
+                          >
+                            {p}
+                          </a>
+                        ) : (
+                          <span>{p}</span>
+                        )}
+                      </span>
+                    );
+                  })}
+                </div>
+              );
+            })}
+          </div>
+        )}
 
         {/* Sections */}
         {sections.map((sec, sIdx) => {
@@ -717,7 +883,7 @@ function ResumeDocumentView({
             : "key";
 
           return (
-            <div key={sIdx} className="space-y-2">
+            <div key={sIdx} className={`space-y-2 ${sIdx === 0 && includePhoto ? "pt-2" : ""}`}>
               {/* Section Header with Black Horizontal Line */}
               <div className="border-b border-black dark:border-white pb-1">
                 <h4 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-zinc-950 dark:text-zinc-50">
@@ -1196,9 +1362,97 @@ export function ApplyMaterialsPanel({
   const [isAppliedUpdated, setIsAppliedUpdated] = useState(false);
   const [showRegenerateConfirm, setShowRegenerateConfirm] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
+  const [includePhoto, setIncludePhoto] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("kairo_resume_include_photo");
+      return saved === "true";
+    }
+    return false;
+  });
+  const [photoSize, setPhotoSize] = useState<"sm" | "md" | "lg">(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("kairo_resume_photo_size");
+      if (saved === "sm" || saved === "md" || saved === "lg") return saved;
+    }
+    return "md";
+  });
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
+
+  // Fetch candidate profile avatar on mount
+  useEffect(() => {
+    let isMounted = true;
+    async function fetchUserAvatar() {
+      try {
+        const res = await getProfileAction();
+        if (isMounted && res.success && res.data?.avatarUrl) {
+          setPhotoUrl(res.data.avatarUrl);
+        }
+      } catch (e) {
+        console.warn("Could not load candidate avatar:", e);
+      }
+    }
+    fetchUserAvatar();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const handleTogglePhoto = () => {
+    setIncludePhoto((prev) => {
+      const next = !prev;
+      if (typeof window !== "undefined") {
+        localStorage.setItem("kairo_resume_include_photo", String(next));
+      }
+      return next;
+    });
+  };
+
+  const handlePhotoSizeChange = (size: "sm" | "md" | "lg") => {
+    setPhotoSize(size);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("kairo_resume_photo_size", size);
+    }
+  };
+
+  const handleUploadPhoto = async (file: File) => {
+    // Instant data URL preview
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const dataUrl = e.target?.result as string;
+      if (dataUrl) {
+        setPhotoUrl(dataUrl);
+        setIncludePhoto(true);
+        if (typeof window !== "undefined") {
+          localStorage.setItem("kairo_resume_include_photo", "true");
+        }
+      }
+    };
+    reader.readAsDataURL(file);
+
+    // Save to user storage
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await uploadAvatarAction(formData);
+      if (res.success && res.publicUrl) {
+        setPhotoUrl(res.publicUrl);
+      }
+    } catch (err) {
+      console.warn("Failed to upload avatar to cloud:", err);
+    }
+  };
+
+  const handleRemovePhoto = () => {
+    setPhotoUrl(null);
+    setIncludePhoto(false);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("kairo_resume_include_photo", "false");
+    }
+  };
 
   // Close dropdown on outside click or ESC key
   useEffect(() => {
@@ -1548,35 +1802,74 @@ export function ApplyMaterialsPanel({
               /* When Editing: Prominent Cancel & Save Actions */
               <div className="flex items-center gap-1.5 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xs p-1 rounded-xl border border-zinc-200 dark:border-zinc-700 shadow-sm">
                 {activeSubTab === "resume-suggestions" && (
-                  <div className="inline-flex items-center rounded-lg bg-zinc-100 dark:bg-zinc-800 p-0.5 text-[11px] font-semibold">
-                    {(
-                      [
-                        { id: "visual", label: "Visual" },
-                        { id: "page", label: "Docx (WYSIWYG)" },
-                      ] as const
-                    ).map((m) => {
-                      const isSelected = resumeEditMode === m.id;
-                      return (
-                        <button
-                          key={m.id}
-                          type="button"
-                          onClick={() => setResumeEditMode(m.id)}
-                          title={
-                            m.id === "visual"
-                              ? "Visual editor with drag-and-drop & suggestions"
-                              : "Edit on a realistic Letter-sized document page (WYSIWYG)"
-                          }
-                          className={`h-6 px-2.5 rounded-md transition cursor-pointer ${
-                            isSelected
-                              ? "bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 shadow-2xs font-bold"
-                              : "text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200"
-                          }`}
-                        >
-                          {m.label}
-                        </button>
-                      );
-                    })}
-                  </div>
+                  <>
+                    <div className="inline-flex items-center rounded-lg bg-zinc-100 dark:bg-zinc-800 p-0.5 text-[11px] font-semibold">
+                      {(
+                        [
+                          { id: "visual", label: "Visual" },
+                          { id: "page", label: "Docx (WYSIWYG)" },
+                        ] as const
+                      ).map((m) => {
+                        const isSelected = resumeEditMode === m.id;
+                        return (
+                          <button
+                            key={m.id}
+                            type="button"
+                            onClick={() => setResumeEditMode(m.id)}
+                            title={
+                              m.id === "visual"
+                                ? "Visual editor with drag-and-drop & suggestions"
+                                : "Edit on a realistic Letter-sized document page (WYSIWYG)"
+                            }
+                            className={`h-6 px-2.5 rounded-md transition cursor-pointer ${
+                              isSelected
+                                ? "bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 shadow-2xs font-bold"
+                                : "text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200"
+                            }`}
+                          >
+                            {m.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Photo Toggle in Edit Toolbar */}
+                    <div className="inline-flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={handleTogglePhoto}
+                        className={`h-7 px-2 rounded-lg border text-xs font-semibold transition flex items-center gap-1.5 shadow-2xs active:scale-[0.98] cursor-pointer ${
+                          includePhoto
+                            ? "bg-amber-50 dark:bg-amber-950/60 border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-200"
+                            : "bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700"
+                        }`}
+                        title={includePhoto ? "Photo is included on resume" : "Include candidate photo on resume"}
+                      >
+                        <Camera className="w-3.5 h-3.5 text-amber-500" />
+                        <span>Photo: {includePhoto ? "On" : "Off"}</span>
+                      </button>
+
+                      {includePhoto && (
+                        <div className="inline-flex items-center rounded-lg bg-zinc-100 dark:bg-zinc-800 p-0.5 text-[10px] font-semibold border border-zinc-200/80 dark:border-zinc-750">
+                          {(["sm", "md", "lg"] as const).map((s) => (
+                            <button
+                              key={s}
+                              type="button"
+                              onClick={() => handlePhotoSizeChange(s)}
+                              className={`px-1.5 py-0.5 rounded uppercase transition cursor-pointer ${
+                                photoSize === s
+                                  ? "bg-amber-100 dark:bg-amber-900/60 text-amber-900 dark:text-amber-200 font-bold"
+                                  : "text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200"
+                              }`}
+                              title={`Photo Size: ${s === "sm" ? "Small (22mm)" : s === "md" ? "Medium (28mm)" : "Large (34mm)"}`}
+                            >
+                              {s}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </>
                 )}
                 {/* Cancel Edit Button */}
                 <button
@@ -1604,14 +1897,53 @@ export function ApplyMaterialsPanel({
             ) : (
               <div className="flex items-center gap-1.5">
                 {activeSubTab === "resume-suggestions" && hasCurrentContent && (
-                  <button
-                    type="button"
-                    onClick={() => setIsEditing(true)}
-                    className="h-7 px-2.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 text-xs font-semibold transition flex items-center gap-1.5 shadow-2xs active:scale-[0.98] cursor-pointer"
-                  >
-                    <Edit3 className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-400" />
-                    <span>Edit Resume</span>
-                  </button>
+                  <>
+                    {/* Include Photo Toggle Button */}
+                    <div className="inline-flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={handleTogglePhoto}
+                        className={`h-7 px-2.5 rounded-lg border text-xs font-semibold transition flex items-center gap-1.5 shadow-2xs active:scale-[0.98] cursor-pointer ${
+                          includePhoto
+                            ? "bg-amber-50 dark:bg-amber-950/60 border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-200"
+                            : "bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 hover:text-zinc-900 dark:hover:text-zinc-100"
+                        }`}
+                        title={includePhoto ? "Candidate photo is included on resume (click to hide)" : "Include candidate photo on resume"}
+                      >
+                        <Camera className="w-3.5 h-3.5 text-amber-500" />
+                        <span>Photo: {includePhoto ? "On" : "Off"}</span>
+                      </button>
+
+                      {includePhoto && (
+                        <div className="inline-flex items-center rounded-lg bg-zinc-100 dark:bg-zinc-800 p-0.5 text-[10px] font-semibold border border-zinc-200/80 dark:border-zinc-750">
+                          {(["sm", "md", "lg"] as const).map((s) => (
+                            <button
+                              key={s}
+                              type="button"
+                              onClick={() => handlePhotoSizeChange(s)}
+                              className={`px-1.5 py-0.5 rounded uppercase transition cursor-pointer ${
+                                photoSize === s
+                                  ? "bg-amber-100 dark:bg-amber-900/60 text-amber-900 dark:text-amber-200 font-bold"
+                                  : "text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200"
+                              }`}
+                              title={`Photo Size: ${s === "sm" ? "Small (22mm)" : s === "md" ? "Medium (28mm)" : "Large (34mm)"}`}
+                            >
+                              {s}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setIsEditing(true)}
+                      className="h-7 px-2.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 text-xs font-semibold transition flex items-center gap-1.5 shadow-2xs active:scale-[0.98] cursor-pointer"
+                    >
+                      <Edit3 className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-400" />
+                      <span>Edit Resume</span>
+                    </button>
+                  </>
                 )}
 
                 {/* When Viewing: 3-Dots Dropdown Menu (Matches Table Behavior) */}
@@ -1671,11 +2003,13 @@ export function ApplyMaterialsPanel({
                         </span>
                       </button>
 
+
                     {/* Download PDF (for Cover Letter or Resume) */}
                     {(activeSubTab === "cover-letter" || activeSubTab === "resume-suggestions") && (
                       <button
                         type="button"
-                        onClick={() => {
+                        disabled={isDownloadingPdf}
+                        onClick={async () => {
                           setIsMenuOpen(false);
                           const resumeText =
                             editedContents["resume-suggestions"] ??
@@ -1699,23 +2033,33 @@ export function ApplyMaterialsPanel({
                             }
                           }
 
-                          if (activeSubTab === "cover-letter") {
-                            downloadCoverLetterPdf({
-                              content: currentContent,
-                              companyName: company,
-                              jobTitle: cleanPosition || jobTitle,
-                            });
-                          } else {
-                            downloadResumePdf({
-                              content: currentContent,
-                              jobTitle: cleanPosition || jobTitle,
-                            });
+                          try {
+                            setIsDownloadingPdf(true);
+                            if (activeSubTab === "cover-letter") {
+                              downloadCoverLetterPdf({
+                                content: currentContent,
+                                companyName: company,
+                                jobTitle: cleanPosition || jobTitle,
+                              });
+                            } else {
+                              await downloadResumePdf({
+                                content: currentContent,
+                                jobTitle: cleanPosition || jobTitle,
+                                includePhoto,
+                                photoUrl: includePhoto ? photoUrl : null,
+                                photoSize: includePhoto ? photoSize : undefined,
+                              });
+                            }
+                          } catch (pdfErr) {
+                            console.error("PDF download failed:", pdfErr);
+                          } finally {
+                            setIsDownloadingPdf(false);
                           }
                         }}
                         className="w-full flex items-center gap-2.5 px-3 py-2 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100/80 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-white cursor-pointer transition"
                       >
                         <Download className="w-3.5 h-3.5 text-rose-500" />
-                        <span>Download PDF</span>
+                        <span>{isDownloadingPdf ? "Preparing PDF..." : "Download PDF"}</span>
                       </button>
                     )}
 
@@ -1784,6 +2128,13 @@ export function ApplyMaterialsPanel({
           ) : isEditing && activeSubTab === "resume-suggestions" && resumeEditMode === "page" ? (
             <ResumePageEditor
               content={currentContent}
+              includePhoto={includePhoto}
+              photoUrl={photoUrl}
+              photoSize={photoSize}
+              onTogglePhoto={handleTogglePhoto}
+              onPhotoSizeChange={handlePhotoSizeChange}
+              onUploadPhoto={handleUploadPhoto}
+              onRemovePhoto={handleRemovePhoto}
               onChange={(newContent) => {
                 setEditedContents((prev) => ({
                   ...prev,
@@ -1801,6 +2152,13 @@ export function ApplyMaterialsPanel({
                   description={description}
                   matchAnalysis={matchAnalysis}
                   hiddenProjects={hiddenProjects}
+                  includePhoto={includePhoto}
+                  photoUrl={photoUrl}
+                  photoSize={photoSize}
+                  onTogglePhoto={handleTogglePhoto}
+                  onPhotoSizeChange={handlePhotoSizeChange}
+                  onUploadPhoto={handleUploadPhoto}
+                  onRemovePhoto={handleRemovePhoto}
                   onContentChange={(newContent) => {
                     setEditedContents((prev) => ({
                       ...prev,
