@@ -54,6 +54,7 @@ export function getRecommendedSkillsForJob(
       "Node.js", "Express", "PostgreSQL", "MySQL", "MongoDB", "Supabase", "Firebase",
       "GraphQL", "REST APIs", "Git", "GitHub", "Docker", "AWS", "CI/CD",
       "Jest", "Playwright", "Cypress", "Python", "Redux", "Zustand", "Prisma",
+      "Cursor", "Claude Code", "Codex", "GitHub Copilot", "ChatGPT",
       "Lighthouse", "Core Web Vitals", "SEO", "Responsive Design", "Figma"
     ];
     for (const kw of commonTech) {
@@ -218,7 +219,106 @@ export function addResumeSkillCategory(
   }
 
   const newLine = initSkill ? `${cleanCat}: ${initSkill}` : `${cleanCat}:`;
-  lines.push(newLine);
+
+  // If adding an AI category, place it above Tools & Performance / Developer Tools
+  const toolsIdx = lines.findIndex((l) => {
+    const colonMatch = l.match(/^([^:]+):/);
+    if (!colonMatch) return false;
+    const cat = colonMatch[1].trim().toLowerCase();
+    return (
+      cat.includes("tool") ||
+      cat.includes("performance") ||
+      cat.includes("developer tools") ||
+      cat.includes("practices")
+    );
+  });
+
+  if (cleanCat.toLowerCase().includes("ai") && toolsIdx !== -1) {
+    lines.splice(toolsIdx, 0, newLine);
+  } else {
+    lines.push(newLine);
+  }
+
+  const newBody = lines.join("\n");
+  return normalized.replace(skillsSectionRegex, `${header}${newBody}\n`);
+}
+
+/**
+ * Ensures "AI Development Tools" category with skills (Claude Code, Codex, Cursor)
+ * is present in TECHNICAL SKILLS, positioned directly above "Tools & Performance".
+ */
+export function ensureAiDevelopmentTools(content: string): string {
+  if (!content) return content;
+  const normalized = content.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+  const skillsSectionRegex = /(TECHNICAL\s+SKILLS\s*\n[-=_]+\s*\n)([\s\S]*?)(?=\n+[A-Z\s/&-]{3,}\s*(?:\n[-=_]+\s*\n|\n|$)|$)/i;
+  const match = normalized.match(skillsSectionRegex);
+
+  if (!match) return content;
+
+  const header = match[1];
+  const body = match[2];
+  const lines = body.split("\n").filter((l) => l.trim().length > 0);
+
+  // Check if AI Development Tools category already exists
+  const aiLineIdx = lines.findIndex((l) => {
+    const colonMatch = l.match(/^([^:]+):/);
+    if (!colonMatch) return false;
+    const cat = colonMatch[1].trim().toLowerCase();
+    return (
+      cat.includes("ai dev") ||
+      cat.includes("ai tool") ||
+      cat.includes("ai-assisted") ||
+      cat === "ai" ||
+      cat === "ai skills"
+    );
+  });
+
+  const defaultAiSkills = ["Claude Code", "Codex", "Cursor"];
+  let aiLine: string;
+
+  if (aiLineIdx !== -1) {
+    const existing = lines[aiLineIdx];
+    const colonMatch = existing.match(/^([^:]+):\s*(.*)$/);
+    const catName = colonMatch ? colonMatch[1].trim() : "AI Development Tools";
+    const currentSkills =
+      colonMatch && colonMatch[2]
+        ? colonMatch[2]
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean)
+        : [];
+
+    const currentLower = new Set(currentSkills.map((s) => s.toLowerCase()));
+    for (const sk of defaultAiSkills) {
+      if (!currentLower.has(sk.toLowerCase())) {
+        currentSkills.push(sk);
+        currentLower.add(sk.toLowerCase());
+      }
+    }
+    aiLine = `${catName}: ${currentSkills.join(", ")}`;
+    lines.splice(aiLineIdx, 1);
+  } else {
+    aiLine = `AI Development Tools: ${defaultAiSkills.join(", ")}`;
+  }
+
+  // Find index of Tools & Performance / Developer Tools
+  const toolsIdx = lines.findIndex((l) => {
+    const colonMatch = l.match(/^([^:]+):/);
+    if (!colonMatch) return false;
+    const cat = colonMatch[1].trim().toLowerCase();
+    return (
+      cat.includes("tool") ||
+      cat.includes("performance") ||
+      cat.includes("developer tools") ||
+      cat.includes("practices")
+    );
+  });
+
+  if (toolsIdx !== -1) {
+    lines.splice(toolsIdx, 0, aiLine);
+  } else {
+    lines.push(aiLine);
+  }
 
   const newBody = lines.join("\n");
   return normalized.replace(skillsSectionRegex, `${header}${newBody}\n`);

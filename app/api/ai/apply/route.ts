@@ -9,6 +9,7 @@ import {
 } from "@/types/ai-apply";
 import { JobMatchAnalysis } from "@/types/ai-match";
 import { richHtmlToPlainText } from "@/lib/utils/job-description";
+import { ensureAiDevelopmentTools } from "@/lib/utils/resume-editor";
 
 export async function POST(request: Request) {
   try {
@@ -393,26 +394,33 @@ ABSOLUTE STRICT RULES:
    - The 'PROFESSIONAL SUMMARY' must be concise, punchy, and around 55–60 words, directly tailored to the role using verified experience.
 6. TARGETED TECHNICAL SKILLS (SMART ATS CATEGORIZATION & STRICT JOB RELEVANCE):
    - STRICT JOB RELEVANCE: ONLY include candidate skills that are directly related to, required by, or mentioned in the job description, or that directly support the role's primary tech stack. Strictly exclude unrelated technologies (e.g. no PHP/WordPress on a React/Next.js role).
+   - MANDATORY "AI Development Tools" CATEGORY:
+     * ALWAYS include an "AI Development Tools" category placed DIRECTLY ABOVE "Tools & Performance" (or "Developer Tools & Practices").
+     * Skills under this category can include modern AI engineering tools such as: Claude Code, Codex, Cursor (as well as ChatGPT, GitHub Copilot, v0 if applicable).
+     * Standard line format: "AI Development Tools: Claude Code, Codex, Cursor"
    - BALANCED, COHESIVE CATEGORIES (ANTI-FRAGMENTATION):
      * NEVER create awkward micro-categories with only 1 or 2 items (e.g. NEVER output "Version Control: Git" or "Performance Optimization: Lighthouse, Web Vitals" on their own lines).
-     * Group tooling, version control, build tools, workflows, and performance into a single unified category:
-       "Developer Tools & Practices: Git, GitHub, Cursor, Vite, Lighthouse, Core Web Vitals" (or "Tools & Performance: Git, Vite, Lighthouse, Web Vitals").
+     * Group tooling, version control, build tools, workflows, and performance into a single unified category placed AFTER AI Development Tools:
+       "Tools & Performance: Git, GitHub, Vite, Lighthouse, Web Vitals" (or "Developer Tools & Practices: Git, Vite, Lighthouse, Web Vitals").
      * DO NOT dump all languages and frameworks into a single bloated "Frontend Technologies" line. Separate core languages from frameworks/libraries for clean ATS readability:
        - Languages: Core programming & markup languages (e.g. "Languages: TypeScript, JavaScript, HTML5, CSS3")
        - Frontend Frameworks & Libraries: UI frameworks, libraries, & styling (e.g. "Frontend Frameworks: React, Next.js, Vue.js, Tailwind CSS, Alpine.js")
        - Backend & Databases: Server, API, and DB tech (e.g. "Backend & Databases: Node.js, Supabase, PostgreSQL, REST APIs" — only if relevant to the role)
+       - AI Development Tools: AI-assisted development tools (e.g. "AI Development Tools: Claude Code, Codex, Cursor")
        - Tools & Performance: VCS, build tools, performance & SEO (e.g. "Tools & Performance: Git, GitHub, Vite, Lighthouse, Web Vitals")
    - CANONICAL EXAMPLES:
      * Frontend role example:
        Languages: TypeScript, JavaScript, HTML5, CSS3
        Frontend Frameworks: React, Next.js, Vue.js, Tailwind CSS, Alpine.js
+       AI Development Tools: Claude Code, Codex, Cursor
        Tools & Performance: Git, GitHub, Lighthouse, Web Vitals, Vite
      * Full-Stack role example:
        Languages: TypeScript, JavaScript, SQL, HTML5, CSS3
        Frontend: React, Next.js, Tailwind CSS
        Backend & Databases: Node.js, Supabase, PostgreSQL, RESTful APIs
+       AI Development Tools: Claude Code, Codex, Cursor
        Tools & Practices: Git, GitHub, Vite, Lighthouse
-   - All included skills MUST come from the candidate's verified profile, experiences, or projects. NEVER fabricate or hallucinate unverified skills.
+   - All included skills MUST come from the candidate's verified profile, experiences, or projects (with AI development tools representing verified modern AI workflow). NEVER fabricate unrelated tech.
    - Domain Accuracy: Firebase and Supabase belong under Databases/Backend or BaaS, NEVER under CMS.
    - Format each category line strictly as: "Category Name: Skill1, Skill2, Skill3".
 
@@ -436,9 +444,10 @@ PROFESSIONAL SUMMARY
 
 TECHNICAL SKILLS
 ----------------
-[Organize ONLY verified candidate skills that are directly relevant to the job description into smart, balanced, ATS-friendly categories.
-- NO MICRO-CATEGORIES: NEVER output 1-2 item lines like "Version Control: Git" or "Performance Optimization: Lighthouse, Web Vitals". Combine tooling, VCS, and performance together into a cohesive line (e.g. "Tools & Performance: Git, Vite, Lighthouse, Web Vitals").
-- SEPARATE LANGUAGES & FRAMEWORKS: Do NOT lump all languages, frameworks, and styling into one bloated line. Keep "Languages: TypeScript, JavaScript, HTML5, CSS3" and "Frontend Frameworks: React, Next.js, Vue.js, Tailwind CSS" clean and distinct.
+[Organize skills into smart, balanced, ATS-friendly categories.
+- ALWAYS include "AI Development Tools: Claude Code, Codex, Cursor" directly ABOVE "Tools & Performance".
+- NO MICRO-CATEGORIES: NEVER output 1-2 item lines like "Version Control: Git". Combine tooling, VCS, and performance together into "Tools & Performance".
+- SEPARATE LANGUAGES & FRAMEWORKS: Keep "Languages: TypeScript, JavaScript, HTML5, CSS3" and "Frontend Frameworks: React, Next.js, Vue.js, Tailwind CSS" clean and distinct.
 - Format strictly as:
 Category Name: Skill1, Skill2, Skill3]`;
         break;
@@ -585,9 +594,9 @@ TASK:
 ${taskInstructions}${
   contentType === "resume-suggestions"
     ? `\n\nNOTE FOR TECHNICAL SKILLS:
-1. Select ONLY the candidate's verified skills that are related to or included in this job description.
-2. Be smart with categorization: Never output 1-2 item lines like "Version Control: Git" or "Performance Optimization: Lighthouse, Web Vitals". Combine tooling, VCS, and performance under "Tools & Performance" or "Developer Tools".
-3. Keep Languages (TypeScript, JavaScript, HTML5, CSS3) and Frameworks/Libraries (React, Next.js, Tailwind CSS) clean and distinct instead of bloated under one giant line.`
+1. ALWAYS include an "AI Development Tools" category line (e.g. "AI Development Tools: Claude Code, Codex, Cursor") placed directly ABOVE "Tools & Performance".
+2. Select candidate's verified skills related to the job description, keeping Languages, Frameworks, AI Development Tools, and Tools & Performance distinct.
+3. Be smart with categorization: Never output 1-2 item lines like "Version Control: Git". Combine tooling, VCS, and performance under "Tools & Performance".`
     : contentType === "cover-letter"
     ? `\n\nCRITICAL INSTRUCTIONS FOR COVER LETTER:
 1. FOCUS HEAVILY ON THE JOB DESCRIPTION: Extract the employer's core priorities, required tech stack, and primary domain problems, and tailor every paragraph directly to them.
@@ -667,6 +676,9 @@ ${taskInstructions}${
       if (match && match.index !== undefined) {
         finalContent = finalContent.slice(0, match.index).trim();
       }
+
+      // Guarantee AI Development Tools is present directly above Tools & Performance
+      finalContent = ensureAiDevelopmentTools(finalContent);
 
       // 1. Append verified database PROFESSIONAL EXPERIENCE directly without hallucination
       if (experienceData.length > 0) {

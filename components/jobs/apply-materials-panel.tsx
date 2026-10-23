@@ -57,6 +57,7 @@ import {
   restoreResumeProject,
   autoDetectResumeProjectTypes,
   getRecommendedSkillsForJob,
+  ensureAiDevelopmentTools,
   ParsedProject,
 } from "@/lib/utils/resume-editor";
 
@@ -304,6 +305,7 @@ function InlineAddSkillInput({ onAdd }: { onAdd: (skill: string) => void }) {
 }
 
 const SUGGESTED_SKILL_CATEGORIES = [
+  "AI Development Tools",
   "Cloud & DevOps",
   "Testing & QA",
   "Databases & Storage",
@@ -440,6 +442,25 @@ function chooseCategoryForSkill(skill: string, availableCategories: string[]): s
     const cat = rawCat.replace(/:$/, "").trim();
     const c = cat.toLowerCase();
     if (
+      (s.includes("claude") ||
+        s.includes("codex") ||
+        s.includes("cursor") ||
+        s.includes("copilot") ||
+        s.includes("chatgpt") ||
+        s.includes("gpt") ||
+        s.includes("openai") ||
+        s.includes("anthropic") ||
+        s.includes("windsurf") ||
+        s.includes("v0") ||
+        s.includes("llm") ||
+        s === "ai" ||
+        s.includes("ai tool") ||
+        s.includes("prompt")) &&
+      (c.includes("ai") || c.includes("artificial") || c.includes("machine"))
+    ) {
+      return cat;
+    }
+    if (
       (s.includes("react") ||
         s.includes("css") ||
         s.includes("html") ||
@@ -560,7 +581,7 @@ function ResumeDocumentView({
   onHideProject,
   onRestoreProject,
 }: ResumeDocumentViewProps) {
-  const normalized = content.replace(/\r\n/g, "\n").replace(/\r/g, "\n").trim();
+  const normalized = ensureAiDevelopmentTools(content).replace(/\r\n/g, "\n").replace(/\r/g, "\n").trim();
   if (!normalized) return null;
   const lines = normalized.split("\n");
 
@@ -1363,13 +1384,7 @@ export function ApplyMaterialsPanel({
   const [showRegenerateConfirm, setShowRegenerateConfirm] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
-  const [includePhoto, setIncludePhoto] = useState<boolean>(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("kairo_resume_include_photo");
-      return saved === "true";
-    }
-    return false;
-  });
+  const [includePhoto, setIncludePhoto] = useState<boolean>(false);
   const [photoSize, setPhotoSize] = useState<"sm" | "md" | "lg">(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("kairo_resume_photo_size");
@@ -1381,6 +1396,13 @@ export function ApplyMaterialsPanel({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
+
+  // Clean up any legacy localStorage flag to ensure default is always Off
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("kairo_resume_include_photo");
+    }
+  }, []);
 
   // Fetch candidate profile avatar on mount
   useEffect(() => {
@@ -1402,13 +1424,7 @@ export function ApplyMaterialsPanel({
   }, []);
 
   const handleTogglePhoto = () => {
-    setIncludePhoto((prev) => {
-      const next = !prev;
-      if (typeof window !== "undefined") {
-        localStorage.setItem("kairo_resume_include_photo", String(next));
-      }
-      return next;
-    });
+    setIncludePhoto((prev) => !prev);
   };
 
   const handlePhotoSizeChange = (size: "sm" | "md" | "lg") => {
@@ -1426,9 +1442,6 @@ export function ApplyMaterialsPanel({
       if (dataUrl) {
         setPhotoUrl(dataUrl);
         setIncludePhoto(true);
-        if (typeof window !== "undefined") {
-          localStorage.setItem("kairo_resume_include_photo", "true");
-        }
       }
     };
     reader.readAsDataURL(file);
@@ -1449,9 +1462,6 @@ export function ApplyMaterialsPanel({
   const handleRemovePhoto = () => {
     setPhotoUrl(null);
     setIncludePhoto(false);
-    if (typeof window !== "undefined") {
-      localStorage.setItem("kairo_resume_include_photo", "false");
-    }
   };
 
   // Close dropdown on outside click or ESC key
@@ -2043,7 +2053,7 @@ export function ApplyMaterialsPanel({
                               });
                             } else {
                               await downloadResumePdf({
-                                content: currentContent,
+                                content: ensureAiDevelopmentTools(currentContent),
                                 jobTitle: cleanPosition || jobTitle,
                                 includePhoto,
                                 photoUrl: includePhoto ? photoUrl : null,
@@ -2127,7 +2137,7 @@ export function ApplyMaterialsPanel({
             />
           ) : isEditing && activeSubTab === "resume-suggestions" && resumeEditMode === "page" ? (
             <ResumePageEditor
-              content={currentContent}
+              content={ensureAiDevelopmentTools(currentContent)}
               includePhoto={includePhoto}
               photoUrl={photoUrl}
               photoSize={photoSize}

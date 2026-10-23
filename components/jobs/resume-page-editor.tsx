@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { Plus, Trash2, FileText, Sparkles, HelpCircle, Camera } from "lucide-react";
+import { ensureAiDevelopmentTools } from "@/lib/utils/resume-editor";
 
 interface EditableProps {
   value: string;
