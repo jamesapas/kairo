@@ -47,14 +47,6 @@ export function LandingHero() {
             <span>Get Started for Free</span>
             <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
           </button>
-
-          <button
-            type="button"
-            onClick={() => openAuthModal("login")}
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-7 py-3.5 rounded-2xl bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800/80 text-zinc-900 dark:text-zinc-100 text-sm font-bold border border-zinc-200 dark:border-zinc-800 shadow-sm transition-all duration-200 cursor-pointer active:scale-98"
-          >
-            <span>Sign In</span>
-          </button>
         </div>
 
         {/* Micro-Trust Copy */}
