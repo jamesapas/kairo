@@ -9,7 +9,7 @@ import {
 } from "@/types/ai-apply";
 import { JobMatchAnalysis } from "@/types/ai-match";
 import { richHtmlToPlainText } from "@/lib/utils/job-description";
-import { ensureAiDevelopmentTools } from "@/lib/utils/resume-editor";
+import { ensureAiDevelopmentTools, cleanFreelancePhrasing } from "@/lib/utils/resume-editor";
 
 export async function POST(request: Request) {
   try {
@@ -157,7 +157,16 @@ export async function POST(request: Request) {
       const highlights = Array.isArray(exp.bullets)
         ? exp.bullets.filter(Boolean).slice(0, 4).join(" | ")
         : "";
-      return `- ${exp.job_title} at ${exp.company_name} (${exp.start_year || ""}-${exp.is_current ? "Present" : exp.end_year || ""})${highlights ? `: ${highlights}` : ""}`;
+      const compLower = (exp.company_name || "").toLowerCase().trim();
+      const jobLower = (exp.job_title || "").toLowerCase().trim();
+      const isFreelance =
+        compLower === "freelance" ||
+        compLower.includes("freelance") ||
+        jobLower.includes("freelance");
+      const companyPart = isFreelance
+        ? "(Freelance / Independent Projects)"
+        : `at ${exp.company_name}`;
+      return `- ${exp.job_title} ${companyPart} (${exp.start_year || ""}-${exp.is_current ? "Present" : exp.end_year || ""})${highlights ? `: ${highlights}` : ""}`;
     }).join("\n");
 
     const sortedProjectsForPrompt = [...projectsData].sort((a, b) => {
@@ -265,47 +274,43 @@ ${compactExperiences ? `Experience:\n${compactExperiences}\n` : ""}${compactProj
 
     switch (contentType) {
       case "cover-letter":
-        maxTokens = 1400;
-        systemPrompt = `You are Kairo's AI Career Co-Pilot specializing in writing authentic, high-impact, executive-ready Cover Letters.
+        maxTokens = 800;
+        systemPrompt = `You are Kairo's AI Career Co-Pilot specializing in writing authentic, concise, executive-ready Cover Letters.
 
 ### CORE PRINCIPLE
 THE JOB DESCRIPTION DETERMINES WHAT THE CANDIDATE SHOULD TALK ABOUT. THE CANDIDATE'S PROFILE, RÉSUMÉ, AND PROJECTS PROVIDE THE EVIDENCE.
-Do not generate a generic cover letter summarizing the candidate's general background with boilerplate filler. Analyze the job description deeply first, identify the employer's highest priorities, required tech stack, and primary domain, and build the letter directly around those needs.
+Do not generate a generic cover letter filled with conversational filler, repetitive adjectives, or boilerplate throat-clearing. Analyze the job description deeply, identify the employer's core technical priorities, and build a sharp, focused letter directly around those needs.
 
-### 1. CLOSEST ROLE & EXPERIENCE MATCHING (CRITICAL PRIORITY)
-- IDENTIFY THE PRIMARY DOMAIN of the target role (e.g. Full Stack Developer, Frontend Developer, Backend Engineer, Mobile Developer, DevOps Engineer, etc.).
-- ALWAYS MATCH THE CLOSEST RELEVANT EXPERIENCE: When presenting the candidate's professional background, past roles, and accomplishments, ALWAYS feature and emphasize the experience that is closest in title, scope, and technical depth to the target role.
-- CRITICAL FULL-STACK EXAMPLE:
-  * If the candidate is applying for "Full Stack Developer" (or Full Stack Engineer), the letter MUST highlight the candidate's verified Full Stack engineering capabilities (both frontend client architecture AND backend APIs, databases, microservices, and server-side logic).
-  * DO NOT narrow or reduce the candidate's narrative to merely "Frontend Developer" if they have verified full-stack experience, full-stack projects, or backend skills in their profile!
-  * If their most recent job title was "Frontend Developer" or "Web Developer", but they have built full-stack projects, designed REST/GraphQL APIs, worked with databases (PostgreSQL, Supabase, MySQL, MongoDB), or engineered full-lifecycle features, you MUST frame and bridge their experience as a versatile Full-Stack Software Engineer who brings deep frontend UI craftsmanship alongside robust backend systems capability!
-  * Never downplay the candidate by pitching them with a narrower past title or specialized scope when applying for a broader role that they have verified evidence for.
-- CONVERSE DOMAIN MATCHING:
-  * If the target role is "Backend Engineer", prioritize and lead with backend architecture, APIs, data modeling, concurrency, caching, and server reliability.
-  * If the target role is "Frontend Developer", prioritize UI component architecture, client-side state management, performance optimization (Core Web Vitals), and responsive design.
+### 1. CONCISE & EXECUTIVE-READY (STRICT 180–220 WORDS)
+- Target body length is strictly around 180–220 words across exactly 3 focused, cohesive paragraphs.
+- Zero filler: No robotic openings ("I am writing to enthusiastically apply for...", "Please accept my application..."), no generic platitudes ("your prestigious organization", "dynamic environment"), and no excessive flattery.
+- Tone: Confident, crisp, professional, and active. Every sentence must communicate concrete technical value.
 
-### 2. DEEP ALIGNMENT WITH THE JOB DESCRIPTION
-- Thoroughly extract the core requirements, technologies, and challenges emphasized in the job description:
-  * Mention the specific technologies, architectural patterns, and methodologies requested by the employer (e.g. React, Next.js, Node.js, TypeScript, PostgreSQL, REST APIs, CI/CD, responsive design).
-  * Connect the candidate's verified accomplishments directly to the employer's stated challenges (e.g., scaling APIs, building responsive web apps, improving site speed, building clean dashboards).
-  * Echo the employer's domain language and engineering values naturally (e.g., clean code, type safety, modular architecture, end-to-end ownership).
+### 2. THREE-PARAGRAPH NARRATIVE ARCHITECTURE
+- Paragraph 1: Direct Intent & Core Value Hook (~45–55 words)
+  * Open directly and confidently: state application for "${targetJobTitle}" at ${targetCompany || "the company"}, the candidate's verified years of experience, and the 2–3 core technical competencies directly relevant to the role's primary tech stack.
+  * Clearly position the candidate in the exact target domain (e.g., Full Stack Engineer, Front-End Developer, etc.).
+- Paragraph 2: Proven Technical Execution & Production Impact (~80–100 words)
+  * Feature 1–2 of the candidate's closest, verified technical achievements or production projects matching the job description's primary challenges.
+  * Detail concrete technologies, architectural decisions, and tangible impact (e.g. building responsive UI components, engineering scalable APIs, optimizing database queries, or enhancing application performance).
+  * If applying for Full Stack: show dual strength across client interfaces and server-side logic/databases without downplaying either.
+- Paragraph 3: Mission Alignment & Confident Call to Action (~45–55 words)
+  * Express genuine alignment with ${targetCompany || "the company"}'s product focus, engineering standards, or technical roadmap.
+  * Reiterate readiness to deliver immediate value with clean, well-tested code.
+  * Close with a professional, confident invitation to discuss how their background aligns with the team's goals in an interview.
 
-### 3. BODY STRUCTURE & NARRATIVE ARCHITECTURE
-The cover letter body must be compelling, authentic, and flow naturally across 4 focused paragraphs (approx. 280-380 words):
-- Paragraph 1: Intent & Target Domain Hook
-  State enthusiastic application for "${targetJobTitle}" at ${targetCompany || "your team"}. Immediately position the candidate in terms of the target role's primary domain (e.g. "as a Full Stack Engineer with X years of experience building scalable, end-to-end web applications..."). Summarize verified core strengths that directly solve the employer's primary needs.
-- Paragraph 2: Closest Experience & Technical Deep Dive
-  Highlight the candidate's verified professional experience and projects that are closest in scope and relevance to the target position. Detail concrete accomplishments: for Full Stack, explain how they architected responsive, performant user interfaces on the frontend while simultaneously developing robust backend APIs, server logic, database schemas, and third-party integrations using verified technologies.
-- Paragraph 3: Verified Impact & Modern Engineering Workflow
-  Provide evidence of measurable impact, technical problem-solving, and workflow discipline (e.g., performance optimizations, test coverage, agile collaboration, or modern AI-assisted engineering velocity with tools like Cursor/Claude Code if relevant). Connect this evidence directly to how it will accelerate ${targetCompany || "the company"}'s upcoming engineering goals.
-- Paragraph 4: Alignment with Company Mission & Confident Call to Action
-  Express genuine motivation for ${targetCompany || "the company"}'s product, engineering focus, or vision. Reiterate commitment to delivering immediate value, and state enthusiastic anticipation to discuss how their background aligns with the team's needs in an interview.
-
-### 4. STRICT INTEGRITY RULES
+### 3. STRICT INTEGRITY & FORMAT RULES
 1. ONLY use verified skills, experiences, projects, and education provided in the candidate context.
-2. DO NOT invent or assume unlisted employers, metrics, credentials, or proprietary products.
-3. DO NOT invent imaginary street addresses, postal codes, or fake recipient addresses for the company. Only use the company name (and city/location ONLY IF explicitly mentioned in the job description).
-4. Strictly follow the formal business letter format: Candidate Header, Date, Recipient block, Subject line ('Re: ... Application'), formal salutation, 4 structured body paragraphs separated by double newlines, and formal sign-off.
+2. DO NOT invent unlisted employers, metrics, credentials, or proprietary products.
+3. DO NOT invent imaginary street addresses or postal codes. Only use the company name (and location ONLY IF explicitly mentioned in the job description).
+4. Strictly follow the formal business letter format: Candidate Header, Date, Recipient block, Subject line ('Re: ... Application'), formal salutation, 3 structured body paragraphs separated by double newlines, and formal sign-off.
+5. STRICT PHRASING RULE (NEVER WRITE "AT FREELANCE"):
+   - NEVER write "at Freelance" or "at freelance". Freelance is an employment status/modality, NOT a company or organization.
+   - Always use natural, professional phrasing such as:
+     * "In my freelance engineering work, I engineered..."
+     * "As a freelance [job title], I built..."
+     * "Through independent client engagements, I developed..."
+     * "Delivering client solutions as an independent developer..."
 
 Return JSON matching:
 {
@@ -313,7 +318,7 @@ Return JSON matching:
   "content": string, // Full formal cover letter text formatted with proper line breaks
   "keyPointsUsed": string[] // 2-3 brief bullet points of verified candidate strengths leveraged
 }`;
-        taskInstructions = `Generate a formal, beautifully structured Cover Letter for "${targetJobTitle}" at ${targetCompany || "the company"}.
+        taskInstructions = `Generate a concise, high-impact, professional Cover Letter for "${targetJobTitle}" at ${targetCompany || "the company"}.
 
 Follow this EXACT layout structure:
 
@@ -329,13 +334,11 @@ Re: ${targetJobTitle || "Role"} Application
 
 Dear Hiring Manager,
 
-[Paragraph 1: Clear application intent for the ${targetJobTitle || "role"} at ${targetCompany || "the company"}. Frame the candidate in the exact primary domain of the target role (e.g. Full Stack Developer), highlighting total verified years of experience and core technical capabilities that mirror the job posting's main requirements.]
+[Paragraph 1: Direct application intent for the ${targetJobTitle || "role"} at ${targetCompany || "the company"}. Immediately position candidate in the target domain with verified years of experience and 2-3 core skills matching the employer's highest priorities. ~50 words.]
 
-[Paragraph 2: The closest, most relevant experience and verified projects. IF APPLYING FOR FULL STACK: Feature full-stack engineering achievements (both frontend client interfaces AND backend APIs, database modeling, and server-side logic). Do not reduce to frontend only. Mention concrete technical tools, architectural decisions, and production accomplishments from verified bullets.]
+[Paragraph 2: Concrete technical execution and verified production achievements closest in scope to this job description. Detail architectural choices, specific tech stack tools, and measurable impact. ~90 words.]
 
-[Paragraph 3: Engineering problem-solving, proven impact, and workflow rigor matching the job description's challenges (e.g. application performance, robust API integrations, scalability, code quality, developer velocity). Connect this directly to how the candidate will solve problems for ${targetCompany || "the team"}.]
-
-[Paragraph 4: Genuine motivation for ${targetCompany || "the company"}'s product/mission and alignment with their engineering culture. Confidently reiterate readiness to make an immediate impact and state anticipation to discuss the role in an interview.]
+[Paragraph 3: Alignment with ${targetCompany || "the company"}'s product or engineering mission, readiness to deliver immediate value, and a confident, professional call to action for an interview. ~50 words.]
 
 Sincerely,
 ${profileData?.name || "Candidate"}`;
@@ -364,6 +367,7 @@ ${candidateSignOff}
 4. Mention relevant technologies ONLY when they match the job requirements.
 5. Highlight why candidate is a strong fit without exaggerating qualifications or making generic claims.
 6. Return only the finished email ready to send. No explanations, no markdown code blocks in content, no multiple versions.
+7. NEVER write "at Freelance" or "at freelance". Freelance is an employment modality, not a company name. Write "in my freelance work" or "as a freelance developer".
 
 Return JSON format:
 {
@@ -392,6 +396,7 @@ ABSOLUTE STRICT RULES:
    - If the target position is 'Web Developer', the summary MUST start by identifying as a Web Developer (e.g. "[Results-driven / Dedicated / Innovative] Web Developer with [X] years of experience in..." or "Web Developer with [X] years of experience...").
    - NEVER default or revert to 'Full-Stack Developer' unless 'Full-Stack Developer' is the actual target position.
    - The 'PROFESSIONAL SUMMARY' must be concise, punchy, and around 55–60 words, directly tailored to the role using verified experience.
+   - NEVER write "at Freelance" or "at freelance" in the summary. Write "freelance experience" or "delivering client solutions as an independent developer".
 6. TARGETED TECHNICAL SKILLS (SMART ATS CATEGORIZATION & STRICT JOB RELEVANCE):
    - STRICT JOB RELEVANCE: ONLY include candidate skills that are directly related to, required by, or mentioned in the job description, or that directly support the role's primary tech stack. Strictly exclude unrelated technologies (e.g. no PHP/WordPress on a React/Next.js role).
    - MANDATORY "AI Development Tools" CATEGORY:
@@ -505,6 +510,7 @@ Do not generate a generic introduction summarizing the candidate's general backg
   * What outcome, implementation detail, or example makes the evidence convincing.
   * Whether the candidate has a genuine gap that should not be misrepresented.
 - STRICT RULE: NEVER invent, fabricate, or hallucinate experience, achievements, metrics, technical skills, or project functionality.
+- STRICT RULE (NEVER SAY "AT FREELANCE"): NEVER say or write "at Freelance" or "at freelance". Say "in my freelance work", "as a freelance developer", or "working independently for clients".
 - If the employer asks a direct question that candidate data cannot answer:
   * In the script, include a clear placeholder (e.g. "[Candidate Note: Briefly explain your personal motivation for Company X / your experience with Y]").
   * Mark it as "missing" or "partial" in the requirement coverage summary.
@@ -599,9 +605,11 @@ ${taskInstructions}${
 3. Be smart with categorization: Never output 1-2 item lines like "Version Control: Git". Combine tooling, VCS, and performance under "Tools & Performance".`
     : contentType === "cover-letter"
     ? `\n\nCRITICAL INSTRUCTIONS FOR COVER LETTER:
-1. FOCUS HEAVILY ON THE JOB DESCRIPTION: Extract the employer's core priorities, required tech stack, and primary domain problems, and tailor every paragraph directly to them.
-2. CLOSEST ROLE MATCHING: Feature and speak about the candidate's experience closest in scope to "${targetJobTitle}". If applying for Full Stack Developer, speak to their Full Stack engineering capabilities (both frontend client architecture AND backend APIs/databases/architecture)—NEVER reduce or downplay to frontend only if they have full-stack evidence!
-3. AUTHENTIC EVIDENCE: Back every technical claim with verified candidate experience, projects, or accomplishments.`
+1. CONCISE & PROFESSIONAL (STRICT 180–220 WORDS): Keep the body strictly to 3 crisp, high-impact paragraphs. Eliminate conversational filler, redundant adjectives, and generic platitudes.
+2. JOB-TAILORED VALUE: Focus directly on how the candidate's verified technical capabilities and accomplishments solve the employer's specific priorities in the job description.
+3. DOMAIN ALIGNMENT: Pitch the candidate in the exact target domain (e.g. Full-Stack Developer if applying for Full-Stack, featuring both client UI craftsmanship and server/DB architecture).
+4. AUTHENTIC EVIDENCE: Ground every claim in verified profile and project data. Zero fluff.
+5. NEVER WRITE "AT FREELANCE": Never output "at Freelance" or "at freelance". Freelance is not an employer name. Write "in my freelance work", "as a freelance developer", or "through independent client engagements".`
     : ""
 }`;
 
@@ -858,6 +866,26 @@ ${taskInstructions}${
             ) || Math.round((words / 140) * 60);
         }
       }
+    }
+
+    // Sanitize any accidental occurrences of "at Freelance" in content, key points, title, and script
+    finalContent = cleanFreelancePhrasing(finalContent);
+
+    if (Array.isArray(parsed.keyPointsUsed)) {
+      parsed.keyPointsUsed = parsed.keyPointsUsed.map((kp: string) =>
+        cleanFreelancePhrasing(kp)
+      );
+    }
+
+    if (parsed.title) {
+      parsed.title = cleanFreelancePhrasing(parsed.title);
+    }
+
+    if (parsed.scriptData?.sections && Array.isArray(parsed.scriptData.sections)) {
+      parsed.scriptData.sections = parsed.scriptData.sections.map((sec: any) => ({
+        ...sec,
+        spokenText: cleanFreelancePhrasing(sec.spokenText || ""),
+      }));
     }
 
     const data: ApplyContentResponse = {

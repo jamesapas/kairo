@@ -1,4 +1,5 @@
 import { jsPDF } from "jspdf";
+import { cleanFreelancePhrasing } from "@/lib/utils/resume-editor";
 
 export interface CoverLetterPdfOptions {
   content: string;
@@ -20,7 +21,8 @@ export function downloadCoverLetterPdf({
   jobTitle,
   fileName,
 }: CoverLetterPdfOptions): void {
-  if (!content || !content.trim()) return;
+  const sanitizedContent = cleanFreelancePhrasing(content || "");
+  if (!sanitizedContent || !sanitizedContent.trim()) return;
 
   const doc = new jsPDF({
     orientation: "portrait",
@@ -75,7 +77,7 @@ export function downloadCoverLetterPdf({
   };
 
   // Normalize raw content into paragraphs split by double line breaks
-  const normalizedContent = content
+  const normalizedContent = sanitizedContent
     .replace(/\r\n/g, "\n")
     .replace(/\r/g, "\n")
     .trim();

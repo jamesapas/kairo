@@ -58,6 +58,7 @@ import {
   autoDetectResumeProjectTypes,
   getRecommendedSkillsForJob,
   ensureAiDevelopmentTools,
+  cleanFreelancePhrasing,
   ParsedProject,
 } from "@/lib/utils/resume-editor";
 
@@ -85,7 +86,8 @@ const CONTENT_TYPE_ICONS: Record<
 };
 
 function renderCoverLetterContent(content: string) {
-  const normalized = content.replace(/\r\n/g, "\n").replace(/\r/g, "\n").trim();
+  const sanitized = cleanFreelancePhrasing(content);
+  const normalized = sanitized.replace(/\r\n/g, "\n").replace(/\r/g, "\n").trim();
   if (!normalized) return null;
 
   const blocks = normalized.split(/\n\s*\n+/);

@@ -823,3 +823,38 @@ function reassembleResumeProjects(content: string, projects: ParsedProject[]): s
 
   return `${normalized.trimEnd()}\n\n${replacement}`.trim();
 }
+
+/**
+ * Sanitizes awkward or ungrammatical "at Freelance" phrases across generated application materials.
+ * "Freelance" is an employment status/modality, not a company name, so phrases like "At Freelance, I..."
+ * or "working at Freelance" sound unprofessional.
+ */
+export function cleanFreelancePhrasing(text: string): string {
+  if (!text) return text;
+  return text
+    // "During my time at Freelance" / "in my time at Freelance"
+    .replace(/\b(?:[Dd]uring|[Ii]n)\s+my\s+time\s+at\s+freelance\b/gi, (match) =>
+      match[0] === match[0].toUpperCase() ? "Throughout my freelance work" : "throughout my freelance work"
+    )
+    // "working at Freelance" / "worked at Freelance"
+    .replace(/\bworking\s+at\s+freelance\b/gi, "working as a freelance developer")
+    .replace(/\bworked\s+at\s+freelance\b/gi, "worked as an independent developer")
+    // "while at Freelance"
+    .replace(/\b[Ww]hile\s+at\s+freelance\b/gi, (match) =>
+      match[0] === match[0].toUpperCase() ? "In my freelance work" : "in my freelance work"
+    )
+    // "experience at Freelance"
+    .replace(/\bexperience\s+at\s+freelance\b/gi, "freelance experience")
+    // "role at Freelance"
+    .replace(/\brole\s+at\s+freelance\b/gi, "freelance role")
+    // "time at Freelance"
+    .replace(/\btime\s+at\s+freelance\b/gi, "freelance work")
+    // Capitalized sentence-opener: "At Freelance," or "At Freelance "
+    .replace(/\bAt\s+Freelance\b/g, "In my freelance work")
+    // Lowercase / mid-sentence: "at Freelance" or "at freelance"
+    .replace(/\bat\s+[Ff]reelance\b/g, "in my freelance work")
+    // Any remaining stray "At freelance"
+    .replace(/\bAt\s+freelance\b/g, "In my freelance work")
+    // Clean up multiple spaces if any were left
+    .replace(/[ \t]{2,}/g, " ");
+}
