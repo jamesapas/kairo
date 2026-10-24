@@ -31,6 +31,9 @@ import {
 import { StatusDropdown } from "./status-dropdown";
 import { PlatformIcon } from "./platform-badge";
 
+const PAGE_SIZE_STORAGE_KEY = "kairo_table_page_size";
+const ALLOWED_PAGE_SIZES = [5, 10, 20, 25, 50, 100] as const;
+
 interface JobTableProps {
   jobs: JobApplication[];
   selectedStatus?: string;
@@ -390,6 +393,26 @@ export function JobTable({
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(PAGE_SIZE_STORAGE_KEY);
+      if (saved) {
+        const parsed = parseInt(saved, 10);
+        if (ALLOWED_PAGE_SIZES.includes(parsed as (typeof ALLOWED_PAGE_SIZES)[number])) {
+          setPageSize(parsed);
+        }
+      }
+    } catch {}
+  }, []);
+
+  const handlePageSizeChange = (newSize: number) => {
+    setPageSize(newSize);
+    setCurrentPage(1);
+    try {
+      localStorage.setItem(PAGE_SIZE_STORAGE_KEY, String(newSize));
+    } catch {}
+  };
+
   const isArchiveView =
     selectedStatus === "archived" ||
     selectedStatus === "rejected" ||
@@ -677,17 +700,19 @@ export function JobTable({
         <div className="flex items-center gap-1.5 pl-3 border-l border-zinc-200 dark:border-zinc-700">
           <span className="text-[11px] text-zinc-400 dark:text-zinc-500">Show:</span>
           <select
+            aria-label="Rows per page"
             value={pageSize}
             onChange={(e) => {
-              setPageSize(Number(e.target.value));
-              setCurrentPage(1);
+              handlePageSizeChange(Number(e.target.value));
             }}
             className="h-8 bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100/80 dark:hover:bg-zinc-700 border border-zinc-200 dark:border-zinc-700 text-zinc-800 dark:text-zinc-200 rounded-lg px-2 text-xs font-semibold focus:outline-hidden transition cursor-pointer"
           >
             <option value={5}>5 / page</option>
             <option value={10}>10 / page</option>
+            <option value={20}>20 / page</option>
             <option value={25}>25 / page</option>
             <option value={50}>50 / page</option>
+            <option value={100}>100 / page</option>
           </select>
         </div>
       </div>
